@@ -1,0 +1,12 @@
+[display]
+move_delay_ms = 50   # Delay between each input step shown during animation.
+lock_delay_ms = 150  # Extra pause after the piece locks before the next piece appears.
+visible_rows = 20    # How many rows of the board to show (max 40).
+queue_size = 5       # Number of next pieces shown in the queue panel.
+
+[game]
+randomizer = "seven_bag"  # Randomizer type: "seven_bag" or "pure_random".
+initial_queue = 5         # How many pieces to seed in the queue before sending start.
+refill_threshold = 5      # Keep at least this many pieces in the queue.
+suggest_timeout_ms = 10_000 # Timeout waiting for a bot suggestion.
+first_move_think_ms = 200 # Extra think time given to the bot on its very first move.

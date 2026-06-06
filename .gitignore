@@ -1,0 +1,19 @@
+# Environment
+.vs/
+.vscode/
+.idea/
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+.mypy_cache/
+.ruff_cache/
+
+# Profiler
+*.pyspy
