@@ -211,6 +211,10 @@ class Frontend:
                     )
                     self._render(state, moving_piece, (ax, ay, arot))
                 else:
+                    print(
+                        f"[frontend] warning: no path found for move {chosen}",
+                        file=sys.stderr,
+                    )
                     loc = chosen.location
                     self._render(state, moving_piece, (loc.x, loc.y, loc.rotation))
 

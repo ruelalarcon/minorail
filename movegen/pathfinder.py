@@ -108,11 +108,20 @@ def find_path(
             parent[state] = (prev, step)
             queue.append(state)
 
-    use_rot180 = rules.rot180 and rules.kickset in kicks.SUPPORTS_180
+    use_rot180 = rules.rot180
+    tgt_x, tgt_y, tgt_rot = target.x, target.y, target.rotation
 
+    best: Optional[tuple[int, int, Rotation]] = None
     while queue:
         state = queue.popleft()
         cx, cy, crot = state
+        if (
+            crot == tgt_rot
+            and cx == tgt_x
+            and cy - board.drop_distance(piece, crot, cx, cy) == tgt_y
+        ):
+            best = state
+            break
 
         # Lateral moves
         if not obstructed(board, piece, crot, cx - 1, cy):
@@ -155,18 +164,6 @@ def find_path(
             r = try_rotate_180(board, piece, crot, cx, cy, rules.kickset)
             if r is not None:
                 enqueue(r, state, MoveStep.Rot180)
-
-    tgt_x, tgt_y, tgt_rot = target.x, target.y, target.rotation
-
-    def landed_y(x: int, y: int, rot: Rotation) -> int:
-        return y - board.drop_distance(piece, rot, x, y)
-
-    best = None
-    for state in parent:
-        sx, sy, srot = state
-        if srot == tgt_rot and sx == tgt_x and landed_y(sx, sy, srot) == tgt_y:
-            if best is None or sy > best[1]:
-                best = state
 
     if best is None:
         return None

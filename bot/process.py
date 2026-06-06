@@ -19,11 +19,10 @@ class BotProcess:
         self, exe_path: str, on_message: Callable[[dict[str, Any]], None]
     ) -> None:
         self._proc = subprocess.Popen(
-            exe_path,
+            [exe_path],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=sys.stderr,
-            shell=True,
         )
         self._on_message = on_message
         self._lock = threading.Lock()
