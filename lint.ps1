@@ -1,4 +1,5 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-ruff format .
-basedpyright .
+$files = git ls-files '*.py'
+ruff format $files
+basedpyright $files

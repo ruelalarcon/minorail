@@ -1,4 +1,5 @@
 #!/usr/bin/env sh
 set -e
-ruff format .
-basedpyright .
+files=$(git ls-files '*.py')
+ruff format $files
+basedpyright $files
