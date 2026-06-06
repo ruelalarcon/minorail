@@ -39,7 +39,6 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 hold=Piece(hold_raw) if hold_raw is not None else None,
                 combo=obj.get("combo", 0),
                 back_to_back=obj.get("back_to_back", False),
-                randomizer=obj.get("randomizer", {}),
             )
         case "play":
             return MsgPlay(move=Placement.from_tbp(obj["move"]))

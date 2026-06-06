@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Optional
+from dataclasses import dataclass
+from typing import Optional
 
 from core.board import Board
 from core.piece import Piece
@@ -20,7 +20,6 @@ class MsgStart:
     hold: Optional[Piece]
     combo: int
     back_to_back: bool
-    randomizer: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

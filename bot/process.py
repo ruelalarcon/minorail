@@ -77,8 +77,6 @@ class BotProcess:
             "combo": msg.combo,
             "back_to_back": msg.back_to_back,
         }
-        if msg.randomizer:
-            obj["randomizer"] = msg.randomizer
         self._send(obj)
 
     def send_play(self, placement: Placement) -> None:

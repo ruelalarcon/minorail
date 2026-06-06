@@ -7,7 +7,6 @@ from core.board import Board, piece_cells
 from core.piece import Piece
 from core.placement import Placement
 from core.spin import Spin
-from game.randomizer import Randomizer, make_randomizer
 from tbp.messages import MsgStart
 
 _ALL_PIECES = list(Piece)
@@ -20,11 +19,10 @@ class GameState:
     hold: Optional[Piece]
     combo: int
     back_to_back: bool
-    randomizer: Optional[Randomizer]
     hold_used_this_turn: bool = False
 
     @staticmethod
-    def from_start(msg: MsgStart, rules_randomizer: Optional[str] = None) -> GameState:
+    def from_start(msg: MsgStart) -> GameState:
         """Build initial state from a TBP start message."""
         return GameState(
             board=msg.board.copy(),
@@ -32,7 +30,6 @@ class GameState:
             hold=msg.hold,
             combo=msg.combo,
             back_to_back=msg.back_to_back,
-            randomizer=make_randomizer(rules_randomizer, msg.randomizer),
         )
 
     def current_piece(self) -> Optional[Piece]:

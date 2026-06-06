@@ -44,24 +44,14 @@ class Frontend:
             case "error":
                 print(f"[bot error] {obj.get('reason')}", file=sys.stderr)
 
-    def _build_start(self, rules: Rules) -> tuple[MsgStart, Randomizer]:
-        n = self._settings["queue"]["initial"]
-        rand = make_randomizer(rules.randomizer, {})
-        assert rand is not None
-        queue = [rand.next() for _ in range(n)]
-        bag_state = rand.peek_bag()
-        rand_obj: dict[str, Any] = {"type": rules.randomizer}
-        if bag_state:
-            rand_obj["bag_state"] = [p.value for p in bag_state]
-        msg = MsgStart(
+    def _build_start(self, queue: list[Piece]) -> MsgStart:
+        return MsgStart(
             board=Board(),
             queue=queue,
             hold=None,
             combo=0,
             back_to_back=False,
-            randomizer=rand_obj,
         )
-        return msg, rand
 
     def _get_suggestion(self, bot: BotProcess, first: bool) -> list[Placement]:
         cfg = self._settings["bot"]
@@ -143,9 +133,12 @@ class Frontend:
             bot.wait()
             return {"pieces": 0}
 
-        start_msg, rand = self._build_start(rules)
-        state = GameState.from_start(start_msg, rules.randomizer)
-        state.randomizer = rand
+        rand = make_randomizer(rules.randomizer)
+        assert rand is not None
+        start_msg = self._build_start(
+            [rand.next() for _ in range(self._settings["queue"]["initial"])]
+        )
+        state = GameState.from_start(start_msg)
         bot.send_start(start_msg)
 
         if self._display:
