@@ -112,6 +112,18 @@ class Frontend:
         cfg = self._settings["display"]
         render(state, piece, loc, cfg["visible_rows"], cfg["queue_size"])
 
+    def _ensure_queue_refilled(
+        self,
+        state: GameState,
+        rand: Randomizer,
+        bot: BotProcess,
+        refill_at: int,
+    ) -> None:
+        while len(state.queue) < refill_at:
+            p = rand.next()
+            state.queue.append(p)
+            bot.send_new_piece(p)
+
     def play_game(self) -> dict[str, Any]:
         bot = BotProcess(self._bot_path, self._on_bot_message)
         time.sleep(0.1)
@@ -145,10 +157,7 @@ class Frontend:
         first_move = True
 
         while True:
-            while len(state.queue) < refill_at:
-                p = rand.next()
-                state.queue.append(p)
-                bot.send_new_piece(p)
+            self._ensure_queue_refilled(state, rand, bot, refill_at)
 
             spawn_piece = state.current_piece()
             if spawn_piece is None:
@@ -226,6 +235,9 @@ class Frontend:
                 break
 
             bot.send_play(chosen)
+
+            self._ensure_queue_refilled(state, rand, bot, refill_at)
+
             pieces_placed += 1
 
             if self._display:
