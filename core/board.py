@@ -86,6 +86,8 @@ class Board:
                 continue
             if y < 0:
                 return 0
+            if y >= 40:
+                continue
             result = min(result, self.distance_to_ground(x, y))
         return result
 

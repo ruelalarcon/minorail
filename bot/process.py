@@ -8,6 +8,7 @@ from typing import Any, Callable, Optional
 
 from core.piece import Piece
 from core.placement import Placement
+from game.rules import Rules
 from tbp.messages import MsgStart
 
 
@@ -52,8 +53,16 @@ class BotProcess:
             self._proc.stdin.write(line)
             self._proc.stdin.flush()
 
-    def send_rules(self, randomizer: str = "seven_bag") -> None:
-        self._send({"type": "rules", "randomizer": randomizer})
+    def send_rules(self, rules: Rules) -> None:
+        self._send(
+            {
+                "type": "rules",
+                "randomizer": rules.randomizer,
+                "kickset": rules.kickset,
+                "rot180": rules.rot180,
+                "sonic_drop": rules.sonic_drop,
+            }
+        )
 
     def send_start(self, msg: MsgStart) -> None:
         board_rows: list[list[Optional[str]]] = [[None] * 10 for _ in range(40)]

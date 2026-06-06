@@ -12,6 +12,7 @@ from core.placement import Placement
 from core.rotation import Rotation
 from display.renderer import render
 from game.randomizer import Randomizer, make_randomizer
+from game.rules import Rules
 from game.state import GameState
 from movegen.pathfinder import MoveStep, apply_step, find_path
 from tbp.messages import MsgStart
@@ -43,13 +44,13 @@ class Frontend:
             case "error":
                 print(f"[bot error] {obj.get('reason')}", file=sys.stderr)
 
-    def _build_start(self, rules_randomizer: str) -> tuple[MsgStart, Randomizer]:
-        n = self._settings["game"]["initial_queue"]
-        rand = make_randomizer(rules_randomizer, {})
+    def _build_start(self, rules: Rules) -> tuple[MsgStart, Randomizer]:
+        n = self._settings["queue"]["initial"]
+        rand = make_randomizer(rules.randomizer, {})
         assert rand is not None
         queue = [rand.next() for _ in range(n)]
         bag_state = rand.peek_bag()
-        rand_obj: dict[str, Any] = {"type": rules_randomizer}
+        rand_obj: dict[str, Any] = {"type": rules.randomizer}
         if bag_state:
             rand_obj["bag_state"] = [p.value for p in bag_state]
         msg = MsgStart(
@@ -63,9 +64,10 @@ class Frontend:
         return msg, rand
 
     def _get_suggestion(self, bot: BotProcess, first: bool) -> list[Placement]:
+        cfg = self._settings["bot"]
         if first:
-            time.sleep(self._settings["game"]["first_move_think_ms"] / 1000)
-        deadline = time.time() + self._settings["game"]["suggest_timeout_ms"] / 1000
+            time.sleep(cfg["first_move_think_ms"] / 1000)
+        deadline = time.time() + cfg["suggest_timeout_ms"] / 1000
         while time.time() < deadline:
             self._suggestion_event.clear()
             self._suggestion = None
@@ -115,22 +117,22 @@ class Frontend:
         time.sleep(0.1)
 
         cfg_d = self._settings["display"]
-        cfg_g = self._settings["game"]
         move_delay = cfg_d["move_delay_ms"] / 1000
         lock_delay = cfg_d["lock_delay_ms"] / 1000
-        refill_at = cfg_g["refill_threshold"]
+        refill_at = self._settings["queue"]["refill_threshold"]
+
+        rules = Rules.from_settings(self._settings)
 
         self._ready_event.clear()
-        rules_randomizer: str = cfg_g["randomizer"]
-        bot.send_rules(rules_randomizer)
+        bot.send_rules(rules)
         if not self._ready_event.wait(timeout=5.0):
             print("[frontend] bot did not send ready", file=sys.stderr)
             bot.send_quit()
             bot.wait()
             return {"pieces": 0}
 
-        start_msg, rand = self._build_start(rules_randomizer)
-        state = GameState.from_start(start_msg, rules_randomizer)
+        start_msg, rand = self._build_start(rules)
+        state = GameState.from_start(start_msg, rules.randomizer)
         state.randomizer = rand
         bot.send_start(start_msg)
 
@@ -180,7 +182,7 @@ class Frontend:
             assert moving_piece is not None
 
             if self._display:
-                path = find_path(state.board, moving_piece, chosen.location)
+                path = find_path(state.board, moving_piece, chosen.location, rules)
 
                 if hold_used:
                     self._render(state, moving_piece, (4, 19, Rotation.North))
@@ -194,12 +196,18 @@ class Frontend:
                         ay = 20
                     for step in path[:-1]:
                         ax, ay, arot = apply_step(
-                            step, moving_piece, arot, ax, ay, state.board
+                            step, moving_piece, arot, ax, ay, state.board, rules.kickset
                         )
                         self._render(state, moving_piece, (ax, ay, arot))
                         time.sleep(move_delay)
                     ax, ay, arot = apply_step(
-                        MoveStep.HardDrop, moving_piece, arot, ax, ay, state.board
+                        MoveStep.HardDrop,
+                        moving_piece,
+                        arot,
+                        ax,
+                        ay,
+                        state.board,
+                        rules.kickset,
                     )
                     self._render(state, moving_piece, (ax, ay, arot))
                 else:

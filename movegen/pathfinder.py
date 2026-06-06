@@ -2,21 +2,28 @@ from __future__ import annotations
 
 from collections import deque
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from core.board import Board, piece_cells
 from core.location import PieceLocation
 from core.piece import Piece
 from core.rotation import Rotation, rot_ccw, rot_cw
-from movegen.kicks import srs_kicks
+from movegen import kicks
+
+if TYPE_CHECKING:
+    from game.rules import Rules
 
 
 class MoveStep(Enum):
     Left = "left"
     Right = "right"
+    DasLeft = "das_left"
+    DasRight = "das_right"
     RotCW = "rot_cw"
     RotCCW = "rot_ccw"
+    Rot180 = "rot_180"
     SoftDrop = "soft_drop"
+    SonicDrop = "sonic_drop"
     HardDrop = "hard_drop"
 
 
@@ -30,11 +37,38 @@ def obstructed(board: Board, piece: Piece, rotation: Rotation, x: int, y: int) -
 
 
 def try_rotate(
-    board: Board, piece: Piece, from_rot: Rotation, to_rot: Rotation, x: int, y: int
+    board: Board,
+    piece: Piece,
+    from_rot: Rotation,
+    to_rot: Rotation,
+    x: int,
+    y: int,
+    kickset: str,
 ) -> Optional[tuple[int, int, Rotation]]:
     if piece == Piece.O:
         return None
-    for dx, dy in srs_kicks(piece, from_rot, to_rot):
+    kick_list = (
+        kicks.kicks_cw(kickset, piece, from_rot)
+        if to_rot == rot_cw(from_rot)
+        else kicks.kicks_ccw(kickset, piece, from_rot)
+    )
+    for dx, dy in kick_list:
+        nx, ny = x + dx, y + dy
+        if not obstructed(board, piece, to_rot, nx, ny):
+            return (nx, ny, to_rot)
+    return None
+
+
+def try_rotate_180(
+    board: Board,
+    piece: Piece,
+    from_rot: Rotation,
+    x: int,
+    y: int,
+    kickset: str,
+) -> Optional[tuple[int, int, Rotation]]:
+    to_rot = rot_cw(rot_cw(from_rot))
+    for dx, dy in kicks.kicks_180(kickset, piece, from_rot):
         nx, ny = x + dx, y + dy
         if not obstructed(board, piece, to_rot, nx, ny):
             return (nx, ny, to_rot)
@@ -42,7 +76,10 @@ def try_rotate(
 
 
 def find_path(
-    board: Board, piece: Piece, target: PieceLocation
+    board: Board,
+    piece: Piece,
+    target: PieceLocation,
+    rules: Rules,
 ) -> Optional[list[MoveStep]]:
     """
     BFS from spawn (North, x=4, y=19) to the target placement.
@@ -54,7 +91,6 @@ def find_path(
         if obstructed(board, piece, spawn_rot, spawn_x, spawn_y):
             return None
 
-    # State = tuple[int, int, Rotation]
     start = (spawn_x, spawn_y, spawn_rot)
     parent: dict[
         tuple[int, int, Rotation], tuple[tuple[int, int, Rotation], MoveStep]
@@ -72,23 +108,53 @@ def find_path(
             parent[state] = (prev, step)
             queue.append(state)
 
+    use_rot180 = rules.rot180 and rules.kickset in kicks.SUPPORTS_180
+
     while queue:
         state = queue.popleft()
         cx, cy, crot = state
 
+        # Lateral moves
         if not obstructed(board, piece, crot, cx - 1, cy):
             enqueue((cx - 1, cy, crot), state, MoveStep.Left)
         if not obstructed(board, piece, crot, cx + 1, cy):
             enqueue((cx + 1, cy, crot), state, MoveStep.Right)
-        if not obstructed(board, piece, crot, cx, cy - 1):
-            enqueue((cx, cy - 1, crot), state, MoveStep.SoftDrop)
 
-        r = try_rotate(board, piece, crot, rot_cw(crot), cx, cy)
+        # DAS: slide all the way left/right
+        das_x = cx - 1
+        while not obstructed(board, piece, crot, das_x, cy):
+            das_x -= 1
+        das_x += 1
+        if das_x != cx:
+            enqueue((das_x, cy, crot), state, MoveStep.DasLeft)
+
+        das_x = cx + 1
+        while not obstructed(board, piece, crot, das_x, cy):
+            das_x += 1
+        das_x -= 1
+        if das_x != cx:
+            enqueue((das_x, cy, crot), state, MoveStep.DasRight)
+
+        # Vertical moves
+        if rules.sonic_drop != "only":
+            if not obstructed(board, piece, crot, cx, cy - 1):
+                enqueue((cx, cy - 1, crot), state, MoveStep.SoftDrop)
+
+        sonic_y = cy - board.drop_distance(piece, crot, cx, cy)
+        if sonic_y != cy:
+            enqueue((cx, sonic_y, crot), state, MoveStep.SonicDrop)
+
+        # Rotations
+        r = try_rotate(board, piece, crot, rot_cw(crot), cx, cy, rules.kickset)
         if r is not None:
             enqueue(r, state, MoveStep.RotCW)
-        r = try_rotate(board, piece, crot, rot_ccw(crot), cx, cy)
+        r = try_rotate(board, piece, crot, rot_ccw(crot), cx, cy, rules.kickset)
         if r is not None:
             enqueue(r, state, MoveStep.RotCCW)
+        if use_rot180:
+            r = try_rotate_180(board, piece, crot, cx, cy, rules.kickset)
+            if r is not None:
+                enqueue(r, state, MoveStep.Rot180)
 
     tgt_x, tgt_y, tgt_rot = target.x, target.y, target.rotation
 
@@ -119,21 +185,41 @@ def find_path(
 
 
 def apply_step(
-    step: MoveStep, piece: Piece, rotation: Rotation, x: int, y: int, board: Board
+    step: MoveStep,
+    piece: Piece,
+    rotation: Rotation,
+    x: int,
+    y: int,
+    board: Board,
+    kickset: str = "srs",
 ) -> tuple[int, int, Rotation]:
-    """Apply one move step, returning the new (x, y, rotation)."""
     match step:
         case MoveStep.Left:
             return (x - 1, y, rotation)
         case MoveStep.Right:
             return (x + 1, y, rotation)
+        case MoveStep.DasLeft:
+            nx = x - 1
+            while not obstructed(board, piece, rotation, nx, y):
+                nx -= 1
+            return (nx + 1, y, rotation)
+        case MoveStep.DasRight:
+            nx = x + 1
+            while not obstructed(board, piece, rotation, nx, y):
+                nx += 1
+            return (nx - 1, y, rotation)
         case MoveStep.SoftDrop:
             return (x, y - 1, rotation)
+        case MoveStep.SonicDrop:
+            return (x, y - board.drop_distance(piece, rotation, x, y), rotation)
         case MoveStep.HardDrop:
             return (x, y - board.drop_distance(piece, rotation, x, y), rotation)
         case MoveStep.RotCW:
-            r = try_rotate(board, piece, rotation, rot_cw(rotation), x, y)
+            r = try_rotate(board, piece, rotation, rot_cw(rotation), x, y, kickset)
             return r if r is not None else (x, y, rotation)
         case MoveStep.RotCCW:
-            r = try_rotate(board, piece, rotation, rot_ccw(rotation), x, y)
+            r = try_rotate(board, piece, rotation, rot_ccw(rotation), x, y, kickset)
+            return r if r is not None else (x, y, rotation)
+        case MoveStep.Rot180:
+            r = try_rotate_180(board, piece, rotation, x, y, kickset)
             return r if r is not None else (x, y, rotation)
