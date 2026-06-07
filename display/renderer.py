@@ -50,10 +50,10 @@ def render(
     next_str = " ".join(colored(p.value, p) for p in state.queue[:queue_size])
     side: list[str] = [
         f"Hold: {hold_str}",
-        f"Next: {next_str}",
+        f"Queue: {next_str}",
         "",
-        f"Combo:  {state.combo}",
-        f"B2B:    {state.back_to_back}",
+        f"Combo: {state.combo}   ",
+        f"Back-to-Back: {state.back_to_back}   ",
     ]
 
     out: list[str] = []
