@@ -11,6 +11,11 @@ from core.placement import Placement
 @dataclass
 class MsgRules:
     randomizer: Optional[str] = None
+    kickset: Optional[str] = None
+    rot180: Optional[bool] = None
+    sonic_drop: Optional[str] = None
+    allspin_b2b: Optional[bool] = None
+    allclear_b2b: Optional[bool] = None
 
 
 @dataclass

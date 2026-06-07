@@ -38,7 +38,14 @@ def parse(line: str) -> Optional[FrontendMessage]:
 
     match obj.get("type"):
         case "rules":
-            return MsgRules(randomizer=obj.get("randomizer"))
+            return MsgRules(
+                randomizer=obj.get("randomizer"),
+                kickset=obj.get("kickset"),
+                rot180=obj.get("rot180"),
+                sonic_drop=obj.get("sonic_drop"),
+                allspin_b2b=obj.get("allspin_b2b"),
+                allclear_b2b=obj.get("allclear_b2b"),
+            )
         case "start":
             hold_raw = obj.get("hold")
             return MsgStart(

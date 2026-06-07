@@ -60,6 +60,8 @@ class BotProcess:
                 "kickset": rules.kickset,
                 "rot180": rules.rot180,
                 "sonic_drop": rules.sonic_drop,
+                "allspin_b2b": rules.allspin_b2b,
+                "allclear_b2b": rules.allclear_b2b,
             }
         )
 

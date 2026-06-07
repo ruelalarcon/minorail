@@ -222,7 +222,7 @@ class Frontend:
 
                 time.sleep(lock_delay)
 
-            ok = state.apply_move(chosen)
+            ok = state.apply_move(chosen, rules)
             if not ok:
                 print(f"[frontend] apply_move rejected: {chosen}", file=sys.stderr)
                 break

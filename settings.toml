@@ -3,6 +3,8 @@ randomizer = "seven_bag"  # "seven_bag" or "pure_random"
 kickset = "srs"           # kick table: "srs"
 rot180 = true             # allow 180-degree rotations (only effective if kickset supports it)
 sonic_drop = "only"       # "only" = sonic drop only, "allow" = sonic drop and soft drop
+allspin_b2b = true        # spins, including minis, of any piece contribute to back-to-back
+allclear_b2b = true       # all-clears contribute to back-to-back
 
 [bot]
 suggest_timeout_ms = 10_000  # timeout waiting for a suggestion

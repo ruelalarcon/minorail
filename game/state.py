@@ -7,6 +7,7 @@ from core.board import Board, piece_cells
 from core.piece import Piece
 from core.placement import Placement
 from core.spin import Spin
+from game.rules import Rules
 from tbp.messages import MsgStart
 
 _ALL_PIECES = list(Piece)
@@ -35,7 +36,7 @@ class GameState:
     def current_piece(self) -> Optional[Piece]:
         return self.queue[0] if self.queue else None
 
-    def apply_move(self, placement: Placement) -> bool:
+    def apply_move(self, placement: Placement, rules: Rules | None = None) -> bool:
         """
         Apply a bot move. Returns False if the move is illegal.
         Hold is inferred from the placed piece type vs queue front.
@@ -72,7 +73,13 @@ class GameState:
         cleared = self.board.line_clears()
         if cleared:
             self.board.remove_lines(cleared)
-            hard = bin(cleared).count("1") == 4 or placement.spin != Spin.none
+            active_rules = rules or Rules()
+            all_clear = all(c == 0 for c in self.board.cols)
+            hard = (
+                bin(cleared).count("1") == 4
+                or (active_rules.allspin_b2b and placement.spin != Spin.none)
+                or (active_rules.allclear_b2b and all_clear)
+            )
             self.back_to_back = self.back_to_back + 1 if hard else 0
             self.combo += 1
         else:

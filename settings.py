@@ -10,6 +10,8 @@ DEFAULT: dict[str, dict[str, Any]] = {
         "kickset": "srs",
         "rot180": True,
         "sonic_drop": "only",
+        "allspin_b2b": False,
+        "allclear_b2b": False,
     },
     "bot": {
         "suggest_timeout_ms": 10_000,

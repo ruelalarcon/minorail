@@ -10,6 +10,8 @@ class Rules:
     kickset: str = "srs"
     rot180: bool = True
     sonic_drop: str = "only"
+    allspin_b2b: bool = False
+    allclear_b2b: bool = False
 
     @staticmethod
     def from_settings(settings: dict[str, dict[str, Any]]) -> Rules:
@@ -19,4 +21,6 @@ class Rules:
             kickset=r.get("kickset", "srs"),
             rot180=r.get("rot180", True),
             sonic_drop=r.get("sonic_drop", "only"),
+            allspin_b2b=r.get("allspin_b2b", False),
+            allclear_b2b=r.get("allclear_b2b", False),
         )
