@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import sys
-import threading
 import time
 from typing import Any, Optional
 
-from bot.process import BotProcess
-from core.board import Board, piece_cells
+from core.board import Board
 from core.piece import Piece
 from core.placement import Placement
 from core.rotation import Rotation
@@ -14,8 +12,10 @@ from display.renderer import render
 from game.randomizer import Randomizer, make_randomizer
 from game.rules import Rules
 from game.state import GameState
-from movegen.pathfinder import MoveStep, apply_step, find_path
-from tbp.messages import MsgStart
+from movegen.pathfinder import MoveStep, apply_step
+from service.move_selection import moving_piece_for
+from service.snapshot import ObservedSnapshot, SuggestionRequest
+from service.suggestion_service import SuggestionService
 
 
 class Frontend:
@@ -25,73 +25,6 @@ class Frontend:
         self._bot_path = bot_path
         self._settings = settings
         self._display = display
-        self._suggestion_event = threading.Event()
-        self._suggestion: Optional[list[Placement]] = None
-        self._ready_event = threading.Event()
-
-    def _on_bot_message(self, obj: dict[str, Any]) -> None:
-        match obj.get("type"):
-            case "info":
-                print(
-                    f"[info] {obj.get('name')} {obj.get('version')} by {obj.get('author')}",
-                    file=sys.stderr,
-                )
-            case "ready":
-                self._ready_event.set()
-            case "suggestion":
-                self._suggestion = [Placement.from_tbp(m) for m in obj.get("moves", [])]
-                self._suggestion_event.set()
-            case "error":
-                print(f"[bot error] {obj.get('reason')}", file=sys.stderr)
-
-    def _build_start(self, queue: list[Piece]) -> MsgStart:
-        return MsgStart(
-            board=Board(),
-            queue=queue,
-            hold=None,
-            combo=0,
-            back_to_back=0,
-        )
-
-    def _get_suggestion(self, bot: BotProcess, first: bool) -> list[Placement]:
-        cfg = self._settings["bot"]
-        if first:
-            time.sleep(cfg["first_move_think_ms"] / 1000)
-        deadline = time.time() + cfg["suggest_timeout_ms"] / 1000
-        while time.time() < deadline:
-            self._suggestion_event.clear()
-            self._suggestion = None
-            bot.send_suggest()
-            if not self._suggestion_event.wait(timeout=5.0):
-                print("[frontend] timed out waiting for suggestion", file=sys.stderr)
-                return []
-            moves: list[Placement] = self._suggestion or []
-            if moves:
-                return moves
-            time.sleep(0.05)
-        return []
-
-    def _pick_move(
-        self, moves: list[Placement], state: GameState
-    ) -> Optional[Placement]:
-        for candidate in moves:
-            loc = candidate.location
-            cells = piece_cells(loc.piece, loc.rotation, loc.x, loc.y)
-            if not all(
-                0 <= x < 10 and 0 <= y < 40 and not state.board.occupied(x, y)
-                for (x, y) in cells
-            ):
-                continue
-            placed = loc.piece
-            current = state.current_piece()
-            if placed == current:
-                return candidate
-            if state.hold is None:
-                if len(state.queue) >= 2 and placed == state.queue[1]:
-                    return candidate
-            elif placed == state.hold:
-                return candidate
-        return None
 
     def _render(
         self,
@@ -106,40 +39,47 @@ class Frontend:
         self,
         state: GameState,
         rand: Randomizer,
-        bot: BotProcess,
         refill_at: int,
     ) -> None:
         while len(state.queue) < refill_at:
-            p = rand.next()
-            state.queue.append(p)
-            bot.send_new_piece(p)
+            state.queue.append(rand.next())
+
+    def _snapshot(
+        self,
+        state: GameState,
+        seq: int,
+        last_move: Optional[Placement],
+    ) -> ObservedSnapshot:
+        return ObservedSnapshot(
+            board=state.board.copy(),
+            current=state.current_piece(),
+            queue=list(state.queue),
+            hold=state.hold,
+            can_hold=not state.hold_used_this_turn,
+            seq=seq,
+            last_move=last_move,
+        )
 
     def play_game(self) -> dict[str, Any]:
-        bot = BotProcess(self._bot_path, self._on_bot_message)
-        time.sleep(0.1)
+        service = SuggestionService(self._bot_path)
 
         cfg_d = self._settings["display"]
+        cfg_b = self._settings["bot"]
         move_delay = cfg_d["move_delay_ms"] / 1000
         lock_delay = cfg_d["lock_delay_ms"] / 1000
         refill_at = self._settings["queue"]["refill_threshold"]
 
         rules = Rules.from_settings(self._settings)
 
-        self._ready_event.clear()
-        bot.send_rules(rules)
-        if not self._ready_event.wait(timeout=5.0):
-            print("[frontend] bot did not send ready", file=sys.stderr)
-            bot.send_quit()
-            bot.wait()
-            return {"pieces": 0}
-
         rand = make_randomizer(rules.randomizer)
         assert rand is not None
-        start_msg = self._build_start(
-            [rand.next() for _ in range(self._settings["queue"]["initial"])]
+        state = GameState(
+            board=Board(),
+            queue=[rand.next() for _ in range(self._settings["queue"]["initial"])],
+            hold=None,
+            combo=0,
+            back_to_back=0,
         )
-        state = GameState.from_start(start_msg)
-        bot.send_start(start_msg)
 
         if self._display:
             sys.stdout.write("\033[2J\033[H")
@@ -148,105 +88,120 @@ class Frontend:
         pieces_placed = 0
         start_time = time.time()
         first_move = True
+        seq = 0
+        last_move: Optional[Placement] = None
 
-        while True:
-            self._ensure_queue_refilled(state, rand, bot, refill_at)
+        try:
+            while True:
+                self._ensure_queue_refilled(state, rand, refill_at)
 
-            spawn_piece = state.current_piece()
-            if spawn_piece is None:
-                break
+                spawn_piece = state.current_piece()
+                if spawn_piece is None:
+                    break
 
-            if self._display:
-                self._render(state, spawn_piece, (4, 19, Rotation.North))
+                if self._display:
+                    self._render(state, spawn_piece, (4, 19, Rotation.North))
 
-            moves = self._get_suggestion(bot, first_move)
-            first_move = False
-            if not moves:
-                print("[frontend] no suggestion", file=sys.stderr)
-                break
-
-            chosen = self._pick_move(moves, state)
-            if chosen is None:
-                print("[frontend] no valid move", file=sys.stderr)
-                break
-
-            placed_piece = chosen.location.piece
-            hold_used = placed_piece != spawn_piece
-
-            if hold_used:
-                if state.hold is None:
-                    moving_piece = state.queue[1]
-                else:
-                    moving_piece = state.hold
-            else:
-                moving_piece = spawn_piece
-
-            assert moving_piece is not None
-
-            if self._display:
-                path = find_path(state.board, moving_piece, chosen.location, rules)
-
-                if hold_used:
-                    self._render(state, moving_piece, (4, 19, Rotation.North))
-                    time.sleep(lock_delay)
-
-                if path is not None:
-                    ax, ay, arot = 4, 19, Rotation.North
-                    from movegen.pathfinder import obstructed
-
-                    if obstructed(state.board, moving_piece, arot, ax, ay):
-                        ay = 20
-                    for step in path[:-1]:
-                        ax, ay, arot = apply_step(
-                            step, moving_piece, arot, ax, ay, state.board, rules.kickset
-                        )
-                        self._render(state, moving_piece, (ax, ay, arot))
-                        time.sleep(move_delay)
-                    ax, ay, arot = apply_step(
-                        MoveStep.HardDrop,
-                        moving_piece,
-                        arot,
-                        ax,
-                        ay,
-                        state.board,
-                        rules.kickset,
+                if first_move:
+                    time.sleep(cfg_b["first_move_think_ms"] / 1000)
+                result = service.suggest(
+                    SuggestionRequest(
+                        snapshot=self._snapshot(state, seq, last_move),
+                        rules=rules,
+                        include_path=True,
+                        session_id="terminal",
+                        timeout_ms=cfg_b["suggest_timeout_ms"],
                     )
-                    self._render(state, moving_piece, (ax, ay, arot))
-                else:
+                )
+                first_move = False
+                seq += 1
+                if result.placement is None:
                     print(
-                        f"[frontend] warning: no path found for move {chosen}",
+                        f"[frontend] no suggestion: {result.reason or result.status.value}",
                         file=sys.stderr,
                     )
-                    loc = chosen.location
-                    self._render(state, moving_piece, (loc.x, loc.y, loc.rotation))
+                    break
 
-                time.sleep(lock_delay)
+                chosen = result.placement
 
-            ok = state.apply_move(chosen, rules)
-            if not ok:
-                print(f"[frontend] apply_move rejected: {chosen}", file=sys.stderr)
-                break
+                placed_piece = chosen.location.piece
+                hold_used = placed_piece != spawn_piece
 
-            bot.send_play(chosen)
+                moving_piece = moving_piece_for(
+                    self._snapshot(state, seq, last_move), chosen
+                )
+                if moving_piece is None:
+                    print(f"[frontend] no valid move: {chosen}", file=sys.stderr)
+                    break
 
-            self._ensure_queue_refilled(state, rand, bot, refill_at)
+                if self._display:
+                    path = result.path
 
-            pieces_placed += 1
+                    if hold_used:
+                        self._render(state, moving_piece, (4, 19, Rotation.North))
+                        time.sleep(lock_delay)
 
-            if self._display:
-                self._render(state)
-                time.sleep(lock_delay * 0.5)
+                    if path is not None:
+                        ax, ay, arot = 4, 19, Rotation.North
+                        from movegen.pathfinder import obstructed
 
-            if any(state.board.cols[x] >> 20 != 0 for x in range(10)):
+                        if obstructed(state.board, moving_piece, arot, ax, ay):
+                            ay = 20
+                        for step in path[:-1]:
+                            ax, ay, arot = apply_step(
+                                step,
+                                moving_piece,
+                                arot,
+                                ax,
+                                ay,
+                                state.board,
+                                rules.kickset,
+                            )
+                            self._render(state, moving_piece, (ax, ay, arot))
+                            time.sleep(move_delay)
+                        ax, ay, arot = apply_step(
+                            MoveStep.HardDrop,
+                            moving_piece,
+                            arot,
+                            ax,
+                            ay,
+                            state.board,
+                            rules.kickset,
+                        )
+                        self._render(state, moving_piece, (ax, ay, arot))
+                    else:
+                        print(
+                            f"[frontend] warning: {result.reason or 'no path found'}",
+                            file=sys.stderr,
+                        )
+                        loc = chosen.location
+                        self._render(state, moving_piece, (loc.x, loc.y, loc.rotation))
+
+                    time.sleep(lock_delay)
+
+                ok = state.apply_move(chosen, rules)
+                if not ok:
+                    print(f"[frontend] apply_move rejected: {chosen}", file=sys.stderr)
+                    break
+
+                last_move = chosen
+                self._ensure_queue_refilled(state, rand, refill_at)
+
+                pieces_placed += 1
+
                 if self._display:
                     self._render(state)
-                print("[frontend] topped out", file=sys.stderr)
-                break
+                    time.sleep(lock_delay * 0.5)
 
-        elapsed = time.time() - start_time
-        bot.send_stop()
-        bot.send_quit()
-        bot.wait(timeout=3.0)
+                if any(state.board.cols[x] >> 20 != 0 for x in range(10)):
+                    if self._display:
+                        self._render(state)
+                    print("[frontend] topped out", file=sys.stderr)
+                    break
+        finally:
+            elapsed = time.time() - start_time
+            service.close()
+
         return {
             "pieces": pieces_placed,
             "elapsed": elapsed,
