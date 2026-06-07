@@ -9,8 +9,8 @@ suggest_timeout_ms = 10_000  # timeout waiting for a suggestion
 first_move_think_ms = 200    # extra think time on the first move
 
 [queue]
-initial = 5             # pieces to seed before sending start
-refill_threshold = 5    # refill the queue when it drops below this
+initial = 5           # pieces to seed before sending start
+refill_threshold = 5  # when queue length drops below this, add pieces until it reaches this value
 
 [display]
 move_delay_ms = 50   # delay between each animated input step
