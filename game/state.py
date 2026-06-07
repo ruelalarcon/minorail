@@ -18,7 +18,7 @@ class GameState:
     queue: list[Piece]
     hold: Optional[Piece]
     combo: int
-    back_to_back: bool
+    back_to_back: int
     hold_used_this_turn: bool = False
 
     @staticmethod
@@ -73,7 +73,7 @@ class GameState:
         if cleared:
             self.board.remove_lines(cleared)
             hard = bin(cleared).count("1") == 4 or placement.spin != Spin.none
-            self.back_to_back = hard
+            self.back_to_back = self.back_to_back + 1 if hard else 0
             self.combo += 1
         else:
             self.combo = 0

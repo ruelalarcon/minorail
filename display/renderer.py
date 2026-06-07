@@ -53,7 +53,7 @@ def render(
         f"Next: {next_str}",
         "",
         f"Combo:  {state.combo}",
-        f"B2B:    {'Yes' if state.back_to_back else 'No '}",
+        f"B2B:    {state.back_to_back}",
     ]
 
     out: list[str] = []

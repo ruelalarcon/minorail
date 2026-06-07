@@ -50,7 +50,7 @@ class Frontend:
             queue=queue,
             hold=None,
             combo=0,
-            back_to_back=False,
+            back_to_back=0,
         )
 
     def _get_suggestion(self, bot: BotProcess, first: bool) -> list[Placement]:

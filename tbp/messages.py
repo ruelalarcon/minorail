@@ -19,7 +19,7 @@ class MsgStart:
     queue: list[Piece]
     hold: Optional[Piece]
     combo: int
-    back_to_back: bool
+    back_to_back: int
 
 
 @dataclass

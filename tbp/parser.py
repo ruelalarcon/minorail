@@ -21,6 +21,14 @@ FrontendMessage = (
 )
 
 
+def _counter(value: object, default: int = 0) -> int:
+    if isinstance(value, bool):
+        return 1 if value else 0
+    if isinstance(value, int):
+        return max(0, value)
+    return default
+
+
 def parse(line: str) -> Optional[FrontendMessage]:
     """Parse a JSON line from a bot into a frontend message. Returns None for unknown types."""
     try:
@@ -37,8 +45,8 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 board=Board.from_tbp(obj.get("board", [])),
                 queue=[Piece(p) for p in obj.get("queue", [])],
                 hold=Piece(hold_raw) if hold_raw is not None else None,
-                combo=obj.get("combo", 0),
-                back_to_back=obj.get("back_to_back", False),
+                combo=_counter(obj.get("combo", 0)),
+                back_to_back=_counter(obj.get("back_to_back", 0)),
             )
         case "play":
             return MsgPlay(move=Placement.from_tbp(obj["move"]))
