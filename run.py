@@ -1,8 +1,9 @@
 import argparse
 import sys
 
+from engine import EngineSession
 import settings as cfg
-from frontend import Frontend
+from visualizer import HeadlessVisualizer, TerminalVisualizer
 
 
 def main() -> None:
@@ -18,7 +19,10 @@ def main() -> None:
     total: int = 0
     for i in range(args.games):
         print(f"\n=== Game {i + 1} / {args.games} ===", file=sys.stderr)
-        stats = Frontend(args.bot, settings, display=not args.no_display).play_game()
+        visualizer = (
+            HeadlessVisualizer() if args.no_display else TerminalVisualizer(settings)
+        )
+        stats = EngineSession(args.bot, settings, visualizer).play_game()
         print(
             f"Pieces: {stats['pieces']}  "
             f"Time: {stats.get('elapsed', 0):.1f}s  "
