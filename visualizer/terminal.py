@@ -170,14 +170,27 @@ def _render(
         board_lines.append("|" + cells + "|")
     board_lines.append("+" + "--" * 10 + "+")
 
+    if active_piece is not None and active_loc is not None:
+        active_x, active_y, active_rotation = active_loc
+        active_str = _colored(active_piece.value, active_piece)
+        active_side = [
+            f"Active Piece: {active_str}",
+            f"X: {active_x}",
+            f"Y: {active_y}",
+            f"Orientation: {active_rotation.name}",
+            "",
+        ]
+    else:
+        active_side = []
+
     hold_str = _colored(state.hold.value, state.hold) if state.hold else " "
     next_str = " ".join(_colored(p.value, p) for p in state.queue[:queue_size])
-    side: list[str] = [
+    side: list[str] = active_side + [
         f"Hold: {hold_str}",
         f"Queue: {next_str}",
         "",
-        f"Combo: {state.combo}   ",
-        f"Back-to-Back: {state.back_to_back}   ",
+        f"Combo: {state.combo}",
+        f"Back-to-Back: {state.back_to_back}",
     ]
 
     out: list[str] = []
@@ -185,5 +198,5 @@ def _render(
         out.append(f"{row_str}  {side[i] if i < len(side) else ''}")
 
     sys.stdout.write("\033[H")
-    sys.stdout.write("\n".join(out) + "\n")
+    sys.stdout.write("\n".join(f"{line}\033[K" for line in out) + "\n")
     sys.stdout.flush()
