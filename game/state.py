@@ -32,7 +32,7 @@ class GameState:
         """Build initial state from a TBP start message."""
         return GameState(
             board=msg.board.copy(),
-            active=msg.active,
+            active=spawn_location(msg.active),
             queue=list(msg.queue),
             hold=msg.hold,
             combo=msg.combo,

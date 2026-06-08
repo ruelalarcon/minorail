@@ -178,7 +178,7 @@ class ClientSession:
     def _to_bot_snapshot(self, snapshot: ObservedSnapshot) -> BotSnapshot:
         return BotSnapshot(
             board=snapshot.board.copy(),
-            active=snapshot.active,
+            active=snapshot.active.piece,
             queue=list(snapshot.queue),
             hold=snapshot.hold,
             combo=self.derived_state.combo,

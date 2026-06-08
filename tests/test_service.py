@@ -127,7 +127,7 @@ class ServiceTests(unittest.TestCase):
 
         self.assertEqual(result.status, SuggestionStatus.Synced)
         self.assertEqual(result.placement, placement(Piece.O, 4, 0))
-        self.assertEqual(fake.started[0].active, spawn_location(Piece.O))
+        self.assertEqual(fake.started[0].active, Piece.O)
         self.assertEqual(fake.started[0].queue, [Piece.I, Piece.T, Piece.L, Piece.J])
         self.assertIsNotNone(fake.started[0].piece_stream)
         assert fake.started[0].piece_stream is not None

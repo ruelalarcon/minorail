@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
 
 from core.board import Board
-from core.location import PieceLocation
 from core.piece import Piece
 from core.placement import Placement
 from game.rules import Rules
@@ -73,7 +72,7 @@ class MsgRules:
 @dataclass
 class MsgStart:
     board: Board
-    active: PieceLocation
+    active: Piece
     queue: list[Piece]
     hold: Optional[Piece]
     combo: int

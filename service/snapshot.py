@@ -52,7 +52,7 @@ class PieceStreamSnapshot:
 @dataclass
 class BotSnapshot:
     board: Board
-    active: PieceLocation
+    active: Piece
     queue: list[Piece]
     hold: Optional[Piece]
     combo: int
