@@ -62,9 +62,11 @@ class Frontend:
 
     def play_game(self) -> dict[str, Any]:
         protocol_cfg = self._settings.get("protocol", {})
+        bot_info_cfg = self._settings.get("bot_info", {})
         service = SuggestionService(
             self._bot_path,
             piece_stream_limit=protocol_cfg.get("piece_stream_limit", 11),
+            info_print_topics=bot_info_cfg.get("print", ["warning"]),
         )
 
         cfg_d = self._settings["display"]

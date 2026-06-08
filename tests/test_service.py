@@ -19,6 +19,7 @@ from service.snapshot import (
     SuggestionRequest,
     SuggestionStatus,
 )
+from tbp.messages import BotCapabilities
 
 
 def placement(
@@ -173,6 +174,34 @@ class ServiceTests(unittest.TestCase):
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=Rules()))
 
         self.assertIsNone(fake.started[0].piece_stream)
+
+    def test_capabilities_validate_configured_rules(self) -> None:
+        capabilities = BotCapabilities.from_tbp(
+            {
+                "randomizers": ["seven_bag"],
+                "kicksets": ["srs"],
+                "rot180": True,
+                "sonic_drop": ["only", "allow"],
+                "piece_stream": True,
+            }
+        )
+
+        self.assertIsNone(capabilities.validate_rules(Rules()))
+        self.assertTrue(capabilities.piece_stream)
+
+    def test_capabilities_reject_unsupported_rule(self) -> None:
+        capabilities = BotCapabilities.from_tbp(
+            {
+                "randomizers": ["seven_bag"],
+                "kicksets": ["srs"],
+                "rot180": False,
+                "sonic_drop": ["only"],
+            }
+        )
+
+        error = capabilities.validate_rules(Rules(rot180=True))
+
+        self.assertEqual(error, "bot does not support rot180")
 
 
 if __name__ == "__main__":

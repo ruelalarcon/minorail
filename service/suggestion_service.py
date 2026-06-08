@@ -8,9 +8,17 @@ from service.snapshot import SuggestionRequest, SuggestionResult
 
 
 class SuggestionService:
-    def __init__(self, bot_path: str, piece_stream_limit: int = 11) -> None:
+    def __init__(
+        self,
+        bot_path: str,
+        piece_stream_limit: int = 11,
+        info_print_topics: list[str] | None = None,
+    ) -> None:
         self._bot_path = bot_path
         self._piece_stream_limit = piece_stream_limit
+        self._info_print_topics = {
+            topic for topic in info_print_topics or [] if isinstance(topic, str)
+        }
         self._sessions: dict[str, ClientSession] = {}
 
     def suggest(self, request: SuggestionRequest) -> SuggestionResult:
@@ -34,4 +42,6 @@ class SuggestionService:
         self._sessions.clear()
 
     def _bot_session_factory(self) -> Callable[[], BotSession]:
-        return lambda: BotSession(self._bot_path)
+        return lambda: BotSession(
+            self._bot_path, info_print_topics=self._info_print_topics
+        )

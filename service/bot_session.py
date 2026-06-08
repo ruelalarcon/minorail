@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import threading
 import time
@@ -9,25 +10,34 @@ from bot.process import BotProcess
 from core.piece import Piece
 from core.placement import Placement
 from game.rules import Rules
-from service.snapshot import BotSnapshot
-from tbp.messages import MsgStart
+from service.snapshot import BotSnapshot, PieceStreamSnapshot
+from tbp.messages import BotCapabilities, MsgStart
 
 
 class BotSession:
-    def __init__(self, bot_path: str) -> None:
+    def __init__(
+        self, bot_path: str, info_print_topics: set[str] | None = None
+    ) -> None:
         self._bot_path = bot_path
+        self._info_print_topics = info_print_topics or set()
         self._bot: Optional[BotProcess] = None
+        self._register_event = threading.Event()
         self._ready_event = threading.Event()
         self._suggestion_event = threading.Event()
         self._suggestion: Optional[list[Placement]] = None
+        self._capabilities = BotCapabilities()
 
     def _on_bot_message(self, obj: dict[str, Any]) -> None:
         match obj.get("type"):
-            case "info":
+            case "register":
+                self._capabilities = BotCapabilities.from_tbp(obj.get("capabilities"))
                 print(
                     f"[info] {obj.get('name')} {obj.get('version')} by {obj.get('author')}",
                     file=sys.stderr,
                 )
+                self._register_event.set()
+            case "info":
+                self._handle_runtime_info(obj)
             case "ready":
                 self._ready_event.set()
             case "suggestion":
@@ -38,11 +48,21 @@ class BotSession:
 
     def start_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
         self.close()
+        self._register_event.clear()
         self._ready_event.clear()
         self._suggestion_event.clear()
         self._suggestion = None
+        self._capabilities = BotCapabilities()
         self._bot = BotProcess(self._bot_path, self._on_bot_message)
-        time.sleep(0.1)
+        if not self._register_event.wait(timeout=5.0):
+            self.close()
+            raise TimeoutError("bot did not send register")
+
+        capability_error = self._capabilities.validate_rules(rules)
+        if capability_error is not None:
+            self.close()
+            raise RuntimeError(capability_error)
+
         self._bot.send_rules(rules)
         if not self._ready_event.wait(timeout=5.0):
             self.close()
@@ -54,7 +74,7 @@ class BotSession:
                 hold=snapshot.hold,
                 combo=snapshot.combo,
                 back_to_back=snapshot.back_to_back,
-                piece_stream=snapshot.piece_stream,
+                piece_stream=self._start_piece_stream(snapshot.piece_stream),
             )
         )
 
@@ -101,3 +121,17 @@ class BotSession:
                 pass
         self._bot.wait(timeout=3.0)
         self._bot = None
+
+    def _start_piece_stream(
+        self, piece_stream: Optional[PieceStreamSnapshot]
+    ) -> Optional[PieceStreamSnapshot]:
+        if not self._capabilities.piece_stream:
+            return None
+        return piece_stream
+
+    def _handle_runtime_info(self, obj: dict[str, Any]) -> None:
+        topic = obj.get("topic")
+        if not isinstance(topic, str) or topic not in self._info_print_topics:
+            return
+        data = obj.get("data")
+        print(f"[bot info:{topic}] {json.dumps(data)}", file=sys.stderr)
