@@ -17,19 +17,24 @@ def main() -> None:
     settings = cfg.load(args.settings)
 
     total: int = 0
-    for i in range(args.games):
-        print(f"\n=== Game {i + 1} / {args.games} ===", file=sys.stderr)
-        visualizer = (
-            HeadlessVisualizer() if args.no_display else TerminalVisualizer(settings)
-        )
-        stats = EngineSession(args.bot, settings, visualizer).play_game()
-        print(
-            f"Pieces: {stats['pieces']}  "
-            f"Time: {stats.get('elapsed', 0):.1f}s  "
-            f"PPS: {stats.get('pps', 0):.2f}",
-            file=sys.stderr,
-        )
-        total += int(stats["pieces"])
+    try:
+        for i in range(args.games):
+            print(f"\n=== Game {i + 1} / {args.games} ===", file=sys.stderr)
+            visualizer = (
+                HeadlessVisualizer()
+                if args.no_display
+                else TerminalVisualizer(settings)
+            )
+            stats = EngineSession(args.bot, settings, visualizer).play_game()
+            print(
+                f"Pieces: {stats['pieces']}  "
+                f"Time: {stats.get('elapsed', 0):.1f}s  "
+                f"PPS: {stats.get('pps', 0):.2f}",
+                file=sys.stderr,
+            )
+            total += int(stats["pieces"])
+    except KeyboardInterrupt:
+        raise SystemExit(130) from None
 
     if args.games > 1:
         print(f"\nTotal: {total} pieces over {args.games} games", file=sys.stderr)
