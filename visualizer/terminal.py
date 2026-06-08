@@ -114,7 +114,7 @@ class TerminalVisualizer:
         print(f"[warn] {message}", file=sys.stderr)
 
     def error(self, message: str) -> None:
-        print(f"[frontend] {message}", file=sys.stderr)
+        print(f"[error] {message}", file=sys.stderr)
 
     def _render(
         self,
