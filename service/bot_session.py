@@ -114,7 +114,10 @@ class BotSession:
 
     def stop(self) -> None:
         if self._bot is not None and self._bot.is_alive():
-            self._bot.send_stop()
+            try:
+                self._bot.send_stop()
+            except (BrokenPipeError, OSError, RuntimeError):
+                pass
 
     def close(self) -> None:
         if self._bot is None:

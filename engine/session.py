@@ -7,7 +7,7 @@ from typing import Any, Optional, Protocol
 from core.board import Board
 from core.piece import Piece
 from core.placement import Placement
-from engine.commands import CellEdit
+from engine.commands import CellEdit, EngineControls
 from engine.events import EngineEvent, EngineEventType
 from game.randomizer import Randomizer, make_randomizer
 from game.rules import Rules
@@ -39,6 +39,8 @@ class Visualizer(Protocol):
     def warning(self, message: str) -> None: ...
 
     def error(self, message: str) -> None: ...
+
+    def set_engine_controls(self, controls: EngineControls) -> None: ...
 
 
 class EngineSession:
@@ -84,6 +86,14 @@ class EngineSession:
         )
         self.seq = 0
         self.last_move: Optional[Placement] = None
+
+        self._visualizer.set_engine_controls(
+            EngineControls(
+                set_cell=self.set_cell,
+                clear_board=self.clear_board,
+                get_state=lambda: self.state,
+            )
+        )
 
     def close(self) -> None:
         self._service.close()
@@ -149,6 +159,7 @@ class EngineSession:
 
         pieces_placed = 0
         start_time = time.time()
+        interrupted = False
 
         self._visualizer.on_game_started(self.state)
 
@@ -208,9 +219,16 @@ class EngineSession:
                     self._visualizer.on_top_out(self.state)
                     self._visualizer.error("topped out")
                     break
+        except KeyboardInterrupt:
+            interrupted = True
+            raise
         finally:
             elapsed = time.time() - start_time
-            self.close()
+            try:
+                self.close()
+            except KeyboardInterrupt:
+                if not interrupted:
+                    raise
 
         return {
             "pieces": pieces_placed,

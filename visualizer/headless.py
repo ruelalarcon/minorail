@@ -4,6 +4,7 @@ import sys
 import time
 
 from core.piece import Piece
+from engine.commands import EngineControls
 from game.rules import Rules
 from game.state import GameState
 from service.snapshot import SuggestionResult
@@ -14,6 +15,9 @@ class HeadlessVisualizer:
         self._progress_every = progress_every
         self._pieces = 0
         self._started_at = 0.0
+
+    def set_engine_controls(self, controls: EngineControls) -> None:
+        pass
 
     def on_game_started(self, state: GameState) -> None:
         self._pieces = 0

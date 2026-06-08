@@ -11,6 +11,7 @@ from typing import Any, Optional
 from core.board import piece_cells
 from core.piece import Piece
 from core.rotation import Rotation
+from engine.commands import EngineControls
 from game.rules import Rules
 from game.state import GameState
 from movegen.pathfinder import MoveStep, apply_step, obstructed
@@ -45,6 +46,8 @@ class _RenderFrame:
     combo: int
     back_to_back: int
     status: str
+    paused: bool
+    editable: bool
 
 
 class WebVisualizer:
@@ -67,12 +70,21 @@ class WebVisualizer:
         self._frame: Optional[_RenderFrame] = None
         self._client_connected = threading.Event()
         self._server_started = False
+        self._pause_requested = False
+        self._pause_boundary_active = False
+        self._paused = False
+        self._editable = False
+        self._pause_condition = threading.Condition()
+        self._controls: Optional[EngineControls] = None
 
     @property
     def url(self) -> str:
         if self._port is None:
             return f"http://{self._host}:auto"
         return f"http://{self._host}:{self._port}"
+
+    def set_engine_controls(self, controls: EngineControls) -> None:
+        self._controls = controls
 
     def on_game_started(self, state: GameState) -> None:
         self._first_spawn = True
@@ -163,6 +175,7 @@ class WebVisualizer:
     def on_piece_locked(self, state: GameState) -> None:
         self._render(state, status="Locked")
         time.sleep(self._lock_delay * 0.5)
+        self._wait_while_paused(state)
 
     def on_top_out(self, state: GameState) -> None:
         self._render(state, status="Top out")
@@ -195,6 +208,8 @@ class WebVisualizer:
             cfg["visible_rows"],
             cfg["queue_size"],
             status,
+            self._paused,
+            self._editable,
         )
         with self._lock:
             self._frame = frame
@@ -214,7 +229,71 @@ class WebVisualizer:
                 combo=self._frame.combo,
                 back_to_back=self._frame.back_to_back,
                 status=status,
+                paused=self._paused,
+                editable=self._editable,
             )
+
+    def _toggle_pause(self) -> bool:
+        status: Optional[str] = None
+        with self._pause_condition:
+            if self._paused:
+                self._pause_requested = False
+                self._paused = False
+                self._editable = False
+                status = "Resuming"
+            elif self._pause_boundary_active:
+                self._pause_requested = True
+                self._paused = True
+                status = "Paused"
+            else:
+                self._pause_requested = not self._pause_requested
+            paused = self._paused
+            self._pause_condition.notify_all()
+
+        if status is not None:
+            self._set_status(status)
+        return paused
+
+    def _edit_cell(self, x: int, y: int, filled: bool) -> dict[str, object]:
+        if not self._editable:
+            return {"ok": False, "reason": "not editable"}
+        if self._controls is None:
+            return {"ok": False, "reason": "controls not configured"}
+        self._controls.set_cell(x, y, filled)
+        self._render(self._controls.get_state(), status="Paused")
+        return {"ok": True}
+
+    def _clear(self) -> dict[str, object]:
+        if not self._editable:
+            return {"ok": False, "reason": "not editable"}
+        if self._controls is None:
+            return {"ok": False, "reason": "controls not configured"}
+        self._controls.clear_board()
+        self._render(self._controls.get_state(), status="Paused")
+        return {"ok": True}
+
+    def _wait_while_paused(self, state: GameState) -> None:
+        with self._pause_condition:
+            if not self._pause_requested:
+                return
+            self._pause_boundary_active = True
+            self._paused = True
+            self._editable = True
+        self._render(state, status="Paused")
+
+        try:
+            with self._pause_condition:
+                while self._pause_requested:
+                    self._pause_condition.wait(timeout=0.1)
+        finally:
+            with self._pause_condition:
+                self._paused = False
+                self._editable = False
+                self._pause_boundary_active = False
+            current = (
+                self._controls.get_state() if self._controls is not None else state
+            )
+            self._render(current, status="Resuming")
 
     def _ensure_server_started(self) -> None:
         if self._server_started:
@@ -238,13 +317,36 @@ class WebVisualizer:
         def index() -> None:
             ui.add_head_html(_FONT_LINKS)
             ui.add_css(_CSS)
+            ui.add_body_html(_BOARD_SCRIPT)
             ui.query("body").classes("minorail-body")
             with ui.column().classes("minorail-shell"):
                 with ui.row().classes("minorail-topbar"):
                     ui.label("minorail").classes("minorail-title")
                     ui.label("web visualizer").classes("minorail-subtitle")
                 with ui.row().classes("minorail-main"):
-                    board = ui.html(_empty_html()).classes("minorail-board-wrap")
+                    with ui.column().classes("minorail-board-column"):
+                        board = ui.html(_empty_html()).classes("minorail-board-wrap")
+                        with ui.row().classes("minorail-controls"):
+                            pause_button = ui.button(
+                                icon="pause",
+                                on_click=visualizer._toggle_pause,
+                                color=None,
+                            )
+                            pause_button.props("unelevated")
+                            pause_button.classes(
+                                "minorail-icon-button minorail-pause-button"
+                            )
+                            pause_button.tooltip("Pause / Unpause")
+                            clear_button = ui.button(
+                                icon="delete_sweep",
+                                on_click=visualizer._clear,
+                                color=None,
+                            )
+                            clear_button.props("unelevated")
+                            clear_button.classes(
+                                "minorail-icon-button minorail-clear-button"
+                            )
+                            clear_button.tooltip("Clear Board")
                     side = ui.html("").classes("minorail-side")
 
             def refresh() -> None:
@@ -253,8 +355,40 @@ class WebVisualizer:
                     return
                 board.set_content(_board_html(frame))
                 side.set_content(_side_html(frame))
+                pause_button.set_icon("play_arrow" if frame.paused else "pause")
+                if frame.paused:
+                    pause_button.classes(
+                        remove="minorail-pause-button",
+                        add="minorail-unpause-button",
+                    )
+                else:
+                    pause_button.classes(
+                        remove="minorail-unpause-button",
+                        add="minorail-pause-button",
+                    )
+                if frame.editable:
+                    clear_button.enable()
+                else:
+                    clear_button.disable()
 
             ui.timer(1 / 30, refresh, active=True)
+
+        @app.post("/minorail/api/pause")
+        async def toggle_pause() -> dict[str, bool]:
+            paused = visualizer._toggle_pause()
+            return {"paused": paused}
+
+        @app.post("/minorail/api/cell")
+        async def edit_cell(payload: dict[str, Any]) -> dict[str, object]:
+            return visualizer._edit_cell(
+                int(payload["x"]),
+                int(payload["y"]),
+                bool(payload["filled"]),
+            )
+
+        @app.post("/minorail/api/clear")
+        async def clear_board() -> dict[str, object]:
+            return visualizer._clear()
 
         thread = threading.Thread(
             target=lambda: ui.run(
@@ -290,6 +424,8 @@ def _make_frame(
     visible_rows: int,
     queue_size: int,
     status: str,
+    paused: bool,
+    editable: bool,
 ) -> _RenderFrame:
     cells = [[_RenderCell("empty") for _ in range(10)] for _ in range(visible_rows)]
 
@@ -336,22 +472,29 @@ def _make_frame(
         combo=state.combo,
         back_to_back=state.back_to_back,
         status=status,
+        paused=paused,
+        editable=editable,
     )
 
 
 def _empty_html() -> str:
-    return '<div class="minorail-board"></div>'
+    return '<div class="minorail-board minorail-board-disabled"></div>'
 
 
 def _board_html(frame: _RenderFrame) -> str:
-    out = ['<div class="minorail-board">']
-    for row in reversed(frame.cells):
-        for cell in row:
+    board_class = (
+        "minorail-board-editable" if frame.editable else "minorail-board-disabled"
+    )
+    out = [f'<div class="minorail-board {board_class}">']
+    for y in reversed(range(len(frame.cells))):
+        for x, cell in enumerate(frame.cells[y]):
             classes = f"minorail-cell minorail-cell-{cell.kind}"
             style = ""
             if cell.piece is not None:
                 style = f' style="--piece-color: {PIECE_COLORS[cell.piece]}"'
-            out.append(f'<div class="{classes}"{style}></div>')
+            out.append(
+                f'<div class="{classes}" data-x="{x}" data-y="{y}"{style}></div>'
+            )
     out.append("</div>")
     return "".join(out)
 
@@ -444,6 +587,66 @@ _FONT_LINKS = """
 """
 
 
+_BOARD_SCRIPT = """
+<script>
+(() => {
+  let paintMode = null;
+  let lastCell = "";
+  let requestChain = Promise.resolve();
+
+  const postJson = (url, payload) => {
+    requestChain = requestChain.then(() => fetch(url, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload),
+    })).catch(() => {});
+  };
+
+  const paint = cell => {
+    if (!cell || paintMode === null) return;
+    const key = `${cell.dataset.x}:${cell.dataset.y}:${paintMode}`;
+    if (key === lastCell) return;
+    lastCell = key;
+    postJson("/minorail/api/cell", {
+      x: Number(cell.dataset.x),
+      y: Number(cell.dataset.y),
+      filled: paintMode,
+    });
+  };
+
+  document.addEventListener("contextmenu", event => {
+    if (event.target.closest(".minorail-cell")) event.preventDefault();
+  });
+
+  document.addEventListener("mousedown", event => {
+    const cell = event.target.closest(".minorail-cell");
+    if (!cell) return;
+    if (event.button !== 0 && event.button !== 2) return;
+    event.preventDefault();
+    paintMode = event.button === 0;
+    lastCell = "";
+    paint(cell);
+  });
+
+  document.addEventListener("mouseover", event => {
+    if (paintMode === null) return;
+    paint(event.target.closest(".minorail-cell"));
+  });
+
+  document.addEventListener("mouseup", () => {
+    paintMode = null;
+    lastCell = "";
+  });
+
+  window.addEventListener("blur", () => {
+    paintMode = null;
+    lastCell = "";
+  });
+})();
+</script>
+"""
+
+
 _CSS = """
 .minorail-body {
   min-height: 100vh;
@@ -455,6 +658,16 @@ _CSS = """
   color: #e7ecf3;
   font-family: Lilex, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-variant-ligatures: contextual;
+}
+.nicegui-error-popup {
+  background: #14171d !important;
+  border: 1px solid #47515f !important;
+  border-radius: 6px !important;
+  color: #e7ecf3 !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.34) !important;
+}
+.nicegui-error-popup span {
+  color: #e7ecf3 !important;
 }
 .minorail-shell {
   width: min(1080px, calc(100vw - 32px));
@@ -486,10 +699,71 @@ _CSS = """
   line-height: 18px;
   font-weight: 500;
 }
+.minorail-controls {
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.minorail-controls .minorail-icon-button {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-family: inherit;
+  text-transform: none;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+.minorail-controls .minorail-icon-button .q-icon {
+  font-size: 20px;
+}
+.minorail-controls .minorail-pause-button {
+  background: #93c5fd !important;
+  background-color: #93c5fd !important;
+  border-color: #bfdbfe !important;
+  color: #102a56 !important;
+}
+.minorail-controls .minorail-pause-button:hover {
+  background: #bfdbfe !important;
+  background-color: #bfdbfe !important;
+}
+.minorail-controls .minorail-unpause-button {
+  background: #86efac !important;
+  background-color: #86efac !important;
+  border-color: #bbf7d0 !important;
+  color: #12351f !important;
+}
+.minorail-controls .minorail-unpause-button:hover {
+  background: #bbf7d0 !important;
+  background-color: #bbf7d0 !important;
+}
+.minorail-controls .minorail-clear-button {
+  background: #fca5a5 !important;
+  background-color: #fca5a5 !important;
+  border-color: #fecaca !important;
+  color: #4a1111 !important;
+}
+.minorail-controls .minorail-clear-button:hover {
+  background: #fecaca !important;
+  background-color: #fecaca !important;
+}
+.minorail-controls .q-btn--disabled {
+  background: #2b313b !important;
+  background-color: #2b313b !important;
+  border-color: #47515f !important;
+  color: #9aa5b5 !important;
+  opacity: 1 !important;
+  box-shadow: none;
+}
 .minorail-main {
   align-items: flex-start;
   gap: 16px;
   flex-wrap: wrap;
+}
+.minorail-board-column {
+  gap: 8px;
 }
 .minorail-board-wrap {
   padding: 12px;
@@ -515,6 +789,19 @@ _CSS = """
   aspect-ratio: 1;
   background: #0e1218;
   border: 1px solid rgba(122, 134, 153, 0.07);
+  user-select: none;
+}
+.minorail-board-disabled {
+  cursor: not-allowed;
+}
+.minorail-board-disabled .minorail-cell {
+  cursor: not-allowed;
+}
+.minorail-board-editable {
+  cursor: cell;
+}
+.minorail-board-editable .minorail-cell {
+  cursor: cell;
 }
 .minorail-cell-filled {
   background: #7f8896;

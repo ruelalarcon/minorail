@@ -7,6 +7,7 @@ from typing import Any, Optional
 from core.board import piece_cells
 from core.piece import Piece
 from core.rotation import Rotation
+from engine.commands import EngineControls
 from game.rules import Rules
 from game.state import GameState
 from movegen.pathfinder import MoveStep, apply_step, obstructed
@@ -39,6 +40,9 @@ class TerminalVisualizer:
         self._first_move_delay = cfg["first_move_delay_ms"] / 1000
         self._first_spawn = True
         self._status = ""
+
+    def set_engine_controls(self, controls: EngineControls) -> None:
+        pass
 
     def on_game_started(self, state: GameState) -> None:
         self._status = "Game started"
