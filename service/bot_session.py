@@ -14,6 +14,10 @@ from service.snapshot import BotSnapshot, PieceStreamSnapshot
 from tbp.messages import BotCapabilities, MsgStart
 
 
+class BotStartupError(RuntimeError):
+    pass
+
+
 class BotSession:
     def __init__(
         self, bot_path: str, info_print_topics: set[str] | None = None
@@ -44,7 +48,7 @@ class BotSession:
                 self._suggestion = [Placement.from_tbp(m) for m in obj.get("moves", [])]
                 self._suggestion_event.set()
             case "error":
-                print(f"[bot error] {obj.get('reason')}", file=sys.stderr)
+                print(f"[error] bot error: {obj.get('reason')}", file=sys.stderr)
 
     def start_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
         self.close()
@@ -56,17 +60,17 @@ class BotSession:
         self._bot = BotProcess(self._bot_path, self._on_bot_message)
         if not self._register_event.wait(timeout=5.0):
             self.close()
-            raise TimeoutError("bot did not send register")
+            raise BotStartupError("bot did not send register")
 
         capability_error = self._capabilities.validate_rules(rules)
         if capability_error is not None:
             self.close()
-            raise RuntimeError(capability_error)
+            raise BotStartupError(capability_error)
 
         self._bot.send_rules(rules)
         if not self._ready_event.wait(timeout=5.0):
             self.close()
-            raise TimeoutError("bot did not send ready")
+            raise BotStartupError("bot did not send ready")
         self._bot.send_start(
             MsgStart(
                 board=snapshot.board.copy(),
@@ -125,7 +129,11 @@ class BotSession:
     def _start_piece_stream(
         self, piece_stream: Optional[PieceStreamSnapshot]
     ) -> Optional[PieceStreamSnapshot]:
-        if not self._capabilities.piece_stream:
+        if piece_stream is not None and not self._capabilities.piece_stream:
+            print(
+                "[warn] bot does not support piece_stream; omitting start.piece_stream",
+                file=sys.stderr,
+            )
             return None
         return piece_stream
 

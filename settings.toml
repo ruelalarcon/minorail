@@ -18,7 +18,7 @@ refill_threshold = 5  # when queue length drops below this, add pieces until it 
 piece_stream_limit = 11  # 0 omits piece_stream; otherwise send up to this many generated pieces
 
 [bot_info]
-print = ["warning"]  # runtime info topics to print, e.g. ["warning", "status", "search"]
+print = ["warning", "log"]  # runtime info topics to print, e.g. ["warning", "status", "search"]
 
 [display]
 move_delay_ms = 50   # delay between each animated input step

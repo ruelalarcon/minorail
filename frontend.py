@@ -13,6 +13,7 @@ from game.randomizer import Randomizer, make_randomizer
 from game.rules import Rules
 from game.state import GameState
 from movegen.pathfinder import MoveStep, apply_step
+from service.bot_session import BotStartupError
 from service.move_selection import moving_piece_for
 from service.snapshot import ObservedSnapshot, SuggestionRequest
 from service.suggestion_service import SuggestionService
@@ -110,15 +111,19 @@ class Frontend:
 
                 if first_move:
                     time.sleep(cfg_b["first_move_think_ms"] / 1000)
-                result = service.suggest(
-                    SuggestionRequest(
-                        snapshot=self._snapshot(state, seq, last_move),
-                        rules=rules,
-                        include_path=True,
-                        session_id="terminal",
-                        timeout_ms=cfg_b["suggest_timeout_ms"],
+                try:
+                    result = service.suggest(
+                        SuggestionRequest(
+                            snapshot=self._snapshot(state, seq, last_move),
+                            rules=rules,
+                            include_path=True,
+                            session_id="terminal",
+                            timeout_ms=cfg_b["suggest_timeout_ms"],
+                        )
                     )
-                )
+                except BotStartupError as e:
+                    print(f"[error] bot startup failed: {e}", file=sys.stderr)
+                    break
                 first_move = False
                 seq += 1
                 if result.placement is None:

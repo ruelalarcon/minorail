@@ -38,12 +38,12 @@ class BotProcess:
             try:
                 obj = json.loads(line)
             except json.JSONDecodeError:
-                print(f"[bot] invalid JSON: {line}", file=sys.stderr)
+                print(f"[error] invalid JSON from bot: {line}", file=sys.stderr)
                 continue
             try:
                 self._on_message(obj)
             except Exception as e:
-                print(f"[bot] message handler error: {e}", file=sys.stderr)
+                print(f"[error] bot message handler error: {e}", file=sys.stderr)
 
     def _send(self, obj: dict[str, Any]) -> None:
         line = (json.dumps(obj) + "\n").encode("utf-8")

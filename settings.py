@@ -25,7 +25,7 @@ DEFAULT: dict[str, dict[str, Any]] = {
         "piece_stream_limit": 11,
     },
     "bot_info": {
-        "print": ["warning"],
+        "print": ["log", "warning"],
     },
     "display": {
         "move_delay_ms": 50,
