@@ -18,6 +18,11 @@ DEFAULT: dict[str, Any] = {
             "piece_stream_limit": 11,
         },
     },
+    "service": {
+        "path": {
+            "convert_sonic_drops": False,
+        },
+    },
     "bot": {
         "suggest_timeout_ms": 10_000,
     },

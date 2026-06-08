@@ -7,7 +7,7 @@ from core.piece import Piece
 from core.placement import Placement
 from game.rules import Rules
 from game.state import GameState
-from movegen.pathfinder import find_path
+from movegen.pathfinder import convert_sonic_drops, find_path
 from service.derived_state import DerivedState
 from service.move_selection import moving_piece_for, pick_move
 from service.piece_stream import PieceStreamTracker
@@ -100,6 +100,13 @@ class ClientSession:
                 path = find_path(
                     request.snapshot.board, moving_piece, chosen.location, request.rules
                 )
+                if path is not None and request.convert_sonic_drops:
+                    path = convert_sonic_drops(
+                        path,
+                        request.snapshot.board,
+                        moving_piece,
+                        request.rules.kickset,
+                    )
             if path is None:
                 reason = "no path found for selected placement"
 

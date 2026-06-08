@@ -181,6 +181,31 @@ def find_path(
     return steps
 
 
+def convert_sonic_drops(
+    path: list[MoveStep],
+    board: Board,
+    piece: Piece,
+    kickset: str = "srs",
+) -> list[MoveStep]:
+    spawn_x, spawn_y, spawn_rot = 4, 19, Rotation.North
+    if obstructed(board, piece, spawn_rot, spawn_x, spawn_y):
+        spawn_y = 20
+
+    x, y, rotation = spawn_x, spawn_y, spawn_rot
+    converted: list[MoveStep] = []
+    for step in path:
+        if step == MoveStep.SonicDrop:
+            distance = board.drop_distance(piece, rotation, x, y)
+            converted.extend(MoveStep.SoftDrop for _ in range(distance))
+            y -= distance
+            continue
+
+        converted.append(step)
+        x, y, rotation = apply_step(step, piece, rotation, x, y, board, kickset)
+
+    return converted
+
+
 def apply_step(
     step: MoveStep,
     piece: Piece,

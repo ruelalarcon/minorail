@@ -56,6 +56,8 @@ class EngineSession:
 
         protocol_cfg = self._settings.get("protocol", {})
         protocol_start_cfg = protocol_cfg.get("start", {})
+        service_path_cfg = self._settings.get("service", {}).get("path", {})
+        self._convert_sonic_drops = service_path_cfg.get("convert_sonic_drops", False)
         logging_cfg = self._settings.get("logging", {})
         bot_info_cfg = logging_cfg.get("bot_info", {})
         self._service = SuggestionService(
@@ -164,6 +166,7 @@ class EngineSession:
                             snapshot=self.snapshot(),
                             rules=self._rules,
                             include_path=True,
+                            convert_sonic_drops=self._convert_sonic_drops,
                             session_id=self._session_id,
                             timeout_ms=cfg_b["suggest_timeout_ms"],
                         )

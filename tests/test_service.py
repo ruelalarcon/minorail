@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from unittest.mock import patch
 
 from core.board import Board
 from core.location import PieceLocation
@@ -10,6 +11,7 @@ from core.rotation import Rotation
 from core.spin import Spin
 from game.rules import Rules
 from game.state import GameState, spawn_location
+from movegen.pathfinder import MoveStep
 from service.client_session import ClientSession
 from service.move_selection import pick_move
 from service.piece_stream import PieceStreamTracker
@@ -220,6 +222,27 @@ class ServiceTests(unittest.TestCase):
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=Rules()))
 
         self.assertIsNone(fake.started[0].piece_stream)
+
+    def test_convert_sonic_drops_request_option_rewrites_path(self) -> None:
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
+        session = ClientSession(lambda: fake)
+
+        with patch(
+            "service.client_session.find_path",
+            return_value=[MoveStep.SonicDrop, MoveStep.HardDrop],
+        ):
+            result = session.suggest(
+                SuggestionRequest(
+                    snapshot=snapshot(active=Piece.O),
+                    rules=Rules(sonic_drop="only"),
+                    convert_sonic_drops=True,
+                )
+            )
+
+        self.assertIsNotNone(result.path)
+        assert result.path is not None
+        self.assertNotIn(MoveStep.SonicDrop, result.path)
+        self.assertEqual(result.path.count(MoveStep.SoftDrop), 19)
 
     def test_capabilities_validate_configured_rules(self) -> None:
         capabilities = BotCapabilities.from_tbp(

@@ -9,15 +9,18 @@ allclear_b2b = true       # all-clears contribute to back-to-back
 [protocol.start]
 piece_stream_limit = 11  # 0 omits piece_stream; otherwise send up to this many generated pieces
 
+[service.path]
+convert_sonic_drops = false  # replace sonic_drop path steps with repeated soft_drop steps
+
 [bot]
 suggest_timeout_ms = 10_000  # timeout waiting for a suggestion
+
+[logging.bot_info]
+print = ["warning", "log"]  # runtime info topics to print, e.g. ["warning", "status", "search"]
 
 [engine.queue]
 initial = 5           # pieces to seed before sending start
 refill_threshold = 5  # when queue length drops below this, add pieces until it reaches this value
-
-[logging.bot_info]
-print = ["warning", "log"]  # runtime info topics to print, e.g. ["warning", "status", "search"]
 
 [visualizer]
 move_delay_ms = 50         # delay between each animated input step
