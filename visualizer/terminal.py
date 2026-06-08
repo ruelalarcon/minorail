@@ -38,12 +38,15 @@ class TerminalVisualizer:
         self._lock_delay = cfg["lock_delay_ms"] / 1000
         self._first_move_delay = cfg["first_move_delay_ms"] / 1000
         self._first_spawn = True
+        self._status = ""
 
     def on_game_started(self, state: GameState) -> None:
+        self._status = "Game started"
         sys.stdout.write("\033[2J\033[H")
         sys.stdout.flush()
 
     def on_spawn(self, state: GameState, piece: Piece) -> None:
+        self._status = f"Spawn: {piece.value}"
         self._render(
             state,
             state.active.piece,
@@ -62,6 +65,7 @@ class TerminalVisualizer:
         rules: Rules,
     ) -> None:
         if hold_used:
+            self._status = "Hold"
             self._render(
                 state, moving_piece, (state.active.x, state.active.y, Rotation.North)
             )
@@ -82,6 +86,7 @@ class TerminalVisualizer:
                     state.board,
                     rules.kickset,
                 )
+                self._status = f"Move: {step.value}"
                 self._render(state, moving_piece, (ax, ay, arot))
                 time.sleep(self._move_delay)
             ax, ay, arot = apply_step(
@@ -93,28 +98,34 @@ class TerminalVisualizer:
                 state.board,
                 rules.kickset,
             )
+            self._status = f"Move: {MoveStep.HardDrop.value}"
             self._render(state, moving_piece, (ax, ay, arot))
         else:
             self.warning(result.reason or "no path found")
             placement = result.placement
             if placement is not None:
                 loc = placement.location
+                self._status = result.reason or "No path"
                 self._render(state, moving_piece, (loc.x, loc.y, loc.rotation))
 
         time.sleep(self._lock_delay)
 
     def on_piece_locked(self, state: GameState) -> None:
+        self._status = "Locked"
         self._render(state)
         time.sleep(self._lock_delay * 0.5)
 
     def on_top_out(self, state: GameState) -> None:
+        self._status = "Top out"
         self._render(state)
 
     def warning(self, message: str) -> None:
         print(f"[warn] {message}", file=sys.stderr)
+        self._status = f"Warning: {message}"
 
     def error(self, message: str) -> None:
         print(f"[error] {message}", file=sys.stderr)
+        self._status = f"Error: {message}"
 
     def _render(
         self,
@@ -132,6 +143,7 @@ class TerminalVisualizer:
             active_loc,
             cfg["visible_rows"],
             cfg["queue_size"],
+            self._status,
         )
 
 
@@ -145,6 +157,7 @@ def _render(
     active_loc: Optional[tuple[int, int, Rotation]],
     visible_rows: int,
     queue_size: int,
+    status: str,
 ) -> None:
     unset = "\x00"
     grid: list[list[str]] = [[unset for _ in range(10)] for _ in range(visible_rows)]
@@ -191,6 +204,9 @@ def _render(
         "",
         f"Combo: {state.combo}",
         f"Back-to-Back: {state.back_to_back}",
+        "",
+        "Status:",
+        status,
     ]
 
     out: list[str] = []
