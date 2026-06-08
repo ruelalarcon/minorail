@@ -31,12 +31,12 @@ GHOST = DIM + "\xb7\xb7" + RESET
 
 
 class TerminalVisualizer:
-    def __init__(self, settings: dict[str, dict[str, Any]]) -> None:
+    def __init__(self, settings: dict[str, Any]) -> None:
         self._settings = settings
-        cfg = self._settings["display"]
+        cfg = self._settings["visualizer"]
         self._move_delay = cfg["move_delay_ms"] / 1000
         self._lock_delay = cfg["lock_delay_ms"] / 1000
-        self._first_move_delay = self._settings["bot"]["first_move_think_ms"] / 1000
+        self._first_move_delay = cfg["first_move_delay_ms"] / 1000
         self._first_spawn = True
 
     def on_game_started(self, state: GameState) -> None:
@@ -125,7 +125,7 @@ class TerminalVisualizer:
         if active_piece is None or active_loc is None:
             active_piece = state.active.piece
             active_loc = (state.active.x, state.active.y, state.active.rotation)
-        cfg = self._settings["display"]
+        cfg = self._settings["visualizer"]
         _render(
             state,
             active_piece,

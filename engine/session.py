@@ -45,7 +45,7 @@ class EngineSession:
     def __init__(
         self,
         bot_path: str,
-        settings: dict[str, dict[str, Any]],
+        settings: dict[str, Any],
         visualizer: Visualizer,
         session_id: str = "terminal",
     ) -> None:
@@ -55,10 +55,12 @@ class EngineSession:
         self._session_id = session_id
 
         protocol_cfg = self._settings.get("protocol", {})
-        bot_info_cfg = self._settings.get("bot_info", {})
+        protocol_start_cfg = protocol_cfg.get("start", {})
+        logging_cfg = self._settings.get("logging", {})
+        bot_info_cfg = logging_cfg.get("bot_info", {})
         self._service = SuggestionService(
             self._bot_path,
-            piece_stream_limit=protocol_cfg.get("piece_stream_limit", 11),
+            piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
             info_print_topics=bot_info_cfg.get("print", ["warning"]),
         )
 
@@ -72,7 +74,7 @@ class EngineSession:
             active=active,
             queue=[
                 self._rand.next()
-                for _ in range(max(0, self._settings["queue"]["initial"] - 1))
+                for _ in range(max(0, self._settings["engine"]["queue"]["initial"] - 1))
             ],
             hold=None,
             combo=0,
@@ -141,7 +143,7 @@ class EngineSession:
 
     def play_game(self) -> dict[str, Any]:
         cfg_b = self._settings["bot"]
-        refill_at = self._settings["queue"]["refill_threshold"]
+        refill_at = self._settings["engine"]["queue"]["refill_threshold"]
 
         pieces_placed = 0
         start_time = time.time()

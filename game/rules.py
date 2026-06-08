@@ -14,8 +14,9 @@ class Rules:
     allclear_b2b: bool = False
 
     @staticmethod
-    def from_settings(settings: dict[str, dict[str, Any]]) -> Rules:
-        r = settings.get("rules", {})
+    def from_settings(settings: dict[str, Any]) -> Rules:
+        protocol = settings.get("protocol", {})
+        r = protocol.get("rules", {})
         return Rules(
             randomizer=r.get("randomizer", "seven_bag"),
             kickset=r.get("kickset", "srs"),

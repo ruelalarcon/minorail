@@ -4,47 +4,65 @@ import os
 import tomllib
 from typing import Any
 
-DEFAULT: dict[str, dict[str, Any]] = {
-    "rules": {
-        "randomizer": "seven_bag",
-        "kickset": "srs",
-        "rot180": True,
-        "sonic_drop": "only",
-        "allspin_b2b": False,
-        "allclear_b2b": False,
+DEFAULT: dict[str, Any] = {
+    "protocol": {
+        "rules": {
+            "randomizer": "seven_bag",
+            "kickset": "srs",
+            "rot180": True,
+            "sonic_drop": "only",
+            "allspin_b2b": False,
+            "allclear_b2b": False,
+        },
+        "start": {
+            "piece_stream_limit": 11,
+        },
     },
     "bot": {
         "suggest_timeout_ms": 10_000,
-        "first_move_think_ms": 200,
     },
-    "queue": {
-        "initial": 5,
-        "refill_threshold": 5,
+    "engine": {
+        "queue": {
+            "initial": 5,
+            "refill_threshold": 5,
+        },
     },
-    "protocol": {
-        "piece_stream_limit": 11,
+    "logging": {
+        "bot_info": {
+            "print": ["log", "warning"],
+        },
     },
-    "bot_info": {
-        "print": ["log", "warning"],
-    },
-    "display": {
+    "visualizer": {
         "move_delay_ms": 50,
         "lock_delay_ms": 150,
+        "first_move_delay_ms": 200,
         "visible_rows": 20,
         "queue_size": 5,
     },
 }
 
 
-def load(path: str = "settings.toml") -> dict[str, dict[str, Any]]:
-    settings = {k: dict(v) for k, v in DEFAULT.items()}
+def load(path: str = "settings.toml") -> dict[str, Any]:
+    settings = _copy_nested(DEFAULT)
     if not os.path.exists(path):
         return settings
     with open(path, "rb") as f:
         raw = tomllib.load(f)
-    for section, values in raw.items():
-        if section in settings:
-            settings[section].update(values)
-        else:
-            settings[section] = values
+    _merge_nested(settings, raw)
     return settings
+
+
+def _copy_nested(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {k: _copy_nested(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return list(value)
+    return value
+
+
+def _merge_nested(target: dict[str, Any], source: dict[str, Any]) -> None:
+    for key, value in source.items():
+        if isinstance(value, dict) and isinstance(target.get(key), dict):
+            _merge_nested(target[key], value)
+        else:
+            target[key] = value
