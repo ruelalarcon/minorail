@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from core.board import Board
 from core.piece import Piece
 from core.placement import Placement
+
+if TYPE_CHECKING:
+    from service.snapshot import PieceStreamSnapshot
 
 
 @dataclass
@@ -25,6 +28,7 @@ class MsgStart:
     hold: Optional[Piece]
     combo: int
     back_to_back: int
+    piece_stream: Optional["PieceStreamSnapshot"] = None
 
 
 @dataclass

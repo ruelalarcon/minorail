@@ -79,6 +79,11 @@ class BotProcess:
             "combo": msg.combo,
             "back_to_back": msg.back_to_back,
         }
+        if msg.piece_stream is not None:
+            obj["piece_stream"] = {
+                "offset": msg.piece_stream.offset,
+                "pieces": [p.value for p in msg.piece_stream.pieces],
+            }
         self._send(obj)
 
     def send_play(self, placement: Placement) -> None:

@@ -10,6 +10,7 @@ from game.state import GameState
 from movegen.pathfinder import find_path
 from service.derived_state import DerivedState
 from service.move_selection import moving_piece_for, pick_move
+from service.piece_stream import PieceStreamTracker
 from service.snapshot import (
     BotSnapshot,
     ObservedSnapshot,
@@ -46,10 +47,13 @@ class _ExpectedAdvance:
 
 
 class ClientSession:
-    def __init__(self, bot_session_factory: BotSessionFactory) -> None:
+    def __init__(
+        self, bot_session_factory: BotSessionFactory, piece_stream_limit: int = 11
+    ) -> None:
         self.latest_observed: Optional[ObservedSnapshot] = None
         self.shadow_observed: Optional[ObservedSnapshot] = None
         self.derived_state = DerivedState.neutral()
+        self.piece_stream = PieceStreamTracker(piece_stream_limit)
         self.previous_suggestion: Optional[Placement] = None
         self.bot_session: BotSessionLike = bot_session_factory()
         self.rules: Optional[Rules] = None
@@ -122,6 +126,7 @@ class ClientSession:
 
         if self.shadow_observed is None:
             self.derived_state = DerivedState.from_observed(incoming)
+            self.piece_stream.initialize(incoming.queue)
             return SuggestionStatus.Synced
 
         if incoming.physically_equals(self.shadow_observed):
@@ -130,6 +135,7 @@ class ClientSession:
         expected = self._expected_advance(incoming, request.rules)
         if expected is not None:
             self.derived_state.update_from_confirmed(expected.state)
+            self.piece_stream.append(expected.new_pieces)
             if self.previous_suggestion is not None:
                 self.bot_session.advance_with(
                     self.previous_suggestion, expected.new_pieces
@@ -137,6 +143,7 @@ class ClientSession:
             return SuggestionStatus.Advanced
 
         self.derived_state.repair_or_reset(incoming, request.rules)
+        self.piece_stream.resync(incoming.queue)
         return SuggestionStatus.Resynced
 
     def _expected_advance(
@@ -175,6 +182,7 @@ class ClientSession:
             hold=snapshot.hold,
             combo=self.derived_state.combo,
             back_to_back=self.derived_state.back_to_back,
+            piece_stream=self.piece_stream.snapshot(),
         )
 
     def _validate(self, snapshot: ObservedSnapshot) -> Optional[str]:

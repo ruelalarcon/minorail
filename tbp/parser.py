@@ -6,6 +6,7 @@ from typing import Optional
 from core.board import Board
 from core.piece import Piece
 from core.placement import Placement
+from service.snapshot import PieceStreamSnapshot
 from tbp.messages import (
     MsgNewPiece,
     MsgPlay,
@@ -48,12 +49,20 @@ def parse(line: str) -> Optional[FrontendMessage]:
             )
         case "start":
             hold_raw = obj.get("hold")
+            piece_stream_raw = obj.get("piece_stream")
+            piece_stream = None
+            if isinstance(piece_stream_raw, dict):
+                piece_stream = PieceStreamSnapshot(
+                    offset=piece_stream_raw.get("offset"),
+                    pieces=[Piece(p) for p in piece_stream_raw.get("pieces", [])],
+                )
             return MsgStart(
                 board=Board.from_tbp(obj.get("board", [])),
                 queue=[Piece(p) for p in obj.get("queue", [])],
                 hold=Piece(hold_raw) if hold_raw is not None else None,
                 combo=_counter(obj.get("combo", 0)),
                 back_to_back=_counter(obj.get("back_to_back", 0)),
+                piece_stream=piece_stream,
             )
         case "play":
             return MsgPlay(move=Placement.from_tbp(obj["move"]))

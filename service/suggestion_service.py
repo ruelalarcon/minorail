@@ -8,14 +8,18 @@ from service.snapshot import SuggestionRequest, SuggestionResult
 
 
 class SuggestionService:
-    def __init__(self, bot_path: str) -> None:
+    def __init__(self, bot_path: str, piece_stream_limit: int = 11) -> None:
         self._bot_path = bot_path
+        self._piece_stream_limit = piece_stream_limit
         self._sessions: dict[str, ClientSession] = {}
 
     def suggest(self, request: SuggestionRequest) -> SuggestionResult:
         session = self._sessions.get(request.session_id)
         if session is None:
-            session = ClientSession(self._bot_session_factory())
+            session = ClientSession(
+                self._bot_session_factory(),
+                piece_stream_limit=self._piece_stream_limit,
+            )
             self._sessions[request.session_id] = session
         return session.suggest(request)
 

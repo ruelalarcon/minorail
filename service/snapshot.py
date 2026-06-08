@@ -43,12 +43,19 @@ class ObservedSnapshot:
 
 
 @dataclass
+class PieceStreamSnapshot:
+    offset: int | None
+    pieces: list[Piece]
+
+
+@dataclass
 class BotSnapshot:
     board: Board
     queue: list[Piece]
     hold: Optional[Piece]
     combo: int
     back_to_back: int
+    piece_stream: Optional[PieceStreamSnapshot] = None
 
 
 @dataclass

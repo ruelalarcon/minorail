@@ -54,6 +54,7 @@ class BotSession:
                 hold=snapshot.hold,
                 combo=snapshot.combo,
                 back_to_back=snapshot.back_to_back,
+                piece_stream=snapshot.piece_stream,
             )
         )
 

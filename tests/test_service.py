@@ -12,6 +12,7 @@ from game.rules import Rules
 from game.state import GameState
 from service.client_session import ClientSession
 from service.move_selection import pick_move
+from service.piece_stream import PieceStreamTracker
 from service.snapshot import (
     BotSnapshot,
     ObservedSnapshot,
@@ -94,6 +95,13 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(
             fake.started[0].queue, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J]
         )
+        self.assertIsNotNone(fake.started[0].piece_stream)
+        assert fake.started[0].piece_stream is not None
+        self.assertEqual(fake.started[0].piece_stream.offset, 0)
+        self.assertEqual(
+            fake.started[0].piece_stream.pieces,
+            [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J],
+        )
         self.assertEqual(fake.started[0].combo, 0)
         self.assertEqual(fake.started[0].back_to_back, 0)
 
@@ -120,6 +128,13 @@ class ServiceTests(unittest.TestCase):
 
         self.assertEqual(result.status, SuggestionStatus.Advanced)
         self.assertEqual(fake.advanced, [(first, [Piece.S])])
+        stream = session.piece_stream.snapshot()
+        self.assertIsNotNone(stream)
+        assert stream is not None
+        self.assertEqual(stream.offset, 0)
+        self.assertEqual(
+            stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
+        )
 
     def test_unexpected_transition_resets_bot(self) -> None:
         fake = FakeBotSession(
@@ -134,6 +149,30 @@ class ServiceTests(unittest.TestCase):
 
         self.assertEqual(result.status, SuggestionStatus.Resynced)
         self.assertEqual(len(fake.resets), 1)
+        stream = fake.resets[0].piece_stream
+        self.assertIsNotNone(stream)
+        assert stream is not None
+        self.assertIsNone(stream.offset)
+        self.assertEqual(stream.pieces, [Piece.I, Piece.T, Piece.L, Piece.J, Piece.S])
+
+    def test_piece_stream_trimming_adjusts_offset(self) -> None:
+        tracker = PieceStreamTracker(limit=5)
+        tracker.initialize([Piece.O, Piece.I, Piece.T, Piece.L, Piece.J])
+        tracker.append([Piece.S, Piece.Z])
+
+        stream = tracker.snapshot()
+        self.assertIsNotNone(stream)
+        assert stream is not None
+        self.assertEqual(stream.offset, 2)
+        self.assertEqual(stream.pieces, [Piece.T, Piece.L, Piece.J, Piece.S, Piece.Z])
+
+    def test_piece_stream_limit_zero_omits_stream(self) -> None:
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
+        session = ClientSession(lambda: fake, piece_stream_limit=0)
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=Rules()))
+
+        self.assertIsNone(fake.started[0].piece_stream)
 
 
 if __name__ == "__main__":

@@ -21,6 +21,9 @@ DEFAULT: dict[str, dict[str, Any]] = {
         "initial": 5,
         "refill_threshold": 5,
     },
+    "protocol": {
+        "piece_stream_limit": 11,
+    },
     "display": {
         "move_delay_ms": 50,
         "lock_delay_ms": 150,
