@@ -9,7 +9,7 @@ from core.placement import Placement
 from core.rotation import Rotation
 from core.spin import Spin
 from game.rules import Rules
-from game.state import GameState
+from game.state import GameState, spawn_location
 from service.client_session import ClientSession
 from service.move_selection import pick_move
 from service.piece_stream import PieceStreamTracker
@@ -30,14 +30,16 @@ def placement(
 
 def snapshot(
     board: Board | None = None,
+    active: Piece | None = None,
     queue: list[Piece] | None = None,
     seq: int = 0,
     last_move: Placement | None = None,
 ) -> ObservedSnapshot:
-    pieces = queue or [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J]
+    active_piece = active or Piece.O
+    pieces = queue or [Piece.I, Piece.T, Piece.L, Piece.J]
     return ObservedSnapshot(
         board=board or Board(),
-        current=pieces[0],
+        active=spawn_location(active_piece),
         queue=list(pieces),
         hold=None,
         can_hold=True,
@@ -80,10 +82,42 @@ class FakeBotSession:
 
 class ServiceTests(unittest.TestCase):
     def test_pick_move_accepts_5_piece_hold_candidate(self) -> None:
-        snap = snapshot(queue=[Piece.O, Piece.I, Piece.T, Piece.L, Piece.J])
+        snap = snapshot(active=Piece.O, queue=[Piece.I, Piece.T, Piece.L, Piece.J])
         self.assertEqual(
             pick_move([placement(Piece.I, 4, 0)], snap), placement(Piece.I, 4, 0)
         )
+
+    def test_game_state_queue_excludes_active(self) -> None:
+        state = GameState(
+            Board(), spawn_location(Piece.O), [Piece.I, Piece.T], None, 0, 0
+        )
+
+        self.assertEqual(state.active.piece, Piece.O)
+        self.assertEqual(state.queue, [Piece.I, Piece.T])
+
+    def test_apply_move_success_spawns_next_active(self) -> None:
+        state = GameState(
+            Board(), spawn_location(Piece.O), [Piece.I, Piece.T], None, 0, 0
+        )
+
+        self.assertTrue(state.apply_move(placement(Piece.O, 4, 0), Rules()))
+
+        self.assertEqual(state.active.piece, Piece.I)
+        self.assertEqual(state.queue, [Piece.T])
+
+    def test_apply_move_failure_does_not_mutate_active_queue_or_hold(self) -> None:
+        state = GameState(
+            Board(), spawn_location(Piece.O), [Piece.I, Piece.T], None, 0, 0
+        )
+        before_active = state.active
+        before_queue = list(state.queue)
+        before_hold = state.hold
+
+        self.assertFalse(state.apply_move(placement(Piece.O, 20, 0), Rules()))
+
+        self.assertEqual(state.active, before_active)
+        self.assertEqual(state.queue, before_queue)
+        self.assertEqual(state.hold, before_hold)
 
     def test_first_snapshot_starts_bot_with_normalized_state(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
@@ -93,9 +127,8 @@ class ServiceTests(unittest.TestCase):
 
         self.assertEqual(result.status, SuggestionStatus.Synced)
         self.assertEqual(result.placement, placement(Piece.O, 4, 0))
-        self.assertEqual(
-            fake.started[0].queue, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J]
-        )
+        self.assertEqual(fake.started[0].active, spawn_location(Piece.O))
+        self.assertEqual(fake.started[0].queue, [Piece.I, Piece.T, Piece.L, Piece.J])
         self.assertIsNotNone(fake.started[0].piece_stream)
         assert fake.started[0].piece_stream is not None
         self.assertEqual(fake.started[0].piece_stream.offset, 0)
@@ -115,14 +148,25 @@ class ServiceTests(unittest.TestCase):
 
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
         state = GameState(
-            Board(), [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J], None, 0, 0
+            Board(),
+            spawn_location(Piece.O),
+            [Piece.I, Piece.T, Piece.L, Piece.J],
+            None,
+            0,
+            0,
         )
         self.assertTrue(state.apply_move(first, rules))
         state.queue.append(Piece.S)
 
         result = session.suggest(
             SuggestionRequest(
-                snapshot=snapshot(state.board, state.queue, seq=1, last_move=first),
+                snapshot=snapshot(
+                    state.board,
+                    active=state.active.piece,
+                    queue=state.queue,
+                    seq=1,
+                    last_move=first,
+                ),
                 rules=rules,
             )
         )
@@ -145,7 +189,9 @@ class ServiceTests(unittest.TestCase):
         rules = Rules()
 
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
-        changed = snapshot(queue=[Piece.I, Piece.T, Piece.L, Piece.J, Piece.S], seq=1)
+        changed = snapshot(
+            active=Piece.I, queue=[Piece.T, Piece.L, Piece.J, Piece.S], seq=1
+        )
         result = session.suggest(SuggestionRequest(snapshot=changed, rules=rules))
 
         self.assertEqual(result.status, SuggestionStatus.Resynced)

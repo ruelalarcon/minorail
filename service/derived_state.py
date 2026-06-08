@@ -24,6 +24,7 @@ class DerivedState:
     def to_game_state(self, snapshot: ObservedSnapshot) -> GameState:
         return GameState(
             board=snapshot.board.copy(),
+            active=snapshot.active,
             queue=list(snapshot.queue),
             hold=snapshot.hold,
             combo=self.combo,

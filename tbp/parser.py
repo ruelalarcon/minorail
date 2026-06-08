@@ -4,8 +4,10 @@ import json
 from typing import Optional
 
 from core.board import Board
+from core.location import PieceLocation
 from core.piece import Piece
 from core.placement import Placement
+from game.state import spawn_location
 from service.snapshot import PieceStreamSnapshot
 from tbp.messages import (
     MsgNewPiece,
@@ -49,6 +51,17 @@ def parse(line: str) -> Optional[FrontendMessage]:
             )
         case "start":
             hold_raw = obj.get("hold")
+            queue = [Piece(p) for p in obj.get("queue", [])]
+            active_raw = obj.get("active")
+            active = (
+                PieceLocation.from_tbp(active_raw)
+                if isinstance(active_raw, dict)
+                else spawn_location(queue.pop(0))
+                if queue
+                else None
+            )
+            if active is None:
+                return None
             piece_stream_raw = obj.get("piece_stream")
             piece_stream = None
             if isinstance(piece_stream_raw, dict):
@@ -58,7 +71,8 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 )
             return MsgStart(
                 board=Board.from_tbp(obj.get("board", [])),
-                queue=[Piece(p) for p in obj.get("queue", [])],
+                active=active,
+                queue=queue,
                 hold=Piece(hold_raw) if hold_raw is not None else None,
                 combo=_counter(obj.get("combo", 0)),
                 back_to_back=_counter(obj.get("back_to_back", 0)),

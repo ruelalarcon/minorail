@@ -126,7 +126,7 @@ class ClientSession:
 
         if self.shadow_observed is None:
             self.derived_state = DerivedState.from_observed(incoming)
-            self.piece_stream.initialize(incoming.queue)
+            self.piece_stream.initialize(_observed_pieces(incoming))
             return SuggestionStatus.Synced
 
         if incoming.physically_equals(self.shadow_observed):
@@ -143,7 +143,7 @@ class ClientSession:
             return SuggestionStatus.Advanced
 
         self.derived_state.repair_or_reset(incoming, request.rules)
-        self.piece_stream.resync(incoming.queue)
+        self.piece_stream.resync(_observed_pieces(incoming))
         return SuggestionStatus.Resynced
 
     def _expected_advance(
@@ -164,7 +164,7 @@ class ClientSession:
 
         expected = ObservedSnapshot(
             board=state.board.copy(),
-            current=state.current_piece(),
+            active=state.active,
             queue=list(state.queue),
             hold=state.hold,
             can_hold=True,
@@ -178,6 +178,7 @@ class ClientSession:
     def _to_bot_snapshot(self, snapshot: ObservedSnapshot) -> BotSnapshot:
         return BotSnapshot(
             board=snapshot.board.copy(),
+            active=snapshot.active,
             queue=list(snapshot.queue),
             hold=snapshot.hold,
             combo=self.derived_state.combo,
@@ -188,14 +189,12 @@ class ClientSession:
     def _validate(self, snapshot: ObservedSnapshot) -> Optional[str]:
         if len(snapshot.board.cols) != 10:
             return "board must have 10 columns"
-        if snapshot.current is None:
-            return "snapshot must include a current piece"
-        if not snapshot.queue:
-            return "queue must include the current piece"
-        if snapshot.queue[0] != snapshot.current:
-            return "current must match queue[0]"
         return None
 
 
 def _is_prefix(prefix: list[Piece], values: list[Piece]) -> bool:
     return len(values) >= len(prefix) and values[: len(prefix)] == prefix
+
+
+def _observed_pieces(snapshot: ObservedSnapshot) -> list[Piece]:
+    return [snapshot.active.piece, *snapshot.queue]

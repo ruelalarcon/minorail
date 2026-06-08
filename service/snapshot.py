@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Optional
 
 from core.board import Board
+from core.location import PieceLocation
 from core.piece import Piece
 from core.placement import Placement
 from game.rules import Rules
@@ -14,7 +15,7 @@ from movegen.pathfinder import MoveStep
 @dataclass
 class ObservedSnapshot:
     board: Board
-    current: Optional[Piece]
+    active: PieceLocation
     queue: list[Piece]
     hold: Optional[Piece]
     can_hold: bool
@@ -24,7 +25,7 @@ class ObservedSnapshot:
     def copy(self) -> ObservedSnapshot:
         return ObservedSnapshot(
             board=self.board.copy(),
-            current=self.current,
+            active=self.active,
             queue=list(self.queue),
             hold=self.hold,
             can_hold=self.can_hold,
@@ -35,7 +36,7 @@ class ObservedSnapshot:
     def physically_equals(self, other: ObservedSnapshot) -> bool:
         return (
             self.board.cols == other.board.cols
-            and self.current == other.current
+            and self.active == other.active
             and self.queue == other.queue
             and self.hold == other.hold
             and self.can_hold == other.can_hold
@@ -51,6 +52,7 @@ class PieceStreamSnapshot:
 @dataclass
 class BotSnapshot:
     board: Board
+    active: PieceLocation
     queue: list[Piece]
     hold: Optional[Piece]
     combo: int

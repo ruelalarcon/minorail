@@ -12,16 +12,14 @@ def moving_piece_for(
     snapshot: ObservedSnapshot, placement: Placement
 ) -> Optional[Piece]:
     placed = placement.location.piece
-    current = snapshot.current
-    if current is None:
-        return None
-    if placed == current:
-        return current
+    active = snapshot.active.piece
+    if placed == active:
+        return active
     if not snapshot.can_hold:
         return None
     if snapshot.hold is None:
-        if len(snapshot.queue) >= 2 and placed == snapshot.queue[1]:
-            return snapshot.queue[1]
+        if snapshot.queue and placed == snapshot.queue[0]:
+            return snapshot.queue[0]
         return None
     if placed == snapshot.hold:
         return snapshot.hold

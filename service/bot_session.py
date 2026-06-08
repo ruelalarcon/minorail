@@ -74,6 +74,7 @@ class BotSession:
         self._bot.send_start(
             MsgStart(
                 board=snapshot.board.copy(),
+                active=snapshot.active,
                 queue=list(snapshot.queue),
                 hold=snapshot.hold,
                 combo=snapshot.combo,

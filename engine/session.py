@@ -11,7 +11,7 @@ from engine.commands import CellEdit
 from engine.events import EngineEvent, EngineEventType
 from game.randomizer import Randomizer, make_randomizer
 from game.rules import Rules
-from game.state import GameState
+from game.state import GameState, spawn_location
 from service.bot_session import BotStartupError
 from service.move_selection import moving_piece_for
 from service.snapshot import ObservedSnapshot, SuggestionRequest, SuggestionResult
@@ -66,10 +66,13 @@ class EngineSession:
         rand = make_randomizer(self._rules.randomizer)
         assert rand is not None
         self._rand: Randomizer = rand
+        active = spawn_location(self._rand.next())
         self.state = GameState(
             board=Board(),
+            active=active,
             queue=[
-                self._rand.next() for _ in range(self._settings["queue"]["initial"])
+                self._rand.next()
+                for _ in range(max(0, self._settings["queue"]["initial"] - 1))
             ],
             hold=None,
             combo=0,
@@ -128,7 +131,7 @@ class EngineSession:
     def snapshot(self) -> ObservedSnapshot:
         return ObservedSnapshot(
             board=self.state.board.copy(),
-            current=self.state.current_piece(),
+            active=self.state.active,
             queue=list(self.state.queue),
             hold=self.state.hold,
             can_hold=not self.state.hold_used_this_turn,
@@ -149,9 +152,7 @@ class EngineSession:
             while True:
                 self._ensure_queue_refilled(self.state, self._rand, refill_at)
 
-                spawn_piece = self.state.current_piece()
-                if spawn_piece is None:
-                    break
+                spawn_piece = self.state.active.piece
 
                 self._visualizer.on_spawn(self.state, spawn_piece)
 

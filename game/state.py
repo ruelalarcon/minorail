@@ -4,18 +4,23 @@ from dataclasses import dataclass
 from typing import Optional
 
 from core.board import Board, piece_cells
+from core.location import PieceLocation
 from core.piece import Piece
 from core.placement import Placement
+from core.rotation import Rotation
 from core.spin import Spin
 from game.rules import Rules
 from tbp.messages import MsgStart
 
 _ALL_PIECES = list(Piece)
+SPAWN_X = 4
+SPAWN_Y = 19
 
 
 @dataclass
 class GameState:
     board: Board
+    active: PieceLocation
     queue: list[Piece]
     hold: Optional[Piece]
     combo: int
@@ -27,38 +32,39 @@ class GameState:
         """Build initial state from a TBP start message."""
         return GameState(
             board=msg.board.copy(),
+            active=msg.active,
             queue=list(msg.queue),
             hold=msg.hold,
             combo=msg.combo,
             back_to_back=msg.back_to_back,
         )
 
-    def current_piece(self) -> Optional[Piece]:
-        return self.queue[0] if self.queue else None
+    def active_piece(self) -> Piece:
+        return self.active.piece
 
     def apply_move(self, placement: Placement, rules: Rules | None = None) -> bool:
         """
         Apply a bot move. Returns False if the move is illegal.
-        Hold is inferred from the placed piece type vs queue front.
+        Hold is inferred from the placed piece type vs active and hold state.
         """
-        if not self.queue:
+        placed = placement.location.piece
+        next_hold = self.hold
+        next_queue = list(self.queue)
+        if placed == self.active.piece:
+            pass
+        elif not self.hold_used_this_turn and self.hold is None:
+            if not next_queue or placed != next_queue[0]:
+                return False
+            next_hold = self.active.piece
+            next_queue.pop(0)
+        elif not self.hold_used_this_turn and placed == self.hold:
+            next_hold = self.active.piece
+        else:
             return False
 
-        placed = placement.location.piece
-        front = self.queue[0]
-
-        if placed == front:
-            self.queue.pop(0)
-        elif self.hold is None:
-            if len(self.queue) < 2 or placed != self.queue[1]:
-                return False
-            self.hold = self.queue.pop(0)
-            self.queue.pop(0)
-        else:
-            if placed != self.hold:
-                return False
-            self.hold, self.queue[0] = self.queue[0], self.hold
-            self.queue.pop(0)
+        if not next_queue:
+            return False
+        next_active = spawn_location(next_queue.pop(0))
 
         loc = placement.location
         cells = piece_cells(loc.piece, loc.rotation, loc.x, loc.y)
@@ -69,6 +75,9 @@ class GameState:
                 return False
 
         self.board.place(loc.piece, loc.rotation, loc.x, loc.y)
+        self.active = next_active
+        self.queue = next_queue
+        self.hold = next_hold
 
         cleared = self.board.line_clears()
         if cleared:
@@ -87,3 +96,7 @@ class GameState:
 
         self.hold_used_this_turn = False
         return True
+
+
+def spawn_location(piece: Piece) -> PieceLocation:
+    return PieceLocation(piece, Rotation.North, SPAWN_X, SPAWN_Y)

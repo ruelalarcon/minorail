@@ -44,7 +44,11 @@ class TerminalVisualizer:
         sys.stdout.flush()
 
     def on_spawn(self, state: GameState, piece: Piece) -> None:
-        self._render(state, piece, (4, 19, Rotation.North))
+        self._render(
+            state,
+            state.active.piece,
+            (state.active.x, state.active.y, state.active.rotation),
+        )
         if self._first_spawn:
             time.sleep(self._first_move_delay)
             self._first_spawn = False
@@ -58,12 +62,14 @@ class TerminalVisualizer:
         rules: Rules,
     ) -> None:
         if hold_used:
-            self._render(state, moving_piece, (4, 19, Rotation.North))
+            self._render(
+                state, moving_piece, (state.active.x, state.active.y, Rotation.North)
+            )
             time.sleep(self._lock_delay)
 
         path = result.path
         if path is not None:
-            ax, ay, arot = 4, 19, Rotation.North
+            ax, ay, arot = state.active.x, state.active.y, Rotation.North
             if obstructed(state.board, moving_piece, arot, ax, ay):
                 ay = 20
             for step in path[:-1]:
@@ -116,6 +122,9 @@ class TerminalVisualizer:
         active_piece: Optional[Piece] = None,
         active_loc: Optional[tuple[int, int, Rotation]] = None,
     ) -> None:
+        if active_piece is None or active_loc is None:
+            active_piece = state.active.piece
+            active_loc = (state.active.x, state.active.y, state.active.rotation)
         cfg = self._settings["display"]
         _render(
             state,

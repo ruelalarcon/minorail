@@ -74,6 +74,7 @@ class BotProcess:
         obj: dict[str, Any] = {
             "type": "start",
             "board": board_rows,
+            "active": msg.active.to_tbp(),
             "queue": [p.value for p in msg.queue],
             "hold": msg.hold.value if msg.hold is not None else None,
             "combo": msg.combo,
