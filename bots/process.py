@@ -16,10 +16,13 @@ class BotProcess:
     """Wraps a TBP bot subprocess with a background reader thread."""
 
     def __init__(
-        self, exe_path: str, on_message: Callable[[dict[str, Any]], None]
+        self,
+        exe_path: str,
+        on_message: Callable[[dict[str, Any]], None],
+        exe_args: Optional[list[str]] = None,
     ) -> None:
         self._proc = subprocess.Popen(
-            [exe_path],
+            [exe_path, *(exe_args or [])],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=sys.stderr,

@@ -12,10 +12,12 @@ class SuggestionService:
     def __init__(
         self,
         bot_path: str,
+        bot_args: list[str] | None = None,
         piece_stream_limit: int = 11,
         info_print_topics: list[str] | None = None,
     ) -> None:
         self._bot_path = bot_path
+        self._bot_args = bot_args or []
         self._piece_stream_limit = piece_stream_limit
         self._info_print_topics = {
             topic for topic in info_print_topics or [] if isinstance(topic, str)
@@ -44,5 +46,7 @@ class SuggestionService:
 
     def _bot_session_factory(self) -> Callable[[], BotSession]:
         return lambda: BotSession(
-            self._bot_path, info_print_topics=self._info_print_topics
+            self._bot_path,
+            bot_args=self._bot_args,
+            info_print_topics=self._info_print_topics,
         )

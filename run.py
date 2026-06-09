@@ -1,4 +1,5 @@
 import argparse
+import shlex
 import sys
 
 from runner.engine_session import EngineSession
@@ -33,6 +34,13 @@ def main() -> None:
 
     run_group = parser.add_argument_group("run options")
     run_group.add_argument(
+        "--bot-args",
+        metavar="ARGS",
+        default="",
+        help='extra arguments passed to the bot, as one string; '
+        'use = when the value starts with a dash, e.g. --bot-args="--profile --nodes 5000"',
+    )
+    run_group.add_argument(
         "--games", metavar="N", type=int, default=1, help="games to run"
     )
     run_group.add_argument(
@@ -42,15 +50,12 @@ def main() -> None:
         help="settings TOML file",
     )
 
-    display_group = parser.add_argument_group(
-        "display options",
-        "Terminal display is used when no display option is provided.",
-    )
+    display_group = parser.add_argument_group("display options")
     display = display_group.add_mutually_exclusive_group()
     display.add_argument(
         "--terminal",
         action="store_true",
-        help="show the terminal visualizer",
+        help="show the terminal visualizer (default)",
     )
     display.add_argument(
         "--web",
@@ -78,6 +83,7 @@ def main() -> None:
     args = parser.parse_args()
 
     settings = cfg.load(args.settings)
+    bot_args = shlex.split(args.bot_args)
 
     total: int = 0
     web_visualizer = (
@@ -98,7 +104,12 @@ def main() -> None:
                 visualizer = web_visualizer
             else:
                 visualizer = TerminalVisualizer(settings)
-            stats = EngineSession(args.bot, settings, visualizer).play_game()
+            stats = EngineSession(
+                args.bot,
+                bot_args=bot_args,
+                settings=settings,
+                visualizer=visualizer,
+            ).play_game()
             print(
                 f"Pieces: {stats['pieces']}  "
                 f"Time: {stats.get('elapsed', 0):.1f}s  "

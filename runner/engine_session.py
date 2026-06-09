@@ -52,8 +52,10 @@ class EngineSession:
         settings: dict[str, Any],
         visualizer: Visualizer,
         session_id: str = "terminal",
+        bot_args: list[str] | None = None,
     ) -> None:
         self._bot_path = bot_path
+        self._bot_args = bot_args or []
         self._settings = settings
         self._visualizer = visualizer
         self._session_id = session_id
@@ -66,6 +68,7 @@ class EngineSession:
         bot_info_cfg = logging_cfg.get("bot_info", {})
         self._service = SuggestionService(
             self._bot_path,
+            bot_args=self._bot_args,
             piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
             info_print_topics=bot_info_cfg.get("print", ["warning"]),
         )

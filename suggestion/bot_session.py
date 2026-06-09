@@ -21,9 +21,13 @@ class BotStartupError(RuntimeError):
 
 class BotSession:
     def __init__(
-        self, bot_path: str, info_print_topics: set[str] | None = None
+        self,
+        bot_path: str,
+        bot_args: list[str] | None = None,
+        info_print_topics: set[str] | None = None,
     ) -> None:
         self._bot_path = bot_path
+        self._bot_args = bot_args or []
         self._info_print_topics = info_print_topics or set()
         self._bot: Optional[BotProcess] = None
         self._register_event = threading.Event()
@@ -58,7 +62,9 @@ class BotSession:
         self._suggestion_event.clear()
         self._suggestion = None
         self._capabilities = BotCapabilities()
-        self._bot = BotProcess(self._bot_path, self._on_bot_message)
+        self._bot = BotProcess(
+            self._bot_path, self._on_bot_message, exe_args=self._bot_args
+        )
         if not self._register_event.wait(timeout=5.0):
             self.close()
             raise BotStartupError("bot did not send register")
