@@ -16,4 +16,3 @@ line-ending = "auto"
 [tool.basedpyright]
 pythonVersion = "3.11"
 typeCheckingMode = "standard"
-exclude = ["mino_taur", "cold_clear"]
