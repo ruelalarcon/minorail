@@ -1,16 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Callable, Optional, Protocol
 
 from core.piece import Piece
 from core.placement import Placement
 from game.rules import Rules
-from game.state import GameState
 from movegen.pathfinder import convert_sonic_drops, find_path
 from service.derived_state import DerivedState
 from service.move_selection import moving_piece_for, pick_move
 from service.piece_stream import PieceStreamTracker
+from service.session.transition import (
+    BotAction,
+    PieceStreamAction,
+    SessionTransition,
+    classify_transition,
+    observed_pieces,
+)
 from service.snapshot import (
     BotSnapshot,
     ObservedSnapshot,
@@ -39,13 +44,6 @@ class BotSessionLike(Protocol):
 BotSessionFactory = Callable[[], BotSessionLike]
 
 
-@dataclass
-class _ExpectedAdvance:
-    snapshot: ObservedSnapshot
-    state: GameState
-    new_pieces: list[Piece]
-
-
 class ClientSession:
     def __init__(
         self, bot_session_factory: BotSessionFactory, piece_stream_limit: int = 11
@@ -70,12 +68,8 @@ class ClientSession:
                 reason=validation_error,
             )
 
-        status = self._sync_to_request(request)
-        bot_snapshot = self._to_bot_snapshot(request.snapshot)
-        if status == SuggestionStatus.Resynced:
-            self.bot_session.reset_from(bot_snapshot, request.rules)
-        elif self.shadow_observed is None:
-            self.bot_session.start_from(bot_snapshot, request.rules)
+        transition = self._sync_to_request(request)
+        self._apply_bot_action(transition, request)
 
         moves = self.bot_session.suggest(request.timeout_ms)
         chosen = pick_move(moves, request.snapshot)
@@ -116,7 +110,7 @@ class ClientSession:
         self.rules = request.rules
         return SuggestionResult(
             seq=request.snapshot.seq,
-            status=status,
+            status=transition.status,
             placements=moves,
             placement=chosen,
             path=path,
@@ -127,85 +121,59 @@ class ClientSession:
         self.bot_session.stop()
         self.bot_session.close()
 
-    def _sync_to_request(self, request: SuggestionRequest) -> SuggestionStatus:
+    def _sync_to_request(self, request: SuggestionRequest) -> SessionTransition:
         incoming = request.snapshot
         self.rules = request.rules
-
-        if self.shadow_observed is None:
-            self.derived_state = DerivedState.from_observed(incoming)
-            self.piece_stream.initialize(_observed_pieces(incoming))
-            return SuggestionStatus.Synced
-
-        if incoming.physically_equals(self.shadow_observed):
-            return SuggestionStatus.Synced
-
-        expected = self._expected_advance(incoming, request.rules)
-        if expected is not None:
-            self.derived_state.update_from_confirmed(expected.state)
-            self.piece_stream.append(expected.new_pieces)
-            if self.previous_suggestion is not None:
-                self.bot_session.advance_with(
-                    self.previous_suggestion, expected.new_pieces
-                )
-            return SuggestionStatus.Advanced
-
-        self.derived_state.repair_or_reset(incoming, request.rules)
-        self._repair_piece_stream(incoming, request.rules)
-        return SuggestionStatus.Resynced
-
-    def _expected_advance(
-        self, incoming: ObservedSnapshot, rules: Rules
-    ) -> Optional[_ExpectedAdvance]:
-        expected = self._expected_piece_advance(incoming, rules)
-        if expected is None:
-            return None
-
-        if not incoming.physically_equals(expected.snapshot):
-            return None
-        return expected
-
-    def _expected_piece_advance(
-        self, incoming: ObservedSnapshot, rules: Rules
-    ) -> Optional[_ExpectedAdvance]:
-        if self.shadow_observed is None or self.previous_suggestion is None:
-            return None
-
-        state = self.derived_state.to_game_state(self.shadow_observed)
-        if not state.apply_move(self.previous_suggestion, rules):
-            return None
-
-        expected_queue = list(state.queue)
-        if not _is_prefix(expected_queue, incoming.queue):
-            return None
-        new_pieces = incoming.queue[len(expected_queue) :]
-        state.queue.extend(new_pieces)
-
-        expected = ObservedSnapshot(
-            board=state.board.copy(),
-            active=state.active,
-            queue=list(state.queue),
-            hold=state.hold,
-            can_hold=True,
-            seq=incoming.seq,
-            last_move=self.previous_suggestion,
+        transition = classify_transition(
+            shadow_observed=self.shadow_observed,
+            incoming=incoming,
+            previous_suggestion=self.previous_suggestion,
+            derived_state=self.derived_state,
+            rules=request.rules,
         )
-        if _observed_pieces(incoming) != _observed_pieces(expected):
-            return None
-        return _ExpectedAdvance(snapshot=expected, state=state, new_pieces=new_pieces)
 
-    def _repair_piece_stream(self, incoming: ObservedSnapshot, rules: Rules) -> None:
-        incoming_pieces = _observed_pieces(incoming)
-        if self.shadow_observed is not None and incoming_pieces == _observed_pieces(
-            self.shadow_observed
-        ):
-            return
+        if transition.status == SuggestionStatus.Advanced:
+            assert transition.expected is not None
+            self.derived_state.update_from_confirmed(transition.expected.state)
+        elif transition.status == SuggestionStatus.Resynced:
+            self.derived_state.repair_or_reset(incoming, request.rules)
+        elif transition.bot_action == BotAction.Start:
+            self.derived_state = DerivedState.from_observed(incoming)
 
-        expected = self._expected_piece_advance(incoming, rules)
-        if expected is not None:
-            self.piece_stream.append(expected.new_pieces)
-            return
+        self._apply_piece_stream_action(transition, incoming)
+        return transition
 
-        self.piece_stream.resync(incoming_pieces)
+    def _apply_piece_stream_action(
+        self, transition: SessionTransition, incoming: ObservedSnapshot
+    ) -> None:
+        match transition.piece_stream_action:
+            case PieceStreamAction.Initialize:
+                self.piece_stream.initialize(observed_pieces(incoming))
+            case PieceStreamAction.Keep:
+                pass
+            case PieceStreamAction.Append:
+                assert transition.expected is not None
+                self.piece_stream.append(transition.expected.new_pieces)
+            case PieceStreamAction.Resync:
+                self.piece_stream.resync(observed_pieces(incoming))
+
+    def _apply_bot_action(
+        self, transition: SessionTransition, request: SuggestionRequest
+    ) -> None:
+        bot_snapshot = self._to_bot_snapshot(request.snapshot)
+        match transition.bot_action:
+            case BotAction.Start:
+                self.bot_session.start_from(bot_snapshot, request.rules)
+            case BotAction.Keep:
+                pass
+            case BotAction.Advance:
+                assert self.previous_suggestion is not None
+                assert transition.expected is not None
+                self.bot_session.advance_with(
+                    self.previous_suggestion, transition.expected.new_pieces
+                )
+            case BotAction.Reset:
+                self.bot_session.reset_from(bot_snapshot, request.rules)
 
     def _to_bot_snapshot(self, snapshot: ObservedSnapshot) -> BotSnapshot:
         return BotSnapshot(
@@ -222,11 +190,3 @@ class ClientSession:
         if len(snapshot.board.cols) != 10:
             return "board must have 10 columns"
         return None
-
-
-def _is_prefix(prefix: list[Piece], values: list[Piece]) -> bool:
-    return len(values) >= len(prefix) and values[: len(prefix)] == prefix
-
-
-def _observed_pieces(snapshot: ObservedSnapshot) -> list[Piece]:
-    return [snapshot.active.piece, *snapshot.queue]

@@ -12,7 +12,7 @@ from core.spin import Spin
 from game.rules import Rules
 from game.state import GameState, spawn_location
 from movegen.pathfinder import MoveStep
-from service.client_session import ClientSession
+from service.session import ClientSession
 from service.move_selection import pick_move
 from service.piece_stream import PieceStreamTracker
 from service.snapshot import (
@@ -249,7 +249,7 @@ class ServiceTests(unittest.TestCase):
         session = ClientSession(lambda: fake)
 
         with patch(
-            "service.client_session.find_path",
+            "service.session.client.find_path",
             return_value=[MoveStep.SonicDrop, MoveStep.HardDrop],
         ):
             result = session.suggest(

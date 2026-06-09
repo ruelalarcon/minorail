@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Callable
 
 from service.bot_session import BotSession
-from service.client_session import ClientSession
+from service.session import ClientSession
 from service.snapshot import SuggestionRequest, SuggestionResult
 
 
