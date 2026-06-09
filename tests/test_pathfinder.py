@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import unittest
 
-from core.board import Board
-from core.piece import Piece
-from movegen.pathfinder import MoveStep, convert_sonic_drops
+from tetris.model.board import Board
+from tetris.model.piece import Piece
+from tetris.model.rotation import Rotation
+from tetris.kicks.registry import register_kick_table
+from tetris.kicks.table import KickTable
+from tetris.movegen.pathfinder import MoveStep, convert_sonic_drops
+from tetris.movegen.rotation import try_rotate, try_rotate_180
 
 
 class PathfinderTests(unittest.TestCase):
@@ -16,6 +20,66 @@ class PathfinderTests(unittest.TestCase):
         self.assertEqual(
             converted,
             [MoveStep.Right] + [MoveStep.SoftDrop] * 19 + [MoveStep.HardDrop],
+        )
+
+    def test_o_rotation_is_controlled_by_kick_table(self) -> None:
+        board = Board()
+
+        self.assertIsNone(
+            try_rotate(
+                board,
+                Piece.O,
+                Rotation.North,
+                Rotation.East,
+                4,
+                19,
+                "srs",
+            )
+        )
+
+        register_kick_table(
+            "test_o_kicks",
+            KickTable(
+                kicks={
+                    Piece.O: {
+                        (Rotation.North, Rotation.East): ((0, 0),),
+                    }
+                }
+            ),
+        )
+
+        self.assertEqual(
+            try_rotate(
+                board,
+                Piece.O,
+                Rotation.North,
+                Rotation.East,
+                4,
+                19,
+                "test_o_kicks",
+            ),
+            (4, 19, Rotation.East),
+        )
+
+    def test_180_rotation_is_a_normal_transition(self) -> None:
+        board = Board()
+
+        self.assertIsNone(try_rotate_180(board, Piece.T, Rotation.North, 4, 19, "srs"))
+
+        register_kick_table(
+            "test_180_kicks",
+            KickTable(
+                kicks={
+                    Piece.T: {
+                        (Rotation.North, Rotation.South): ((0, 0),),
+                    }
+                }
+            ),
+        )
+
+        self.assertEqual(
+            try_rotate_180(board, Piece.T, Rotation.North, 4, 19, "test_180_kicks"),
+            (4, 19, Rotation.South),
         )
 
 

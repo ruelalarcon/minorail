@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 import unittest
 
-from core.piece import Piece
-from game.state import GameState, spawn_location
-from tbp.parser import parse
-from tbp.messages import MsgStart
+from tetris.model.piece import Piece
+from tetris.game.state import GameState, spawn_location
+from protocols.tbp.parser import parse
+from protocols.tbp.messages import MsgStart
 
 
 def empty_board() -> list[list[None]]:

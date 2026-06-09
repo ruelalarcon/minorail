@@ -3,25 +3,23 @@ from __future__ import annotations
 import unittest
 from unittest.mock import patch
 
-from core.board import Board
-from core.location import PieceLocation
-from core.piece import Piece
-from core.placement import Placement
-from core.rotation import Rotation
-from core.spin import Spin
-from game.rules import Rules
-from game.state import GameState, spawn_location
-from movegen.pathfinder import MoveStep
-from service.session import ClientSession
-from service.move_selection import pick_move
-from service.piece_stream import PieceStreamTracker
-from service.snapshot import (
-    BotSnapshot,
-    ObservedSnapshot,
-    SuggestionRequest,
-    SuggestionStatus,
-)
-from tbp.messages import BotCapabilities
+from tetris.model.board import Board
+from tetris.model.location import PieceLocation
+from tetris.model.piece import Piece
+from tetris.model.placement import Placement
+from tetris.model.rotation import Rotation
+from tetris.model.spin import Spin
+from tetris.model.rules import Rules
+from tetris.game.state import GameState, spawn_location
+from tetris.movegen.pathfinder import MoveStep
+from suggestion.session.client_session import ClientSession
+from suggestion.move_selection import pick_move
+from suggestion.piece_stream_tracker import PieceStreamTracker
+from suggestion.contracts.bot_snapshot import BotSnapshot
+from suggestion.contracts.observed_snapshot import ObservedSnapshot
+from suggestion.contracts.suggestion_request import SuggestionRequest
+from suggestion.contracts.suggestion_status import SuggestionStatus
+from protocols.tbp.messages import BotCapabilities
 
 
 def placement(
@@ -249,7 +247,7 @@ class ServiceTests(unittest.TestCase):
         session = ClientSession(lambda: fake)
 
         with patch(
-            "service.session.client.find_path",
+            "suggestion.session.client_session.find_path",
             return_value=[MoveStep.SonicDrop, MoveStep.HardDrop],
         ):
             result = session.suggest(

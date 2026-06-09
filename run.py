@@ -1,9 +1,11 @@
 import argparse
 import sys
 
-from engine import EngineSession
+from runner.engine_session import EngineSession
 import settings as cfg
-from visualizer import HeadlessVisualizer, TerminalVisualizer, WebVisualizer
+from visualizers.headless import HeadlessVisualizer
+from visualizers.terminal import TerminalVisualizer
+from visualizers.web import WebVisualizer
 
 
 class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
