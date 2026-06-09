@@ -1,9 +1,11 @@
 import argparse
+import asyncio
 import shlex
 import sys
 
 from runner.engine_session import EngineSession
 import settings as cfg
+from suggestion.websocket_api import SuggestionWebSocketServer
 from visualizers.headless import HeadlessVisualizer
 from visualizers.terminal import TerminalVisualizer
 from visualizers.web import WebVisualizer
@@ -50,7 +52,7 @@ def main() -> None:
         help="settings TOML file",
     )
 
-    display_group = parser.add_argument_group("display options")
+    display_group = parser.add_argument_group("visualization options")
     display = display_group.add_mutually_exclusive_group()
     display.add_argument(
         "--terminal",
@@ -80,10 +82,47 @@ def main() -> None:
         default=None,
         help="port for the web visualizer (default: auto)",
     )
+    api_group = parser.add_argument_group("api options")
+    api_group.add_argument(
+        "--ws",
+        action="store_true",
+        help="serve suggestions over a websocket API",
+    )
+    api_group.add_argument(
+        "--ws-host",
+        metavar="HOST",
+        default="127.0.0.1",
+        help="host for the websocket API",
+    )
+    api_group.add_argument(
+        "--ws-port",
+        metavar="PORT",
+        type=int,
+        default=8444,
+        help="port for the websocket API",
+    )
     args = parser.parse_args()
+    if args.ws and (args.terminal or args.web or args.headless):
+        parser.error("--ws cannot be combined with visualization modes")
 
     settings = cfg.load(args.settings)
     bot_args = shlex.split(args.bot_args)
+
+    if args.ws:
+        server = SuggestionWebSocketServer(
+            args.bot,
+            bot_args=bot_args,
+            settings=settings,
+            host=args.ws_host,
+            port=args.ws_port,
+        )
+        try:
+            asyncio.run(server.serve_forever())
+        except KeyboardInterrupt:
+            raise SystemExit(130) from None
+        finally:
+            server.close()
+        return
 
     total: int = 0
     web_visualizer = (
