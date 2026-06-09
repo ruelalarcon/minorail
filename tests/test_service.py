@@ -183,7 +183,7 @@ class ServiceTests(unittest.TestCase):
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )
 
-    def test_unexpected_transition_resets_bot(self) -> None:
+    def test_board_desync_resets_bot_without_losing_piece_stream_offset(self) -> None:
         fake = FakeBotSession(
             [[placement(Piece.O, 4, 0)], [placement(Piece.I, 0, 2, Rotation.East)]]
         )
@@ -201,8 +201,29 @@ class ServiceTests(unittest.TestCase):
         stream = fake.resets[0].piece_stream
         self.assertIsNotNone(stream)
         assert stream is not None
+        self.assertEqual(stream.offset, 0)
+        self.assertEqual(
+            stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
+        )
+
+    def test_unexpected_piece_chronology_resets_piece_stream_offset(self) -> None:
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.T, 4, 0)]])
+        session = ClientSession(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        changed = snapshot(
+            active=Piece.T, queue=[Piece.L, Piece.J, Piece.S, Piece.Z], seq=1
+        )
+        result = session.suggest(SuggestionRequest(snapshot=changed, rules=rules))
+
+        self.assertEqual(result.status, SuggestionStatus.Resynced)
+        self.assertEqual(len(fake.resets), 1)
+        stream = fake.resets[0].piece_stream
+        self.assertIsNotNone(stream)
+        assert stream is not None
         self.assertIsNone(stream.offset)
-        self.assertEqual(stream.pieces, [Piece.I, Piece.T, Piece.L, Piece.J, Piece.S])
+        self.assertEqual(stream.pieces, [Piece.T, Piece.L, Piece.J, Piece.S, Piece.Z])
 
     def test_piece_stream_trimming_adjusts_offset(self) -> None:
         tracker = PieceStreamTracker(limit=5)

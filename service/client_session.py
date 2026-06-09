@@ -150,10 +150,21 @@ class ClientSession:
             return SuggestionStatus.Advanced
 
         self.derived_state.repair_or_reset(incoming, request.rules)
-        self.piece_stream.resync(_observed_pieces(incoming))
+        self._repair_piece_stream(incoming, request.rules)
         return SuggestionStatus.Resynced
 
     def _expected_advance(
+        self, incoming: ObservedSnapshot, rules: Rules
+    ) -> Optional[_ExpectedAdvance]:
+        expected = self._expected_piece_advance(incoming, rules)
+        if expected is None:
+            return None
+
+        if not incoming.physically_equals(expected.snapshot):
+            return None
+        return expected
+
+    def _expected_piece_advance(
         self, incoming: ObservedSnapshot, rules: Rules
     ) -> Optional[_ExpectedAdvance]:
         if self.shadow_observed is None or self.previous_suggestion is None:
@@ -178,9 +189,23 @@ class ClientSession:
             seq=incoming.seq,
             last_move=self.previous_suggestion,
         )
-        if not incoming.physically_equals(expected):
+        if _observed_pieces(incoming) != _observed_pieces(expected):
             return None
         return _ExpectedAdvance(snapshot=expected, state=state, new_pieces=new_pieces)
+
+    def _repair_piece_stream(self, incoming: ObservedSnapshot, rules: Rules) -> None:
+        incoming_pieces = _observed_pieces(incoming)
+        if self.shadow_observed is not None and incoming_pieces == _observed_pieces(
+            self.shadow_observed
+        ):
+            return
+
+        expected = self._expected_piece_advance(incoming, rules)
+        if expected is not None:
+            self.piece_stream.append(expected.new_pieces)
+            return
+
+        self.piece_stream.resync(incoming_pieces)
 
     def _to_bot_snapshot(self, snapshot: ObservedSnapshot) -> BotSnapshot:
         return BotSnapshot(
