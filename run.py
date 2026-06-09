@@ -37,7 +37,7 @@ def main() -> None:
         "--bot-args",
         metavar="ARGS",
         default="",
-        help='extra arguments passed to the bot, as one string; '
+        help="extra arguments passed to the bot, as one string; "
         'use = when the value starts with a dash, e.g. --bot-args="--profile --nodes 5000"',
     )
     run_group.add_argument(

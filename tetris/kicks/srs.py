@@ -1,12 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from tetris.kicks.table import KickTable, TransitionKicks
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
-
-JLSTZ_PIECES = (Piece.J, Piece.L, Piece.S, Piece.T, Piece.Z)
 
 JLSTZ_KICKS: TransitionKicks = {
     (Rotation.North, Rotation.East): ((0, 0), (-1, 0), (-1, 1), (0, -2), (-1, -2)),
@@ -17,13 +13,6 @@ JLSTZ_KICKS: TransitionKicks = {
     (Rotation.West, Rotation.South): ((0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)),
     (Rotation.West, Rotation.North): ((0, 0), (-1, 0), (-1, -1), (0, 2), (-1, 2)),
     (Rotation.North, Rotation.West): ((0, 0), (1, 0), (1, 1), (0, -2), (1, -2)),
-}
-
-ZERO_180_KICKS: TransitionKicks = {
-    (Rotation.North, Rotation.South): ((0, 0),),
-    (Rotation.East, Rotation.West): ((0, 0),),
-    (Rotation.South, Rotation.North): ((0, 0),),
-    (Rotation.West, Rotation.East): ((0, 0),),
 }
 
 I_KICKS: TransitionKicks = {
@@ -37,17 +26,21 @@ I_KICKS: TransitionKicks = {
     (Rotation.North, Rotation.West): ((0, -1), (-1, -1), (2, -1), (-1, 1), (2, -2)),
 }
 
-
-def _same_transitions(
-    transitions: TransitionKicks, pieces: Sequence[Piece]
-) -> dict[Piece, TransitionKicks]:
-    return {piece: transitions for piece in pieces}
-
+ZERO_180_KICKS: TransitionKicks = {
+    (Rotation.North, Rotation.South): ((0, 0),),
+    (Rotation.East, Rotation.West): ((0, 0),),
+    (Rotation.South, Rotation.North): ((0, 0),),
+    (Rotation.West, Rotation.East): ((0, 0),),
+}
 
 SRS = KickTable(
     kicks={
         Piece.I: {**I_KICKS, **ZERO_180_KICKS},
         Piece.O: ZERO_180_KICKS,
-        **_same_transitions({**JLSTZ_KICKS, **ZERO_180_KICKS}, JLSTZ_PIECES),
+        Piece.J: {**JLSTZ_KICKS, **ZERO_180_KICKS},
+        Piece.L: {**JLSTZ_KICKS, **ZERO_180_KICKS},
+        Piece.S: {**JLSTZ_KICKS, **ZERO_180_KICKS},
+        Piece.T: {**JLSTZ_KICKS, **ZERO_180_KICKS},
+        Piece.Z: {**JLSTZ_KICKS, **ZERO_180_KICKS},
     }
 )
