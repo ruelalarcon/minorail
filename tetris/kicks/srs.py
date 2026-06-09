@@ -19,6 +19,13 @@ JLSTZ_KICKS: TransitionKicks = {
     (Rotation.North, Rotation.West): ((0, 0), (1, 0), (1, 1), (0, -2), (1, -2)),
 }
 
+ZERO_180_KICKS: TransitionKicks = {
+    (Rotation.North, Rotation.South): ((0, 0),),
+    (Rotation.East, Rotation.West): ((0, 0),),
+    (Rotation.South, Rotation.North): ((0, 0),),
+    (Rotation.West, Rotation.East): ((0, 0),),
+}
+
 I_KICKS: TransitionKicks = {
     (Rotation.North, Rotation.East): ((1, 0), (-1, 0), (2, 0), (-1, -1), (2, 2)),
     (Rotation.East, Rotation.North): ((-1, 0), (1, 0), (-2, 0), (1, 1), (-2, -2)),
@@ -39,7 +46,8 @@ def _same_transitions(
 
 SRS = KickTable(
     kicks={
-        Piece.I: I_KICKS,
-        **_same_transitions(JLSTZ_KICKS, JLSTZ_PIECES),
+        Piece.I: {**I_KICKS, **ZERO_180_KICKS},
+        Piece.O: ZERO_180_KICKS,
+        **_same_transitions({**JLSTZ_KICKS, **ZERO_180_KICKS}, JLSTZ_PIECES),
     }
 )

@@ -3,11 +3,13 @@ from __future__ import annotations
 import unittest
 
 from tetris.model.board import Board
+from tetris.model.location import PieceLocation
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
+from tetris.model.rules import Rules
 from tetris.kicks.registry import register_kick_table
 from tetris.kicks.table import KickTable
-from tetris.movegen.pathfinder import MoveStep, convert_sonic_drops
+from tetris.movegen.pathfinder import MoveStep, convert_sonic_drops, find_path
 from tetris.movegen.rotation import try_rotate, try_rotate_180
 
 
@@ -64,7 +66,10 @@ class PathfinderTests(unittest.TestCase):
     def test_180_rotation_is_a_normal_transition(self) -> None:
         board = Board()
 
-        self.assertIsNone(try_rotate_180(board, Piece.T, Rotation.North, 4, 19, "srs"))
+        self.assertEqual(
+            try_rotate_180(board, Piece.T, Rotation.North, 4, 19, "srs"),
+            (4, 19, Rotation.South),
+        )
 
         register_kick_table(
             "test_180_kicks",
@@ -80,6 +85,29 @@ class PathfinderTests(unittest.TestCase):
         self.assertEqual(
             try_rotate_180(board, Piece.T, Rotation.North, 4, 19, "test_180_kicks"),
             (4, 19, Rotation.South),
+        )
+
+    def test_srs_zero_180_preserves_reachable_spin_path(self) -> None:
+        board = Board(cols=[3, 7, 7, 7, 15, 6, 0, 3, 3, 7])
+        target = PieceLocation(Piece.J, Rotation.West, 6, 1)
+
+        path = find_path(
+            board,
+            Piece.J,
+            target,
+            Rules(kickset="srs", rot180=True, sonic_drop="only"),
+        )
+
+        self.assertEqual(
+            path,
+            [
+                MoveStep.Right,
+                MoveStep.Right,
+                MoveStep.RotCW,
+                MoveStep.SonicDrop,
+                MoveStep.Rot180,
+                MoveStep.HardDrop,
+            ],
         )
 
 
