@@ -7,7 +7,7 @@ from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from suggestion.contracts.piece_stream_snapshot import PieceStreamSnapshot
-from protocols.tbp.messages import (
+from protocols.sbp.messages import (
     MsgNewPiece,
     MsgPlay,
     MsgQuit,
@@ -64,7 +64,7 @@ def parse(line: str) -> Optional[FrontendMessage]:
                     pieces=[Piece(p) for p in piece_stream_raw.get("pieces", [])],
                 )
             return MsgStart(
-                board=Board.from_tbp(obj.get("board", [])),
+                board=Board.from_sbp(obj.get("board", [])),
                 active=active,
                 queue=queue,
                 hold=Piece(hold_raw) if hold_raw is not None else None,
@@ -73,7 +73,7 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 piece_stream=piece_stream,
             )
         case "play":
-            return MsgPlay(move=Placement.from_tbp(obj["move"]))
+            return MsgPlay(move=Placement.from_sbp(obj["move"]))
         case "new_piece":
             return MsgNewPiece(piece=Piece(obj["piece"]))
         case "suggest":

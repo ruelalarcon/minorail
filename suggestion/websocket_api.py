@@ -212,16 +212,16 @@ def _board(value: object) -> Board:
     if isinstance(value, list):
         if len(value) != 40:
             raise WebSocketApiError(
-                "invalid_request", "TBP board matrix must contain 40 rows"
+                "invalid_request", "SBP board matrix must contain 40 rows"
             )
         for y, row in enumerate(value):
             if not isinstance(row, list) or len(row) != 10:
                 raise WebSocketApiError(
-                    "invalid_request", f"TBP board row {y} must contain 10 cells"
+                    "invalid_request", f"SBP board row {y} must contain 10 cells"
                 )
-        return Board.from_tbp(value)
+        return Board.from_sbp(value)
     raise WebSocketApiError(
-        "invalid_request", "board must be {'cols': [...]} or a TBP row matrix"
+        "invalid_request", "board must be {'cols': [...]} or an SBP row matrix"
     )
 
 
@@ -291,10 +291,10 @@ def _optional_placement(value: object, field: str) -> Placement | None:
     if not isinstance(value, dict):
         raise WebSocketApiError("invalid_request", f"{field} must be an object")
     try:
-        return Placement.from_tbp(value)
+        return Placement.from_sbp(value)
     except (KeyError, TypeError, ValueError) as e:
         raise WebSocketApiError(
-            "invalid_request", f"{field} must be a TBP placement"
+            "invalid_request", f"{field} must be an SBP placement"
         ) from e
 
 
@@ -350,7 +350,7 @@ def _optional_output_placement(value: Placement | None) -> dict[str, Any] | None
 
 
 def _placement(value: Placement) -> dict[str, Any]:
-    return value.to_tbp()
+    return value.to_sbp()
 
 
 def _step(value: MoveStep) -> str:

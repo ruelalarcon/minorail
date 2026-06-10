@@ -12,12 +12,12 @@ class Placement:
     location: PieceLocation
     spin: Spin
 
-    def to_tbp(self) -> dict[str, Any]:
-        return {"location": self.location.to_tbp(), "spin": self.spin.value}
+    def to_sbp(self) -> dict[str, Any]:
+        return {"location": self.location.to_sbp(), "spin": self.spin.value}
 
     @staticmethod
-    def from_tbp(d: dict[str, Any]) -> Placement:
+    def from_sbp(d: dict[str, Any]) -> Placement:
         return Placement(
-            location=PieceLocation.from_tbp(d["location"]),
+            location=PieceLocation.from_sbp(d["location"]),
             spin=Spin(d["spin"]),
         )

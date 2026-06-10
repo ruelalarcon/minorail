@@ -19,7 +19,7 @@ from suggestion.contracts.bot_snapshot import BotSnapshot
 from suggestion.contracts.observed_snapshot import ObservedSnapshot
 from suggestion.contracts.suggestion_request import SuggestionRequest
 from suggestion.contracts.suggestion_status import SuggestionStatus
-from protocols.tbp.messages import BotCapabilities
+from protocols.sbp.messages import BotCapabilities
 
 
 def placement(
@@ -275,7 +275,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(result.path.count(MoveStep.SoftDrop), 19)
 
     def test_capabilities_validate_configured_rules(self) -> None:
-        capabilities = BotCapabilities.from_tbp(
+        capabilities = BotCapabilities.from_sbp(
             {
                 "randomizers": ["seven_bag"],
                 "kicksets": ["srs"],
@@ -290,7 +290,7 @@ class ServiceTests(unittest.TestCase):
         self.assertTrue(capabilities.piece_stream)
 
     def test_capabilities_reject_custom_spawn_without_support(self) -> None:
-        capabilities = BotCapabilities.from_tbp(
+        capabilities = BotCapabilities.from_sbp(
             {
                 "randomizers": ["seven_bag"],
                 "kicksets": ["srs"],
@@ -304,7 +304,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(error, "bot does not support custom spawn_position")
 
     def test_capabilities_reject_unsupported_rule(self) -> None:
-        capabilities = BotCapabilities.from_tbp(
+        capabilities = BotCapabilities.from_sbp(
             {
                 "randomizers": ["seven_bag"],
                 "kicksets": ["srs"],

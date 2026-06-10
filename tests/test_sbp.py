@@ -5,15 +5,15 @@ import unittest
 
 from tetris.model.piece import Piece
 from tetris.game.state import GameState, spawn_location
-from protocols.tbp.parser import parse
-from protocols.tbp.messages import MsgRules, MsgStart
+from protocols.sbp.parser import parse
+from protocols.sbp.messages import MsgRules, MsgStart
 
 
 def empty_board() -> list[list[None]]:
     return [[None] * 10 for _ in range(40)]
 
 
-class TbpParserTests(unittest.TestCase):
+class SbpParserTests(unittest.TestCase):
     def test_rules_accept_spawn_position(self) -> None:
         msg = parse(
             json.dumps(
@@ -57,7 +57,7 @@ class TbpParserTests(unittest.TestCase):
                     "type": "start",
                     "board": empty_board(),
                     "active": {
-                        "type": "T",
+                        "piece": "T",
                         "orientation": "north",
                         "x": 4,
                         "y": 19,

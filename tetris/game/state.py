@@ -15,7 +15,7 @@ from tetris.game.hold import Hold
 from tetris.game.line_clear import LineClear
 
 if TYPE_CHECKING:
-    from protocols.tbp.messages import MsgStart
+    from protocols.sbp.messages import MsgStart
 
 _ALL_PIECES = list(Piece)
 SPAWN_X = _spawn.SPAWN_X
@@ -35,7 +35,7 @@ class GameState:
 
     @staticmethod
     def from_start(msg: MsgStart) -> GameState:
-        """Build initial state from a TBP start message."""
+        """Build initial state from an SBP start message."""
         return GameState(
             board=msg.board.copy(),
             active=spawn_location(msg.active),

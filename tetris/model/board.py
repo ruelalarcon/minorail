@@ -15,8 +15,8 @@ class Board:
     cols: list[int] = field(default_factory=lambda: [0] * 10)
 
     @staticmethod
-    def from_tbp(rows: list[list[Optional[str]]]) -> Board:
-        """Parse TBP board: list of 40 rows (index 0 = bottom), each a list of
+    def from_sbp(rows: list[list[Optional[str]]]) -> Board:
+        """Parse SBP board: list of 40 rows (index 0 = bottom), each a list of
         10 cells (None = empty, any string = occupied)."""
         cols = [0] * 10
         for y, row in enumerate(rows):

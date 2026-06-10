@@ -18,18 +18,18 @@ class PieceLocation:
     def cells(self) -> tuple[tuple[int, int], ...]:
         return piece_cells(self.piece, self.rotation, self.x, self.y)
 
-    def to_tbp(self) -> dict[str, Any]:
+    def to_sbp(self) -> dict[str, Any]:
         return {
-            "type": self.piece.value,
+            "piece": self.piece.value,
             "orientation": self.rotation.value,
             "x": self.x,
             "y": self.y,
         }
 
     @staticmethod
-    def from_tbp(d: dict[str, Any]) -> PieceLocation:
+    def from_sbp(d: dict[str, Any]) -> PieceLocation:
         return PieceLocation(
-            piece=Piece(d["type"]),
+            piece=Piece(d.get("piece", d.get("type"))),
             rotation=Rotation(d["orientation"]),
             x=d["x"],
             y=d["y"],

@@ -101,8 +101,8 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(response["type"], "suggestion")
         self.assertEqual(response["seq"], 7)
         self.assertEqual(response["status"], "synced")
-        self.assertEqual(response["placement"], placement.to_tbp())
-        self.assertEqual(response["placements"], [placement.to_tbp()])
+        self.assertEqual(response["placement"], placement.to_sbp())
+        self.assertEqual(response["placements"], [placement.to_sbp()])
         self.assertEqual(response["path"], ["rot_180", "hard_drop"])
         self.assertIsNone(response["reason"])
 

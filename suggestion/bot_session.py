@@ -12,7 +12,7 @@ from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from suggestion.contracts.bot_snapshot import BotSnapshot
 from suggestion.contracts.piece_stream_snapshot import PieceStreamSnapshot
-from protocols.tbp.messages import BotCapabilities, MsgStart
+from protocols.sbp.messages import BotCapabilities, MsgStart
 
 
 class BotStartupError(RuntimeError):
@@ -39,7 +39,7 @@ class BotSession:
     def _on_bot_message(self, obj: dict[str, Any]) -> None:
         match obj.get("type"):
             case "register":
-                self._capabilities = BotCapabilities.from_tbp(obj.get("capabilities"))
+                self._capabilities = BotCapabilities.from_sbp(obj.get("capabilities"))
                 print(
                     f"[info] {obj.get('name')} {obj.get('version')} by {obj.get('author')}",
                     file=sys.stderr,
@@ -50,7 +50,7 @@ class BotSession:
             case "ready":
                 self._ready_event.set()
             case "suggestion":
-                self._suggestion = [Placement.from_tbp(m) for m in obj.get("moves", [])]
+                self._suggestion = [Placement.from_sbp(m) for m in obj.get("moves", [])]
                 self._suggestion_event.set()
             case "error":
                 print(f"[error] bot error: {obj.get('reason')}", file=sys.stderr)

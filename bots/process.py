@@ -9,11 +9,11 @@ from typing import Any, Callable, Optional
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
-from protocols.tbp.messages import MsgStart
+from protocols.sbp.messages import MsgStart
 
 
 class BotProcess:
-    """Wraps a TBP bot subprocess with a background reader thread."""
+    """Wraps an SBP bot subprocess with a background reader thread."""
 
     def __init__(
         self,
@@ -93,7 +93,7 @@ class BotProcess:
         self._send(obj)
 
     def send_play(self, placement: Placement) -> None:
-        self._send({"type": "play", "move": placement.to_tbp()})
+        self._send({"type": "play", "move": placement.to_sbp()})
 
     def send_new_piece(self, piece: Piece) -> None:
         self._send({"type": "new_piece", "piece": piece.value})

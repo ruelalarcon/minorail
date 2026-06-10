@@ -22,7 +22,7 @@ class BotCapabilities:
     spawn_position: bool = False
 
     @staticmethod
-    def from_tbp(value: object) -> "BotCapabilities":
+    def from_sbp(value: object) -> "BotCapabilities":
         if not isinstance(value, dict):
             return BotCapabilities()
         return BotCapabilities(
