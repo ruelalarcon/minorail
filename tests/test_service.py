@@ -105,6 +105,17 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(state.active.piece, Piece.I)
         self.assertEqual(state.queue, [Piece.T])
 
+    def test_apply_move_uses_custom_spawn_position_for_next_active(self) -> None:
+        state = GameState(
+            Board(), spawn_location(Piece.O), [Piece.I, Piece.T], None, 0, 0
+        )
+
+        self.assertTrue(
+            state.apply_move(placement(Piece.O, 4, 0), Rules(spawn_x=5, spawn_y=18))
+        )
+
+        self.assertEqual(state.active, spawn_location(Piece.I, x=5, y=18))
+
     def test_apply_move_failure_does_not_mutate_active_queue_or_hold(self) -> None:
         state = GameState(
             Board(), spawn_location(Piece.O), [Piece.I, Piece.T], None, 0, 0
@@ -271,11 +282,26 @@ class ServiceTests(unittest.TestCase):
                 "rot180": True,
                 "sonic_drop": ["only", "allow"],
                 "piece_stream": True,
+                "spawn_position": True,
             }
         )
 
         self.assertIsNone(capabilities.validate_rules(Rules()))
         self.assertTrue(capabilities.piece_stream)
+
+    def test_capabilities_reject_custom_spawn_without_support(self) -> None:
+        capabilities = BotCapabilities.from_tbp(
+            {
+                "randomizers": ["seven_bag"],
+                "kicksets": ["srs"],
+                "rot180": True,
+                "sonic_drop": ["only"],
+            }
+        )
+
+        error = capabilities.validate_rules(Rules(spawn_x=5))
+
+        self.assertEqual(error, "bot does not support custom spawn_position")
 
     def test_capabilities_reject_unsupported_rule(self) -> None:
         capabilities = BotCapabilities.from_tbp(

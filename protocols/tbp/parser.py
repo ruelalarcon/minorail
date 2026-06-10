@@ -46,6 +46,8 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 sonic_drop=obj.get("sonic_drop"),
                 allspin_b2b=obj.get("allspin_b2b"),
                 allclear_b2b=obj.get("allclear_b2b"),
+                spawn_x=obj.get("spawn_x"),
+                spawn_y=obj.get("spawn_y"),
             )
         case "start":
             hold_raw = obj.get("hold")

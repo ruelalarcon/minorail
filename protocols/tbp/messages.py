@@ -19,6 +19,7 @@ class BotCapabilities:
     rot180: bool = False
     sonic_drop: Optional[list[str]] = None
     piece_stream: bool = False
+    spawn_position: bool = False
 
     @staticmethod
     def from_tbp(value: object) -> "BotCapabilities":
@@ -30,6 +31,7 @@ class BotCapabilities:
             rot180=value.get("rot180") is True,
             sonic_drop=_string_list(value.get("sonic_drop")),
             piece_stream=value.get("piece_stream") is True,
+            spawn_position=value.get("spawn_position") is True,
         )
 
     def validate_rules(self, rules: Rules) -> Optional[str]:
@@ -50,6 +52,8 @@ class BotCapabilities:
                 f"bot does not support sonic_drop {rules.sonic_drop!r}; "
                 f"supported: {', '.join(self.sonic_drop) or 'none'}"
             )
+        if (rules.spawn_x, rules.spawn_y) != (4, 19) and not self.spawn_position:
+            return "bot does not support custom spawn_position"
         return None
 
 
@@ -67,6 +71,8 @@ class MsgRules:
     sonic_drop: Optional[str] = None
     allspin_b2b: Optional[bool] = None
     allclear_b2b: Optional[bool] = None
+    spawn_x: Optional[int] = None
+    spawn_y: Optional[int] = None
 
 
 @dataclass

@@ -5,6 +5,8 @@ rot180 = true             # allow 180-degree rotations (only effective if kickse
 sonic_drop = "only"       # "only" = sonic drop only, "allow" = sonic drop and soft drop
 allspin_b2b = true        # spins, including minis, of any piece contribute to back-to-back
 allclear_b2b = true       # all-clears contribute to back-to-back
+spawn_x = 4               # active piece spawn x coordinate
+spawn_y = 19              # active piece spawn y coordinate
 
 [protocol.start]
 piece_stream_limit = 11  # 0 omits piece_stream; otherwise send up to this many generated pieces

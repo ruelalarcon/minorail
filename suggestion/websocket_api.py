@@ -142,13 +142,14 @@ def request_from_json(
         )
 
     seq = _seq(obj.get("seq"))
+    rules = _rules(obj.get("rules"), base_rules)
     active = _piece(obj.get("active"), "active")
     queue = _piece_list(obj.get("queue", []), "queue")
     hold_raw = obj.get("hold")
     hold = None if hold_raw is None else _piece(hold_raw, "hold")
     snapshot = ObservedSnapshot(
         board=_board(obj.get("board")),
-        active=spawn_location(active),
+        active=spawn_location(active, x=rules.spawn_x, y=rules.spawn_y),
         queue=queue,
         hold=hold,
         can_hold=_bool(obj.get("can_hold", True), "can_hold"),
@@ -157,7 +158,7 @@ def request_from_json(
     )
     return SuggestionRequest(
         snapshot=snapshot,
-        rules=_rules(obj.get("rules"), base_rules),
+        rules=rules,
         include_path=_bool(obj.get("include_path", True), "include_path"),
         convert_sonic_drops=_bool(
             obj.get("convert_sonic_drops", default_convert_sonic_drops),
@@ -310,6 +311,8 @@ def _rules(value: object, base_rules: Rules) -> Rules:
         "sonic_drop",
         "allspin_b2b",
         "allclear_b2b",
+        "spawn_x",
+        "spawn_y",
     }
     unknown = sorted(set(value) - allowed)
     if unknown:
@@ -328,7 +331,16 @@ def _rules(value: object, base_rules: Rules) -> Rules:
     for field in ("rot180", "allspin_b2b", "allclear_b2b"):
         if field in value:
             updates[field] = _bool(value[field], f"rules.{field}")
+    for field in ("spawn_x", "spawn_y"):
+        if field in value:
+            updates[field] = _int(value[field], f"rules.{field}")
     return replace(base_rules, **updates)
+
+
+def _int(value: object, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise WebSocketApiError("invalid_request", f"{field} must be an integer")
+    return value
 
 
 def _optional_output_placement(value: Placement | None) -> dict[str, Any] | None:

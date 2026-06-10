@@ -24,6 +24,23 @@ class PathfinderTests(unittest.TestCase):
             [MoveStep.Right] + [MoveStep.SoftDrop] * 19 + [MoveStep.HardDrop],
         )
 
+    def test_convert_sonic_drop_uses_custom_spawn_y(self) -> None:
+        path = [MoveStep.SonicDrop, MoveStep.HardDrop]
+
+        converted = convert_sonic_drops(path, Board(), Piece.O, spawn_y=18)
+
+        self.assertEqual(converted, [MoveStep.SoftDrop] * 18 + [MoveStep.HardDrop])
+
+    def test_find_path_uses_custom_spawn_x(self) -> None:
+        path = find_path(
+            Board(),
+            Piece.O,
+            PieceLocation(Piece.O, Rotation.North, 4, 0),
+            Rules(spawn_x=5),
+        )
+
+        self.assertEqual(path, [MoveStep.Left, MoveStep.HardDrop])
+
     def test_o_rotation_is_controlled_by_kick_table(self) -> None:
         board = Board()
 

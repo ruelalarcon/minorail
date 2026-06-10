@@ -23,12 +23,12 @@ def find_path(
     rules: Rules,
 ) -> Optional[list[MoveStep]]:
     """
-    BFS from spawn (North, x=4, y=19) to the target placement.
+    BFS from the configured spawn to the target placement.
     Returns the move sequence ending with HardDrop, or None if unreachable.
     """
-    spawn_x, spawn_y, spawn_rot = 4, 19, Rotation.North
+    spawn_x, spawn_y, spawn_rot = rules.spawn_x, rules.spawn_y, Rotation.North
     if obstructed(board, piece, spawn_rot, spawn_x, spawn_y):
-        spawn_y = 20
+        spawn_y += 1
         if obstructed(board, piece, spawn_rot, spawn_x, spawn_y):
             return None
 
@@ -122,10 +122,12 @@ def convert_sonic_drops(
     board: Board,
     piece: Piece,
     kickset: str = "srs",
+    spawn_x: int = 4,
+    spawn_y: int = 19,
 ) -> list[MoveStep]:
-    spawn_x, spawn_y, spawn_rot = 4, 19, Rotation.North
+    spawn_rot = Rotation.North
     if obstructed(board, piece, spawn_rot, spawn_x, spawn_y):
-        spawn_y = 20
+        spawn_y += 1
 
     x, y, rotation = spawn_x, spawn_y, spawn_rot
     converted: list[MoveStep] = []

@@ -13,6 +13,8 @@ DEFAULT: dict[str, Any] = {
             "sonic_drop": "only",
             "allspin_b2b": False,
             "allclear_b2b": False,
+            "spawn_x": 4,
+            "spawn_y": 19,
         },
         "start": {
             "piece_stream_limit": 11,

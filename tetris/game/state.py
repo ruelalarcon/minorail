@@ -65,8 +65,11 @@ class GameState:
 
         if not hold_result.queue:
             return False
+        rules = rules or Rules()
         next_queue = list(hold_result.queue)
-        next_active = spawn_location(next_queue.pop(0))
+        next_active = spawn_location(
+            next_queue.pop(0), x=rules.spawn_x, y=rules.spawn_y
+        )
 
         loc = placement.location
         cells = piece_cells(loc.piece, loc.rotation, loc.x, loc.y)
@@ -86,7 +89,7 @@ class GameState:
             combo=self.combo,
             back_to_back=self.back_to_back,
             spin=placement.spin,
-            rules=rules or Rules(),
+            rules=rules,
         )
         self.combo = clear_result.combo
         self.back_to_back = clear_result.back_to_back

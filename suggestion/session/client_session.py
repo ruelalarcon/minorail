@@ -98,6 +98,8 @@ class ClientSession:
                         request.snapshot.board,
                         moving_piece,
                         request.rules.kickset,
+                        request.rules.spawn_x,
+                        request.rules.spawn_y,
                     )
             if path is None:
                 reason = "no path found for selected placement"

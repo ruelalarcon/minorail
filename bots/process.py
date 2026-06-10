@@ -65,6 +65,8 @@ class BotProcess:
                 "sonic_drop": rules.sonic_drop,
                 "allspin_b2b": rules.allspin_b2b,
                 "allclear_b2b": rules.allclear_b2b,
+                "spawn_x": rules.spawn_x,
+                "spawn_y": rules.spawn_y,
             }
         )
 

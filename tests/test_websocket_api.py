@@ -42,6 +42,24 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.snapshot.queue, [Piece.I, Piece.O])
         self.assertEqual(request.snapshot.board, Board([0] * 10))
 
+    def test_request_rules_can_override_spawn_position(self) -> None:
+        request = request_from_json(
+            {
+                "type": "suggest",
+                "seq": 7,
+                "board": {"cols": [0] * 10},
+                "active": "T",
+                "queue": ["I", "O"],
+                "rules": {"spawn_x": 5, "spawn_y": 18},
+            },
+            base_rules=Rules(),
+        )
+
+        self.assertEqual(request.rules.spawn_x, 5)
+        self.assertEqual(request.rules.spawn_y, 18)
+        self.assertEqual(request.snapshot.active.x, 5)
+        self.assertEqual(request.snapshot.active.y, 18)
+
     def test_request_rejects_active_location_object(self) -> None:
         with self.assertRaises(WebSocketApiError) as cm:
             request_from_json(

@@ -77,7 +77,9 @@ class EngineSession:
         rand = make_randomizer(self._rules.randomizer)
         assert rand is not None
         self._rand: Randomizer = rand
-        active = spawn_location(self._rand.next())
+        active = spawn_location(
+            self._rand.next(), x=self._rules.spawn_x, y=self._rules.spawn_y
+        )
         self.state = GameState(
             board=Board(),
             active=active,
