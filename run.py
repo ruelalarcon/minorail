@@ -150,9 +150,9 @@ def main() -> None:
                 visualizer=visualizer,
             ).play_game()
             print(
-                f"Pieces: {stats['pieces']}  "
-                f"Time: {stats.get('elapsed', 0):.1f}s  "
-                f"PPS: {stats.get('pps', 0):.2f}",
+                f"[info] pieces={stats['pieces']} "
+                f"elapsed={stats.get('elapsed', 0):.1f}s "
+                f"pps={stats.get('pps', 0):.2f}",
                 file=sys.stderr,
             )
             total += int(stats["pieces"])
