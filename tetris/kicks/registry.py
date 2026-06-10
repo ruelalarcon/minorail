@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from tetris.kicks.srs import SRS
+from tetris.kicks.srs_plus import SRS_PLUS
 from tetris.kicks.table import KickTable
 
 _KICK_TABLES: dict[str, KickTable] = {
     "srs": SRS,
+    "srs_plus": SRS_PLUS,
 }
 
 
