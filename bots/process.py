@@ -90,6 +90,8 @@ class BotProcess:
                 "offset": msg.piece_stream.offset,
                 "pieces": [p.value for p in msg.piece_stream.pieces],
             }
+        if msg.extensions is not None:
+            obj["extensions"] = msg.extensions
         self._send(obj)
 
     def send_play(self, placement: Placement) -> None:
@@ -98,8 +100,11 @@ class BotProcess:
     def send_new_piece(self, piece: Piece) -> None:
         self._send({"type": "new_piece", "piece": piece.value})
 
-    def send_suggest(self) -> None:
-        self._send({"type": "suggest"})
+    def send_suggest(self, extensions: dict[str, Any] | None = None) -> None:
+        obj: dict[str, Any] = {"type": "suggest"}
+        if extensions is not None:
+            obj["extensions"] = extensions
+        self._send(obj)
 
     def send_stop(self) -> None:
         self._send({"type": "stop"})

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 from tetris.model.rules import Rules
 from suggestion.contracts.observed_snapshot import ObservedSnapshot
@@ -8,6 +9,7 @@ from suggestion.contracts.observed_snapshot import ObservedSnapshot
 class SuggestionRequest:
     snapshot: ObservedSnapshot
     rules: Rules
+    extensions: dict[str, Any] | None = None
     include_path: bool = True
     convert_sonic_drops: bool = False
     session_id: str = "default"

@@ -60,6 +60,40 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.snapshot.active.x, 5)
         self.assertEqual(request.snapshot.active.y, 18)
 
+    def test_request_accepts_extensions_object(self) -> None:
+        extensions = {"minorail.garbage.v1": {"incoming_garbage": 4}}
+        request = request_from_json(
+            {
+                "type": "suggest",
+                "seq": 7,
+                "board": {"cols": [0] * 10},
+                "active": "T",
+                "queue": ["I", "O"],
+                "extensions": extensions,
+            },
+            base_rules=Rules(),
+        )
+
+        self.assertEqual(request.extensions, extensions)
+        self.assertIsNot(request.extensions, extensions)
+
+    def test_request_rejects_non_object_extensions(self) -> None:
+        with self.assertRaises(WebSocketApiError) as cm:
+            request_from_json(
+                {
+                    "type": "suggest",
+                    "seq": 7,
+                    "board": {"cols": [0] * 10},
+                    "active": "T",
+                    "queue": ["I", "O"],
+                    "extensions": ["minorail.garbage.v1"],
+                },
+                base_rules=Rules(),
+            )
+
+        self.assertEqual(cm.exception.reason, "invalid_request")
+        self.assertEqual(cm.exception.message, "extensions must be an object")
+
     def test_request_rejects_active_location_object(self) -> None:
         with self.assertRaises(WebSocketApiError) as cm:
             request_from_json(

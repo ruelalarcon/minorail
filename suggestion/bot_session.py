@@ -87,17 +87,20 @@ class BotSession:
                 combo=snapshot.combo,
                 back_to_back=snapshot.back_to_back,
                 piece_stream=self._start_piece_stream(snapshot.piece_stream),
+                extensions=snapshot.extensions,
             )
         )
 
-    def suggest(self, timeout_ms: int) -> list[Placement]:
+    def suggest(
+        self, timeout_ms: int, extensions: dict[str, Any] | None = None
+    ) -> list[Placement]:
         if self._bot is None:
             raise RuntimeError("bot session has not been started")
         deadline = time.time() + timeout_ms / 1000
         while time.time() < deadline:
             self._suggestion_event.clear()
             self._suggestion = None
-            self._bot.send_suggest()
+            self._bot.send_suggest(extensions)
             wait_time = min(5.0, max(0.0, deadline - time.time()))
             if not self._suggestion_event.wait(timeout=wait_time):
                 return []

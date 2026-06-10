@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from tetris.model.board import Board
 from tetris.model.piece import Piece
@@ -84,6 +84,7 @@ class MsgStart:
     combo: int
     back_to_back: int
     piece_stream: Optional["PieceStreamSnapshot"] = None
+    extensions: dict[str, Any] | None = None
 
 
 @dataclass
@@ -98,7 +99,7 @@ class MsgNewPiece:
 
 @dataclass
 class MsgSuggest:
-    pass
+    extensions: dict[str, Any] | None = None
 
 
 @dataclass

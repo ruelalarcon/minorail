@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from tetris.model.board import Board
 from tetris.model.piece import Piece
@@ -17,3 +17,4 @@ class BotSnapshot:
     combo: int
     back_to_back: int
     piece_stream: Optional[PieceStreamSnapshot] = None
+    extensions: dict[str, Any] | None = None

@@ -159,6 +159,7 @@ def request_from_json(
     return SuggestionRequest(
         snapshot=snapshot,
         rules=rules,
+        extensions=_extensions(obj.get("extensions")),
         include_path=_bool(obj.get("include_path", True), "include_path"),
         convert_sonic_drops=_bool(
             obj.get("convert_sonic_drops", default_convert_sonic_drops),
@@ -335,6 +336,14 @@ def _rules(value: object, base_rules: Rules) -> Rules:
         if field in value:
             updates[field] = _int(value[field], f"rules.{field}")
     return replace(base_rules, **updates)
+
+
+def _extensions(value: object) -> dict[str, Any] | None:
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise WebSocketApiError("invalid_request", "extensions must be an object")
+    return dict(value)
 
 
 def _int(value: object, field: str) -> int:

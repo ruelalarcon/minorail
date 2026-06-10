@@ -71,16 +71,23 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 combo=_counter(obj.get("combo", 0)),
                 back_to_back=_counter(obj.get("back_to_back", 0)),
                 piece_stream=piece_stream,
+                extensions=_extensions(obj.get("extensions")),
             )
         case "play":
             return MsgPlay(move=Placement.from_sbp(obj["move"]))
         case "new_piece":
             return MsgNewPiece(piece=Piece(obj["piece"]))
         case "suggest":
-            return MsgSuggest()
+            return MsgSuggest(extensions=_extensions(obj.get("extensions")))
         case "stop":
             return MsgStop()
         case "quit":
             return MsgQuit()
         case _:
             return None
+
+
+def _extensions(value: object) -> Optional[dict[str, object]]:
+    if isinstance(value, dict):
+        return dict(value)
+    return None

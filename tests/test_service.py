@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import unittest
+from typing import Any
 from unittest.mock import patch
 
 from tetris.model.board import Board
@@ -54,13 +55,17 @@ class FakeBotSession:
         self.started: list[BotSnapshot] = []
         self.resets: list[BotSnapshot] = []
         self.advanced: list[tuple[Placement, list[Piece]]] = []
+        self.suggested_extensions: list[dict[str, Any] | None] = []
         self.stopped = False
         self.closed = False
 
     def start_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
         self.started.append(snapshot)
 
-    def suggest(self, timeout_ms: int) -> list[Placement]:
+    def suggest(
+        self, timeout_ms: int, extensions: dict[str, Any] | None = None
+    ) -> list[Placement]:
+        self.suggested_extensions.append(extensions)
         if not self.suggestions:
             return []
         return self.suggestions.pop(0)
@@ -149,6 +154,23 @@ class ServiceTests(unittest.TestCase):
         )
         self.assertEqual(fake.started[0].combo, 0)
         self.assertEqual(fake.started[0].back_to_back, 0)
+
+    def test_extensions_are_forwarded_to_start_and_suggest(self) -> None:
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
+        session = ClientSession(lambda: fake)
+        extensions = {"minorail.garbage.v1": {"incoming_garbage": 4}}
+
+        session.suggest(
+            SuggestionRequest(
+                snapshot=snapshot(),
+                rules=Rules(),
+                extensions=extensions,
+            )
+        )
+
+        self.assertEqual(fake.started[0].extensions, extensions)
+        self.assertIsNot(fake.started[0].extensions, extensions)
+        self.assertEqual(fake.suggested_extensions, [extensions])
 
     def test_expected_transition_advances_bot_with_new_piece(self) -> None:
         first = placement(Piece.O, 4, 0)

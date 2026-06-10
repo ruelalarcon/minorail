@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Optional, Protocol
+from typing import Any, Callable, Optional, Protocol
 
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
@@ -26,7 +26,9 @@ from suggestion.contracts.suggestion_status import SuggestionStatus
 class BotSessionLike(Protocol):
     def start_from(self, snapshot: BotSnapshot, rules: Rules) -> None: ...
 
-    def suggest(self, timeout_ms: int) -> list[Placement]: ...
+    def suggest(
+        self, timeout_ms: int, extensions: dict[str, Any] | None = None
+    ) -> list[Placement]: ...
 
     def advance_with(
         self, placement: Placement, new_pieces: list[Piece] | None = None
@@ -69,7 +71,7 @@ class ClientSession:
         transition = self._sync_to_request(request)
         self._apply_bot_action(transition, request)
 
-        moves = self.bot_session.suggest(request.timeout_ms)
+        moves = self.bot_session.suggest(request.timeout_ms, request.extensions)
         chosen = pick_move(moves, request.snapshot)
         if chosen is None:
             self.latest_observed = request.snapshot.copy()
@@ -160,7 +162,7 @@ class ClientSession:
     def _apply_bot_action(
         self, transition: SessionTransition, request: SuggestionRequest
     ) -> None:
-        bot_snapshot = self._to_bot_snapshot(request.snapshot)
+        bot_snapshot = self._to_bot_snapshot(request.snapshot, request.extensions)
         match transition.bot_action:
             case BotAction.Start:
                 self.bot_session.start_from(bot_snapshot, request.rules)
@@ -175,7 +177,9 @@ class ClientSession:
             case BotAction.Reset:
                 self.bot_session.reset_from(bot_snapshot, request.rules)
 
-    def _to_bot_snapshot(self, snapshot: ObservedSnapshot) -> BotSnapshot:
+    def _to_bot_snapshot(
+        self, snapshot: ObservedSnapshot, extensions: dict[str, Any] | None = None
+    ) -> BotSnapshot:
         return BotSnapshot(
             board=snapshot.board.copy(),
             active=snapshot.active.piece,
@@ -184,6 +188,7 @@ class ClientSession:
             combo=self.derived_state.combo,
             back_to_back=self.derived_state.back_to_back,
             piece_stream=self.piece_stream.snapshot(),
+            extensions=None if extensions is None else dict(extensions),
         )
 
     def _validate(self, snapshot: ObservedSnapshot) -> Optional[str]:
