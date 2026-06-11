@@ -12,6 +12,12 @@ Minorail also exposes the same suggestion flow over websockets, allowing you to
 easily connect real game clients to your SBP bot by sending game state updates
 to Minorail's websocket API.
 
+# Screenshots
+
+<img width="auto" height="500" alt="web_visualizer" src="https://github.com/user-attachments/assets/394f76be-7d1b-4f49-b2b0-182a9ebe22b4" />
+
+<img width="auto" height="500" alt="terminal_visualizer" src="https://github.com/user-attachments/assets/e288fa1d-a836-4c7a-a8c5-2b076a14a2be" />
+
 ## Features
 
 | Feature | What it does |
