@@ -6,8 +6,11 @@ Minorail provides an SBP bot a complete local game to play against. Minorail own
 board, active piece, queue, hold state, rules, and sequence numbers, while the
 bot focuses on choosing placements. It can reconcile queue and board state
 across requests, repair desyncs when observed state changes unexpectedly,
-generate movement paths for selected placements, and expose the same suggestion
-flow over a websocket API.
+generate movement paths for selected placements.
+
+Minorail also exposes the same suggestion flow over websockets, allowing you to
+easily connect real game clients to your SBP bot by sending game state updates
+to Minorail's websocket API.
 
 ## Features
 
