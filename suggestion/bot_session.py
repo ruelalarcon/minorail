@@ -191,4 +191,5 @@ class BotSession:
         if not isinstance(topic, str) or topic not in self._info_print_topics:
             return
         data = obj.get("data")
-        print(f"[bot info:{topic}] {json.dumps(data)}", file=sys.stderr)
+        text = data if isinstance(data, str) else json.dumps(data)
+        print(f"[bot info:{topic}] {text}", file=sys.stderr)
