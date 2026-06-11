@@ -3,10 +3,14 @@ from __future__ import annotations
 import json
 import unittest
 from typing import Any
+from unittest.mock import patch
 
+from suggestion.bot_session import BotSession
+from suggestion.contracts.bot_snapshot import BotSnapshot
 from bots.process import BotProcess
 from tetris.model.board import Board
 from tetris.model.piece import Piece
+from tetris.model.rules import Rules
 from tetris.game.state import GameState, spawn_location
 from protocols.sbp.parser import parse
 from protocols.sbp.messages import MsgRules, MsgStart, MsgSuggest
@@ -116,6 +120,70 @@ class SbpParserTests(unittest.TestCase):
 
         self.assertEqual(sent[0]["extensions"], extensions)
         self.assertEqual(sent[1], {"type": "suggest", "extensions": extensions})
+
+    def test_bot_session_reset_reuses_process_with_stop_start(self) -> None:
+        class FakeProcess:
+            instances: list["FakeProcess"] = []
+
+            def __init__(
+                self, exe_path: str, on_message: Any, exe_args: list[str] | None = None
+            ) -> None:
+                self.sent: list[str] = []
+                self.alive = True
+                self._on_message = on_message
+                FakeProcess.instances.append(self)
+                on_message(
+                    {
+                        "type": "register",
+                        "capabilities": {
+                            "randomizers": ["seven_bag"],
+                            "kicksets": ["srs"],
+                            "rot180": True,
+                            "sonic_drop": ["only"],
+                        },
+                    }
+                )
+
+            def send_rules(self, rules: Rules) -> None:
+                self.sent.append("rules")
+                self._on_message({"type": "ready"})
+
+            def send_start(self, msg: MsgStart) -> None:
+                self.sent.append(f"start:{msg.active.value}")
+
+            def send_stop(self) -> None:
+                self.sent.append("stop")
+
+            def send_quit(self) -> None:
+                self.sent.append("quit")
+
+            def wait(self, timeout: float = 5.0) -> None:
+                self.sent.append("wait")
+                self.alive = False
+
+            def is_alive(self) -> bool:
+                return self.alive
+
+        first = BotSnapshot(Board(), Piece.T, [Piece.I], None, 0, 0)
+        second = BotSnapshot(Board(), Piece.O, [Piece.L], None, 0, 0)
+
+        with patch("suggestion.bot_session.BotProcess", FakeProcess):
+            session = BotSession("fake-bot")
+            session.start_from(first, Rules())
+            session.reset_from(second, Rules())
+
+            self.assertEqual(len(FakeProcess.instances), 1)
+            self.assertEqual(
+                FakeProcess.instances[0].sent,
+                ["rules", "start:T", "stop", "start:O"],
+            )
+
+            session.close()
+
+        self.assertEqual(
+            FakeProcess.instances[0].sent,
+            ["rules", "start:T", "stop", "start:O", "quit", "wait"],
+        )
 
     def test_start_rejects_active_location_object(self) -> None:
         msg = parse(

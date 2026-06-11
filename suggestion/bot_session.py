@@ -35,6 +35,7 @@ class BotSession:
         self._suggestion_event = threading.Event()
         self._suggestion: Optional[list[Placement]] = None
         self._capabilities = BotCapabilities()
+        self._rules: Optional[Rules] = None
 
     def _on_bot_message(self, obj: dict[str, Any]) -> None:
         match obj.get("type"):
@@ -56,40 +57,8 @@ class BotSession:
                 print(f"[error] bot error: {obj.get('reason')}", file=sys.stderr)
 
     def start_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
-        self.close()
-        self._register_event.clear()
-        self._ready_event.clear()
-        self._suggestion_event.clear()
-        self._suggestion = None
-        self._capabilities = BotCapabilities()
-        self._bot = BotProcess(
-            self._bot_path, self._on_bot_message, exe_args=self._bot_args
-        )
-        if not self._register_event.wait(timeout=5.0):
-            self.close()
-            raise BotStartupError("bot did not send register")
-
-        capability_error = self._capabilities.validate_rules(rules)
-        if capability_error is not None:
-            self.close()
-            raise BotStartupError(capability_error)
-
-        self._bot.send_rules(rules)
-        if not self._ready_event.wait(timeout=5.0):
-            self.close()
-            raise BotStartupError("bot did not send ready")
-        self._bot.send_start(
-            MsgStart(
-                board=snapshot.board.copy(),
-                active=snapshot.active,
-                queue=list(snapshot.queue),
-                hold=snapshot.hold,
-                combo=snapshot.combo,
-                back_to_back=snapshot.back_to_back,
-                piece_stream=self._start_piece_stream(snapshot.piece_stream),
-                extensions=snapshot.extensions,
-            )
-        )
+        self._ensure_ready(rules)
+        self._send_start(snapshot)
 
     def suggest(
         self, timeout_ms: int, extensions: dict[str, Any] | None = None
@@ -120,7 +89,15 @@ class BotSession:
             self._bot.send_new_piece(piece)
 
     def reset_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
-        self.start_from(snapshot, rules)
+        self._ensure_process()
+        self._validate_rules(rules)
+        assert self._bot is not None
+        try:
+            self._bot.send_stop()
+        except (BrokenPipeError, OSError, RuntimeError):
+            self.close()
+        self._ensure_ready(rules)
+        self._send_start(snapshot)
 
     def stop(self) -> None:
         if self._bot is not None and self._bot.is_alive():
@@ -139,6 +116,64 @@ class BotSession:
                 pass
         self._bot.wait(timeout=3.0)
         self._bot = None
+        self._rules = None
+
+    def _ensure_ready(self, rules: Rules) -> None:
+        self._ensure_process()
+        self._validate_rules(rules)
+
+        if self._rules == rules:
+            return
+
+        assert self._bot is not None
+        self._ready_event.clear()
+        self._bot.send_rules(rules)
+        if not self._ready_event.wait(timeout=5.0):
+            self.close()
+            raise BotStartupError("bot did not send ready")
+        self._rules = rules
+
+    def _ensure_process(self) -> None:
+        if self._bot is not None and self._bot.is_alive():
+            return
+
+        self.close()
+        self._register_event.clear()
+        self._ready_event.clear()
+        self._clear_suggestion()
+        self._capabilities = BotCapabilities()
+        self._bot = BotProcess(
+            self._bot_path, self._on_bot_message, exe_args=self._bot_args
+        )
+        if not self._register_event.wait(timeout=5.0):
+            self.close()
+            raise BotStartupError("bot did not send register")
+
+    def _validate_rules(self, rules: Rules) -> None:
+        capability_error = self._capabilities.validate_rules(rules)
+        if capability_error is not None:
+            self.close()
+            raise BotStartupError(capability_error)
+
+    def _send_start(self, snapshot: BotSnapshot) -> None:
+        assert self._bot is not None
+        self._clear_suggestion()
+        self._bot.send_start(
+            MsgStart(
+                board=snapshot.board.copy(),
+                active=snapshot.active,
+                queue=list(snapshot.queue),
+                hold=snapshot.hold,
+                combo=snapshot.combo,
+                back_to_back=snapshot.back_to_back,
+                piece_stream=self._start_piece_stream(snapshot.piece_stream),
+                extensions=snapshot.extensions,
+            )
+        )
+
+    def _clear_suggestion(self) -> None:
+        self._suggestion_event.clear()
+        self._suggestion = None
 
     def _start_piece_stream(
         self, piece_stream: Optional[PieceStreamSnapshot]
