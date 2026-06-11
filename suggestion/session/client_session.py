@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 from typing import Any, Callable, Optional, Protocol
 
 from tetris.model.piece import Piece
@@ -138,6 +139,7 @@ class ClientSession:
             assert transition.expected is not None
             self.derived_state.update_from_confirmed(transition.expected.state)
         elif transition.status == SuggestionStatus.Resynced:
+            self._log_resync(transition, incoming)
             self.derived_state.repair_or_reset(incoming, request.rules)
         elif transition.bot_action == BotAction.Start:
             self.derived_state = DerivedState.from_observed(incoming)
@@ -195,3 +197,18 @@ class ClientSession:
         if len(snapshot.board.cols) != 10:
             return "board must have 10 columns"
         return None
+
+    def _log_resync(
+        self, transition: SessionTransition, incoming: ObservedSnapshot
+    ) -> None:
+        resync_type = (
+            transition.resync_type.value if transition.resync_type else "unknown"
+        )
+        print(
+            "[info] minorail resync: "
+            f"type={resync_type} "
+            f"seq={incoming.seq} "
+            f"bot_action={transition.bot_action.value} "
+            f"piece_stream_action={transition.piece_stream_action.value}",
+            file=sys.stderr,
+        )

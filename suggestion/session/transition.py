@@ -27,6 +27,12 @@ class PieceStreamAction(Enum):
     Resync = "resync"
 
 
+class ResyncType(Enum):
+    BoardChangedSamePieceStream = "board_changed_same_piece_stream"
+    BoardChangedAfterExpectedAdvance = "board_changed_after_expected_advance"
+    PieceStreamChangedUnexpectedly = "piece_stream_changed_unexpectedly"
+
+
 @dataclass
 class ExpectedAdvance:
     snapshot: ObservedSnapshot
@@ -40,6 +46,7 @@ class SessionTransition:
     bot_action: BotAction
     piece_stream_action: PieceStreamAction
     expected: Optional[ExpectedAdvance] = None
+    resync_type: Optional[ResyncType] = None
 
 
 def classify_transition(
@@ -79,6 +86,7 @@ def classify_transition(
             status=SuggestionStatus.Resynced,
             bot_action=BotAction.Reset,
             piece_stream_action=PieceStreamAction.Keep,
+            resync_type=ResyncType.BoardChangedSamePieceStream,
         )
 
     if expected is not None:
@@ -87,12 +95,14 @@ def classify_transition(
             bot_action=BotAction.Reset,
             piece_stream_action=PieceStreamAction.Append,
             expected=expected,
+            resync_type=ResyncType.BoardChangedAfterExpectedAdvance,
         )
 
     return SessionTransition(
         status=SuggestionStatus.Resynced,
         bot_action=BotAction.Reset,
         piece_stream_action=PieceStreamAction.Resync,
+        resync_type=ResyncType.PieceStreamChangedUnexpectedly,
     )
 
 

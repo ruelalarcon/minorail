@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import io
 import unittest
+from contextlib import redirect_stderr
 from typing import Any
 from unittest.mock import patch
 
@@ -225,9 +227,16 @@ class ServiceTests(unittest.TestCase):
         changed = snapshot(
             active=Piece.I, queue=[Piece.T, Piece.L, Piece.J, Piece.S], seq=1
         )
-        result = session.suggest(SuggestionRequest(snapshot=changed, rules=rules))
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = session.suggest(SuggestionRequest(snapshot=changed, rules=rules))
 
         self.assertEqual(result.status, SuggestionStatus.Resynced)
+        self.assertIn(
+            "[info] minorail resync: type=board_changed_after_expected_advance seq=1 "
+            "bot_action=reset piece_stream_action=append",
+            stderr.getvalue(),
+        )
         self.assertEqual(len(fake.resets), 1)
         stream = fake.resets[0].piece_stream
         self.assertIsNotNone(stream)
