@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Minorail Documentation</title>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+        <meta
+            name="description"
+            content="Documentation for Minorail"
+        />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, minimum-scale=1.0"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css"
+        />
+        <style>
+            :root {
+                --sidebar-width: 22rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app"></div>
+        <script>
+            window.$docsify = {
+                name: "Minorail",
+                repo: "ruelalarcon/minorail",
+                loadSidebar: true,
+                subMaxLevel: 3,
+                auto2top: true,
+                search: {
+                    placeholder: "Search documentation...",
+                    noData: "No results found.",
+                    depth: 6,
+                },
+                copyCode: {
+                    buttonText: "Copy",
+                    errorText: "Error",
+                    successText: "Copied!",
+                },
+                pagination: {
+                    previousText: "Previous",
+                    nextText: "Next",
+                    crossChapter: true,
+                    crossChapterText: true,
+                },
+            };
+        </script>
+        <!-- Docsify core -->
+        <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+        <!-- Search plugin -->
+        <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+        <!-- Copy code plugin -->
+        <script src="//cdn.jsdelivr.net/npm/docsify-copy-code@2"></script>
+        <!-- Pagination plugin -->
+        <script src="//cdn.jsdelivr.net/npm/docsify-pagination@2/dist/docsify-pagination.min.js"></script>
+        <!-- Zoom image plugin -->
+        <script src="//cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
+    </body>
+</html>
