@@ -72,7 +72,7 @@ class EngineSession:
             bot_args=self._bot_args,
             piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
             info_print_topics=bot_info_cfg.get("print", ["warning"]),
-            idle_ms=bot_cfg.get("idle_ms", 20_000),
+            idle_ms=bot_cfg.get("idle_ms", 60_000),
         )
 
         self._rules = Rules.from_settings(self._settings)

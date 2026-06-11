@@ -15,7 +15,7 @@ class SuggestionService:
         bot_args: list[str] | None = None,
         piece_stream_limit: int = 11,
         info_print_topics: list[str] | None = None,
-        idle_ms: int = 20_000,
+        idle_ms: int = 60_000,
     ) -> None:
         self._bot_path = bot_path
         self._bot_args = bot_args or []

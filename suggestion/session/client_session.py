@@ -51,7 +51,7 @@ class ClientSession:
         self,
         bot_session_factory: BotSessionFactory,
         piece_stream_limit: int = 11,
-        idle_ms: int = 20_000,
+        idle_ms: int = 60_000,
     ) -> None:
         self._lock = threading.RLock()
         self._idle_s = idle_ms / 1000

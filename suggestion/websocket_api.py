@@ -48,7 +48,7 @@ class SuggestionWebSocketServer:
             bot_args=bot_args,
             piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
             info_print_topics=bot_info_cfg.get("print", ["warning"]),
-            idle_ms=bot_cfg.get("idle_ms", 20_000),
+            idle_ms=bot_cfg.get("idle_ms", 60_000),
         )
         service_path_cfg = settings.get("service", {}).get("path", {})
         self._convert_sonic_drops = service_path_cfg.get("convert_sonic_drops", False)

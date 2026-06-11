@@ -329,7 +329,7 @@ class ServiceTests(unittest.TestCase):
         first_move = placement(Piece.O, 4, 0)
         fake = FakeBotSession([[first_move], [placement(Piece.I, 0, 2, Rotation.East)]])
         with patch("suggestion.session.client_session.threading.Timer", FakeTimer):
-            session = ClientSession(lambda: fake, idle_ms=20_000)
+            session = ClientSession(lambda: fake, idle_ms=60_000)
             rules = Rules()
 
             first = session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
