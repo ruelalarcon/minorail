@@ -17,6 +17,49 @@ Minorail uses a 10 by 40 board.
 | Default spawn | `x = 4`, `y = 19`, `rotation = North`. |
 | Internal board | `cols[x]` has bit `y` set when cell `(x, y)` is occupied. |
 
+SBP board matrices and websocket board matrices use the same coordinate system:
+row arrays are ordered from bottom to top, `null` means empty, and any string
+means occupied.
+
+---
+
+## Piece Definitions
+
+The built-in Minorail piece set is the seven tetromino strings:
+
+```text
+I O T L J S Z
+```
+
+Each piece definition is identified by a string and consists of relative
+occupied cell offsets for each rotation. Minorail's built-in rotation names are
+`north`, `east`, `south`, and `west`; placements use an anchor coordinate
+`(x, y)`, and each relative cell `[dx, dy]` occupies absolute board cell
+`(x + dx, y + dy)`.
+
+Example built-in north-facing cells:
+
+| Piece | `north` relative cells |
+| --- | --- |
+| `I` | `[[-1, 0], [0, 0], [1, 0], [2, 0]]` |
+| `O` | `[[0, 0], [1, 0], [0, 1], [1, 1]]` |
+| `T` | `[[-1, 0], [0, 0], [1, 0], [0, 1]]` |
+| `L` | `[[-1, 0], [0, 0], [1, 0], [1, 1]]` |
+| `J` | `[[-1, 0], [0, 0], [1, 0], [-1, 1]]` |
+| `S` | `[[-1, 0], [0, 0], [0, 1], [1, 1]]` |
+| `Z` | `[[-1, 1], [0, 1], [0, 0], [1, 0]]` |
+
+Piece identifiers are not inherently limited to tetrominoes. A fork or
+extension can add pieces with arbitrary non-empty string identifiers, including
+larger or smaller mino pieces, as long as the game client, Minorail instance,
+and bot all use the SBP piece definition standard: identifiers, anchor
+coordinates, relative cells, rotation names, spawn behavior, kicks, and lock
+rules must agree. Programs with a different internal piece model are
+responsible for translating to this standard at the API or SBP boundary.
+
+Websocket callers are responsible for sending snapshots and placements that
+match the piece definitions supported by the Minorail instance they are using.
+
 ---
 
 ## Queue Semantics

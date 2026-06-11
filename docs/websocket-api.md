@@ -96,6 +96,17 @@ The API also accepts an SBP board matrix:
 The full matrix must contain 40 rows with 10 cells each. Row 0 is the bottom.
 `null` is empty. Any string is occupied.
 
+Board coordinates use the same grid convention in every request and response:
+
+| Item | Meaning |
+| --- | --- |
+| `x = 0` | Leftmost column. |
+| `y = 0` | Bottom row. |
+| `x` direction | Increases to the right. |
+| `y` direction | Increases upward. |
+| Matrix rows | Ordered from bottom to top. |
+| Matrix cells | `null` is empty; any string is occupied. |
+
 ---
 
 ## Pieces
@@ -106,6 +117,14 @@ Piece fields use SBP piece strings:
 I O T L J S Z
 ```
 
+Those seven tetromino identifiers are the built-in Minorail pieces. The SBP
+piece definition standard is not limited to those names: a piece identifier is
+a non-empty string such as `"T"`, `"P"`, `"big_T"`, or `"custom:hook"`.
+Minorail forks or extensions can support additional pieces as long as every
+program interacting with them translates its internal representation to the SBP
+piece definition standard: the same identifiers, anchor coordinates, relative
+cells, orientation names, spawn behavior, kicks, and lock rules.
+
 The websocket API takes `active` as a piece string, not as a full location
 object. Minorail spawns it at the configured spawn position.
 
@@ -114,6 +133,12 @@ piece.
 
 !> Passing the active piece inside `queue` will desync the chronology Minorail
 uses for session advancement.
+
+!> Websocket clients are responsible for sending piece strings and placements
+in SBP's piece geometry convention. If a client uses a different internal
+coordinate system or rotation origin, it must translate to SBP's system before
+sending requests. The stock Minorail build accepts the built-in tetromino
+strings.
 
 ---
 
