@@ -1,0 +1,6 @@
+websockets>=16.0
+nicegui>=2.0
+
+pytest>=8.0
+ruff>=0.11
+basedpyright>=1.29
