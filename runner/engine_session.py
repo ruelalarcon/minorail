@@ -66,11 +66,13 @@ class EngineSession:
         self._convert_sonic_drops = service_path_cfg.get("convert_sonic_drops", False)
         logging_cfg = self._settings.get("logging", {})
         bot_info_cfg = logging_cfg.get("bot_info", {})
+        bot_cfg = self._settings.get("bot", {})
         self._service = SuggestionService(
             self._bot_path,
             bot_args=self._bot_args,
             piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
             info_print_topics=bot_info_cfg.get("print", ["warning"]),
+            idle_ms=bot_cfg.get("idle_ms", 20_000),
         )
 
         self._rules = Rules.from_settings(self._settings)

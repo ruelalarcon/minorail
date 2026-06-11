@@ -305,6 +305,68 @@ class ServiceTests(unittest.TestCase):
         self.assertNotIn(MoveStep.SonicDrop, result.path)
         self.assertEqual(result.path.count(MoveStep.SoftDrop), 19)
 
+    def test_going_idle_closes_bot_and_restarts_from_snapshot(self) -> None:
+        class FakeTimer:
+            instances: list["FakeTimer"] = []
+
+            def __init__(self, timeout: float, callback: Any, args: list[Any]) -> None:
+                self.timeout = timeout
+                self.callback = callback
+                self.args = args
+                self.daemon = False
+                self.cancelled = False
+                FakeTimer.instances.append(self)
+
+            def start(self) -> None:
+                pass
+
+            def cancel(self) -> None:
+                self.cancelled = True
+
+            def fire(self) -> None:
+                self.callback(*self.args)
+
+        first_move = placement(Piece.O, 4, 0)
+        fake = FakeBotSession([[first_move], [placement(Piece.I, 0, 2, Rotation.East)]])
+        with patch("suggestion.session.client_session.threading.Timer", FakeTimer):
+            session = ClientSession(lambda: fake, idle_ms=20_000)
+            rules = Rules()
+
+            first = session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+            state = GameState(
+                Board(),
+                spawn_location(Piece.O),
+                [Piece.I, Piece.T, Piece.L, Piece.J],
+                None,
+                0,
+                0,
+            )
+            self.assertTrue(state.apply_move(first_move, rules))
+            state.queue.append(Piece.S)
+            advanced = snapshot(
+                state.board,
+                active=state.active.piece,
+                queue=state.queue,
+                seq=1,
+                last_move=first_move,
+            )
+            FakeTimer.instances[-1].fire()
+            second = session.suggest(SuggestionRequest(snapshot=advanced, rules=rules))
+
+        self.assertEqual(first.status, SuggestionStatus.Synced)
+        self.assertEqual(second.status, SuggestionStatus.Advanced)
+        self.assertTrue(fake.closed)
+        self.assertEqual(len(fake.started), 2)
+        self.assertEqual(fake.advanced, [])
+        self.assertEqual(fake.resets, [])
+        stream = fake.started[1].piece_stream
+        self.assertIsNotNone(stream)
+        assert stream is not None
+        self.assertEqual(stream.offset, 0)
+        self.assertEqual(
+            stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
+        )
+
     def test_capabilities_validate_configured_rules(self) -> None:
         capabilities = BotCapabilities.from_sbp(
             {

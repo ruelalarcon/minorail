@@ -16,6 +16,7 @@ convert_sonic_drops = false  # replace sonic_drop path steps with repeated soft_
 
 [bot]
 suggest_timeout_ms = 10_000  # timeout waiting for a suggestion
+idle_ms = 20_000             # go idle after this long without communication to save resources
 
 [logging.bot_info]
 print = ["warning", "log"]  # runtime info topics to print, e.g. ["warning", "status", "search"]

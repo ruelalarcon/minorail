@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import threading
 from typing import Any, Callable, Optional, Protocol
 
 from tetris.model.piece import Piece
@@ -47,8 +48,16 @@ BotSessionFactory = Callable[[], BotSessionLike]
 
 class ClientSession:
     def __init__(
-        self, bot_session_factory: BotSessionFactory, piece_stream_limit: int = 11
+        self,
+        bot_session_factory: BotSessionFactory,
+        piece_stream_limit: int = 11,
+        idle_ms: int = 20_000,
     ) -> None:
+        self._lock = threading.RLock()
+        self._idle_s = idle_ms / 1000
+        self._go_idle_timer: threading.Timer | None = None
+        self._go_idle_generation = 0
+        self._bot_needs_start = False
         self.latest_observed: Optional[ObservedSnapshot] = None
         self.shadow_observed: Optional[ObservedSnapshot] = None
         self.derived_state = DerivedState.neutral()
@@ -58,6 +67,20 @@ class ClientSession:
         self.rules: Optional[Rules] = None
 
     def suggest(self, request: SuggestionRequest) -> SuggestionResult:
+        with self._lock:
+            self._cancel_go_idle()
+            try:
+                return self._suggest_locked(request)
+            finally:
+                self._schedule_go_idle()
+
+    def close(self) -> None:
+        with self._lock:
+            self._cancel_go_idle()
+            self.bot_session.stop()
+            self.bot_session.close()
+
+    def _suggest_locked(self, request: SuggestionRequest) -> SuggestionResult:
         validation_error = self._validate(request.snapshot)
         if validation_error is not None:
             return SuggestionResult(
@@ -120,10 +143,6 @@ class ClientSession:
             reason=reason,
         )
 
-    def close(self) -> None:
-        self.bot_session.stop()
-        self.bot_session.close()
-
     def _sync_to_request(self, request: SuggestionRequest) -> SessionTransition:
         incoming = request.snapshot
         self.rules = request.rules
@@ -165,6 +184,11 @@ class ClientSession:
         self, transition: SessionTransition, request: SuggestionRequest
     ) -> None:
         bot_snapshot = self._to_bot_snapshot(request.snapshot, request.extensions)
+        if self._bot_needs_start:
+            self.bot_session.start_from(bot_snapshot, request.rules)
+            self._bot_needs_start = False
+            return
+
         match transition.bot_action:
             case BotAction.Start:
                 self.bot_session.start_from(bot_snapshot, request.rules)
@@ -212,3 +236,28 @@ class ClientSession:
             f"piece_stream_action={transition.piece_stream_action.value}",
             file=sys.stderr,
         )
+
+    def _schedule_go_idle(self) -> None:
+        if self._idle_s <= 0:
+            return
+        self._go_idle_generation += 1
+        generation = self._go_idle_generation
+        timer = threading.Timer(self._idle_s, self._go_idle, [generation])
+        timer.daemon = True
+        self._go_idle_timer = timer
+        timer.start()
+
+    def _cancel_go_idle(self) -> None:
+        self._go_idle_generation += 1
+        if self._go_idle_timer is not None:
+            self._go_idle_timer.cancel()
+            self._go_idle_timer = None
+
+    def _go_idle(self, generation: int) -> None:
+        with self._lock:
+            if generation != self._go_idle_generation:
+                return
+            self._go_idle_timer = None
+            print("[info] minorail going idle; closing bot process", file=sys.stderr)
+            self.bot_session.close()
+            self._bot_needs_start = True

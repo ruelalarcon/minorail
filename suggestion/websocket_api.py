@@ -42,15 +42,17 @@ class SuggestionWebSocketServer:
         protocol_start_cfg = protocol_cfg.get("start", {})
         logging_cfg = settings.get("logging", {})
         bot_info_cfg = logging_cfg.get("bot_info", {})
+        bot_cfg = settings.get("bot", {})
         self._service = SuggestionService(
             bot_path,
             bot_args=bot_args,
             piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
             info_print_topics=bot_info_cfg.get("print", ["warning"]),
+            idle_ms=bot_cfg.get("idle_ms", 20_000),
         )
         service_path_cfg = settings.get("service", {}).get("path", {})
         self._convert_sonic_drops = service_path_cfg.get("convert_sonic_drops", False)
-        self._timeout_ms = settings.get("bot", {}).get("suggest_timeout_ms", 10_000)
+        self._timeout_ms = bot_cfg.get("suggest_timeout_ms", 10_000)
         self._rules = Rules.from_settings(settings)
         self._host = host
         self._port = port

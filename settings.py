@@ -27,6 +27,7 @@ DEFAULT: dict[str, Any] = {
     },
     "bot": {
         "suggest_timeout_ms": 10_000,
+        "idle_ms": 20_000,
     },
     "engine": {
         "queue": {
