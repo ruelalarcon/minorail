@@ -31,6 +31,7 @@ class ResyncType(Enum):
     BoardChangedSamePieceStream = "board_changed_same_piece_stream"
     BoardChangedAfterExpectedAdvance = "board_changed_after_expected_advance"
     PieceStreamChangedUnexpectedly = "piece_stream_changed_unexpectedly"
+    RulesChanged = "rules_changed"
 
 
 @dataclass

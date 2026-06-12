@@ -14,6 +14,7 @@ from suggestion.piece_stream_tracker import PieceStreamTracker
 from suggestion.session.transition import (
     BotAction,
     PieceStreamAction,
+    ResyncType,
     SessionTransition,
     classify_transition,
     observed_pieces,
@@ -145,14 +146,24 @@ class ClientSession:
 
     def _sync_to_request(self, request: SuggestionRequest) -> SessionTransition:
         incoming = request.snapshot
+        previous_rules = self.rules
+        transition_rules = previous_rules or request.rules
         self.rules = request.rules
         transition = classify_transition(
             shadow_observed=self.shadow_observed,
             incoming=incoming,
             previous_suggestion=self.previous_suggestion,
             derived_state=self.derived_state,
-            rules=request.rules,
+            rules=transition_rules,
         )
+        if previous_rules is not None and previous_rules != request.rules:
+            transition = SessionTransition(
+                status=SuggestionStatus.Resynced,
+                bot_action=BotAction.Reset,
+                piece_stream_action=transition.piece_stream_action,
+                expected=transition.expected,
+                resync_type=ResyncType.RulesChanged,
+            )
 
         if transition.status == SuggestionStatus.Advanced:
             assert transition.expected is not None

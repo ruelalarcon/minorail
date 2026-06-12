@@ -72,6 +72,11 @@ Minorail logs resync details to stderr:
 | `board_changed_same_piece_stream` | The board changed, but active and queue chronology still match. | Keep alignment. |
 | `board_changed_after_expected_advance` | Piece chronology is explainable as an expected advance, but the board does not match exactly. | Append newly observed pieces. |
 | `piece_stream_changed_unexpectedly` | Active and queue are not explainable from the previous snapshot. | Resync from observed pieces and mark offset unknown. |
+| `rules_changed` | The effective rules changed for an existing session. | Preserve the physical transition's stream behavior. |
+
+If rules change at the same time as a physical desync, the logged type is
+`rules_changed`. The `piece_stream_action` still describes how Minorail handled
+the observed piece chronology.
 
 Board edits through a visualizer commonly produce a board-only resync.
 

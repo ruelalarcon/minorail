@@ -173,6 +173,11 @@ Unknown rule fields are rejected.
 When spawn coordinates are overridden, Minorail spawns the active piece at
 those coordinates for that request.
 
+Rules are evaluated on every request. If the effective rules for an existing
+session change, Minorail resets the internal bot session from the incoming
+snapshot before asking for the next suggestion. Re-sending the same rules on
+every request is safe; unchanged rules are not re-sent to the SBP bot.
+
 ---
 
 ## Sessions

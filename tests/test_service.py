@@ -55,7 +55,9 @@ class FakeBotSession:
     def __init__(self, suggestions: list[list[Placement]]) -> None:
         self.suggestions = suggestions
         self.started: list[BotSnapshot] = []
+        self.started_rules: list[Rules] = []
         self.resets: list[BotSnapshot] = []
+        self.reset_rules: list[Rules] = []
         self.advanced: list[tuple[Placement, list[Piece]]] = []
         self.suggested_extensions: list[dict[str, Any] | None] = []
         self.stopped = False
@@ -63,6 +65,7 @@ class FakeBotSession:
 
     def start_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
         self.started.append(snapshot)
+        self.started_rules.append(rules)
 
     def suggest(
         self, timeout_ms: int, extensions: dict[str, Any] | None = None
@@ -79,6 +82,7 @@ class FakeBotSession:
 
     def reset_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
         self.resets.append(snapshot)
+        self.reset_rules.append(rules)
 
     def stop(self) -> None:
         self.stopped = True
@@ -215,6 +219,75 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )
+
+    def test_same_rules_and_same_snapshot_keep_bot_session(self) -> None:
+        fake = FakeBotSession(
+            [[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]]
+        )
+        session = ClientSession(lambda: fake)
+        rules = Rules(rot180=True)
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        result = session.suggest(
+            SuggestionRequest(snapshot=snapshot(seq=1), rules=rules)
+        )
+
+        self.assertEqual(result.status, SuggestionStatus.Synced)
+        self.assertEqual(len(fake.started), 1)
+        self.assertEqual(fake.started_rules, [rules])
+        self.assertEqual(fake.resets, [])
+        self.assertEqual(fake.advanced, [])
+
+    def test_rules_change_resets_bot_session_before_suggesting(self) -> None:
+        fake = FakeBotSession(
+            [[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]]
+        )
+        session = ClientSession(lambda: fake)
+        old_rules = Rules(rot180=True)
+        new_rules = Rules(rot180=False)
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=old_rules))
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = session.suggest(
+                SuggestionRequest(snapshot=snapshot(seq=1), rules=new_rules)
+            )
+
+        self.assertEqual(result.status, SuggestionStatus.Resynced)
+        self.assertIn("type=rules_changed", stderr.getvalue())
+        self.assertEqual(len(fake.started), 1)
+        self.assertEqual(len(fake.resets), 1)
+        self.assertEqual(fake.reset_rules, [new_rules])
+        self.assertEqual(fake.advanced, [])
+
+    def test_rules_change_preserves_unexpected_piece_stream_resync(self) -> None:
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.T, 4, 0)]])
+        session = ClientSession(lambda: fake)
+        old_rules = Rules(rot180=True)
+        new_rules = Rules(rot180=False)
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=old_rules))
+        changed = snapshot(
+            active=Piece.T, queue=[Piece.L, Piece.J, Piece.S, Piece.Z], seq=1
+        )
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = session.suggest(
+                SuggestionRequest(snapshot=changed, rules=new_rules)
+            )
+
+        self.assertEqual(result.status, SuggestionStatus.Resynced)
+        self.assertIn(
+            "type=rules_changed seq=1 bot_action=reset piece_stream_action=resync",
+            stderr.getvalue(),
+        )
+        self.assertEqual(len(fake.resets), 1)
+        self.assertEqual(fake.reset_rules, [new_rules])
+        stream = fake.resets[0].piece_stream
+        self.assertIsNotNone(stream)
+        assert stream is not None
+        self.assertIsNone(stream.offset)
+        self.assertEqual(stream.pieces, [Piece.T, Piece.L, Piece.J, Piece.S, Piece.Z])
 
     def test_board_desync_resets_bot_without_losing_piece_stream_offset(self) -> None:
         fake = FakeBotSession(
