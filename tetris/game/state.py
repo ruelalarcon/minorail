@@ -88,6 +88,7 @@ class GameState:
             self.board,
             combo=self.combo,
             back_to_back=self.back_to_back,
+            piece=loc.piece,
             spin=placement.spin,
             rules=rules,
         )

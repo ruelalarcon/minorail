@@ -221,9 +221,7 @@ class ServiceTests(unittest.TestCase):
         )
 
     def test_same_rules_and_same_snapshot_keep_bot_session(self) -> None:
-        fake = FakeBotSession(
-            [[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]]
-        )
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]])
         session = ClientSession(lambda: fake)
         rules = Rules(rot180=True)
 
@@ -239,9 +237,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(fake.advanced, [])
 
     def test_rules_change_resets_bot_session_before_suggesting(self) -> None:
-        fake = FakeBotSession(
-            [[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]]
-        )
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]])
         session = ClientSession(lambda: fake)
         old_rules = Rules(rot180=True)
         new_rules = Rules(rot180=False)

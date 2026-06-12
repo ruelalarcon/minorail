@@ -157,6 +157,7 @@ then updates combo and back to back state.
 | No rows clear | Reset to 0. | Preserved. |
 | Normal line clear | Incremented. | Reset to 0. |
 | Four line clear | Incremented. | Incremented. |
+| T-spin or T-spin mini clear | Incremented. | Incremented. |
 | Spin clear with `allspin_b2b` | Incremented. | Incremented. |
 | All clear with `allclear_b2b` | Incremented. | Incremented. |
 
@@ -172,8 +173,9 @@ Placements carry a spin value:
 | `mini` | Mini spin. |
 | `full` | Full spin. |
 
-Minorail uses spin information for back to back handling when
-`allspin_b2b = true`.
+Minorail uses T-spin and T-spin mini clears for back to back handling by
+default. When `allspin_b2b = true`, spin clears from other pieces also
+contribute.
 
 ?> For pieces other than T, Minorail detects spins using immobility.
 
