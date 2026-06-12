@@ -3,8 +3,8 @@ randomizer = "seven_bag"  # "seven_bag" or "pure_random"
 kickset = "srs"           # kick table: "srs", "srs_plus"
 rot180 = true             # allow 180-degree rotations (only effective if kickset supports it)
 sonic_drop = "only"       # "only" = sonic drop only, "allow" = sonic drop and soft drop
-allspin_b2b = true        # spins, including minis, of any piece contribute to back-to-back
-allclear_b2b = true       # all-clears contribute to back-to-back
+allspin_b2b = false       # spins, including minis, of any piece contribute to back-to-back
+allclear_b2b = false      # all-clears contribute to back-to-back
 spawn_x = 4               # active piece spawn x coordinate
 spawn_y = 19              # active piece spawn y coordinate
 
