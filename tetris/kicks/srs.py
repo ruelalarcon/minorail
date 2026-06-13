@@ -36,7 +36,7 @@ ZERO_180_KICKS: TransitionKicks = {
 SRS = KickTable(
     kicks={
         Piece.I: {**I_KICKS, **ZERO_180_KICKS},
-        Piece.O: ZERO_180_KICKS,
+        Piece.O: {},
         Piece.J: {**JLSTZ_KICKS, **ZERO_180_KICKS},
         Piece.L: {**JLSTZ_KICKS, **ZERO_180_KICKS},
         Piece.S: {**JLSTZ_KICKS, **ZERO_180_KICKS},

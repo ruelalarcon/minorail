@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tetris.kicks.srs import JLSTZ_KICKS, ZERO_180_KICKS
+from tetris.kicks.srs import JLSTZ_KICKS
 from tetris.kicks.table import KickTable, TransitionKicks
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
@@ -58,7 +58,7 @@ I_KICKS: TransitionKicks = {
 SRS_PLUS = KickTable(
     kicks={
         Piece.I: I_KICKS,
-        Piece.O: ZERO_180_KICKS,
+        Piece.O: {},
         Piece.J: {**JLSTZ_KICKS, **JLSTZ_180_KICKS},
         Piece.L: {**JLSTZ_KICKS, **JLSTZ_180_KICKS},
         Piece.S: {**JLSTZ_KICKS, **JLSTZ_180_KICKS},
