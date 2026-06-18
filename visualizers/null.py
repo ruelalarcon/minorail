@@ -8,6 +8,8 @@ from suggestion.contracts.suggestion_result import SuggestionResult
 
 
 class NullVisualizer:
+    default_pathfinding = False
+
     def set_engine_controls(self, controls: EngineControls) -> None:
         pass
 

@@ -4,6 +4,8 @@ from typing import Any, cast
 
 from runner.engine_session import EngineSession
 from runner.limits import EngineLimits
+from runner.pathfinding import PathfindingOptions
+from suggestion.contracts.suggestion_request import SuggestionRequest
 from suggestion.contracts.suggestion_result import SuggestionResult
 from suggestion.contracts.suggestion_status import SuggestionStatus
 from tetris.model.location import PieceLocation
@@ -17,8 +19,10 @@ class FakeSuggestionService:
     def __init__(self, *, delay: float = 0.0) -> None:
         self._delay = delay
         self._suggestions = 0
+        self.requests: list[SuggestionRequest] = []
 
-    def suggest(self, request):  # noqa: ANN001
+    def suggest(self, request: SuggestionRequest) -> SuggestionResult:
+        self.requests.append(request)
         if self._delay:
             sleep(self._delay)
         piece = request.snapshot.active.piece
@@ -66,6 +70,26 @@ class EngineSessionLimitsTests(unittest.TestCase):
         stats = session.play_game()
 
         self.assertEqual(stats["status"], "time_limit")
+
+    def test_pathfinding_options_are_passed_to_suggestion_request(self) -> None:
+        session = EngineSession(
+            "fake-bot",
+            settings=_settings(),
+            visualizer=NullVisualizer(),
+            limits=EngineLimits(piece_limit=1),
+            pathfinding_options=PathfindingOptions(
+                pathfinding=False,
+                convert_sonic_drops=True,
+            ),
+        )
+        service = FakeSuggestionService()
+        cast(Any, session)._service = service
+
+        session.play_game()
+
+        self.assertEqual(len(service.requests), 1)
+        self.assertFalse(service.requests[0].pathfinding)
+        self.assertFalse(service.requests[0].convert_sonic_drops)
 
 
 def _settings():

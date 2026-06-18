@@ -51,6 +51,8 @@ class _RenderFrame:
 
 
 class WebVisualizer:
+    default_pathfinding = True
+
     def __init__(
         self,
         settings: dict[str, Any],
@@ -159,7 +161,6 @@ class WebVisualizer:
                 status=f"Move: {MoveStep.HardDrop.value}",
             )
         else:
-            self.warning(result.reason or "no path found")
             placement = result.placement
             if placement is not None:
                 loc = placement.location
@@ -167,7 +168,7 @@ class WebVisualizer:
                     state,
                     moving_piece,
                     (loc.x, loc.y, loc.rotation),
-                    status=result.reason or "No path",
+                    status=result.reason or "Placement selected",
                 )
 
         time.sleep(self._lock_delay)

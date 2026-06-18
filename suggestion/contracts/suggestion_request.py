@@ -10,7 +10,7 @@ class SuggestionRequest:
     snapshot: ObservedSnapshot
     rules: Rules
     extensions: dict[str, Any] | None = None
-    include_path: bool = True
+    pathfinding: bool = True
     convert_sonic_drops: bool = False
     session_id: str = "default"
     timeout_ms: int = 10_000

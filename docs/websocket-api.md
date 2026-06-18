@@ -38,7 +38,7 @@ Each request is a JSON text frame.
   "queue": ["I", "O", "L", "J"],
   "hold": null,
   "can_hold": true,
-  "include_path": true
+  "pathfinding": true
 }
 ```
 
@@ -61,8 +61,8 @@ Optional fields:
 | `last_move` | null | SBP placement or null. |
 | `rules` | server settings | Partial per request rule override. |
 | `extensions` | null | Object forwarded to the bot. |
-| `include_path` | true | Whether Minorail should pathfind the selected placement. |
-| `convert_sonic_drops` | settings value | Whether returned paths rewrite intermediate sonic drops. |
+| `pathfinding` | server settings (`default` evaluates to true) | Whether Minorail should pathfind the selected placement. |
+| `convert_sonic_drops` | server settings | Whether returned paths rewrite intermediate sonic drops. Only matters when path output is requested. |
 | `session_id` | connection session | Non empty string. |
 | `timeout_ms` | settings value | Positive integer. |
 

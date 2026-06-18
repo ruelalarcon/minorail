@@ -5,6 +5,7 @@ import sys
 
 from runner.engine_session import EngineSession
 from runner.limits import engine_limits
+from runner.pathfinding import pathfinding_options
 from runner.seeding import base_seed, game_seed
 import settings as cfg
 from suggestion.websocket_api import SuggestionWebSocketServer
@@ -74,6 +75,21 @@ def main() -> None:
         default=None,
         help="per-run wall-clock time limit in milliseconds; overrides settings",
     )
+    path = run_group.add_mutually_exclusive_group()
+    path.add_argument(
+        "--pathfind",
+        dest="pathfinding",
+        action="store_true",
+        default=None,
+        help="run pathfinding and return input paths; overrides settings",
+    )
+    path.add_argument(
+        "--no-pathfind",
+        dest="pathfinding",
+        action="store_false",
+        default=None,
+        help="skip pathfinding and return placements only; overrides settings",
+    )
 
     display_group = parser.add_argument_group("visualization options")
     display = display_group.add_mutually_exclusive_group()
@@ -138,10 +154,16 @@ def main() -> None:
     bot_args = shlex.split(args.bot_args)
 
     if args.ws:
+        ws_pathfinding_options = pathfinding_options(
+            settings,
+            default_pathfinding=True,
+            pathfinding=args.pathfinding,
+        )
         server = SuggestionWebSocketServer(
             args.bot,
             bot_args=bot_args,
             settings=settings,
+            pathfinding_options=ws_pathfinding_options,
             host=args.ws_host,
             port=args.ws_port,
         )
@@ -178,6 +200,11 @@ def main() -> None:
                 visualizer = web_visualizer
             else:
                 visualizer = TerminalVisualizer(settings)
+            resolved_pathfinding_options = pathfinding_options(
+                settings,
+                default_pathfinding=visualizer.default_pathfinding,
+                pathfinding=args.pathfinding,
+            )
             stats = EngineSession(
                 args.bot,
                 bot_args=bot_args,
@@ -185,6 +212,7 @@ def main() -> None:
                 visualizer=visualizer,
                 random_seed=game_seed(seed, i),
                 limits=limits,
+                pathfinding_options=resolved_pathfinding_options,
             ).play_game()
             print(
                 f"[info] pieces={stats['pieces']} "

@@ -9,8 +9,10 @@ from typing import Any
 
 from evaluation.session import run_evaluation
 from runner.limits import engine_limits
+from runner.pathfinding import pathfinding_options
 from runner.seeding import base_seed
 import settings as cfg
+from visualizers.null import NullVisualizer
 
 
 class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
@@ -72,6 +74,21 @@ def main() -> None:
         default=None,
         help="per-run wall-clock time limit in milliseconds; overrides settings",
     )
+    path = parser.add_mutually_exclusive_group()
+    path.add_argument(
+        "--pathfind",
+        dest="pathfinding",
+        action="store_true",
+        default=None,
+        help="run pathfinding and return input paths; overrides settings",
+    )
+    path.add_argument(
+        "--no-pathfind",
+        dest="pathfinding",
+        action="store_false",
+        default=None,
+        help="skip pathfinding and return placements only; overrides settings",
+    )
     parser.add_argument(
         "--json-out",
         metavar="PATH",
@@ -119,6 +136,11 @@ def main() -> None:
                 settings,
                 piece_limit=args.piece_limit,
                 time_limit_ms=args.time_limit_ms,
+            ),
+            pathfinding_options=pathfinding_options(
+                settings,
+                default_pathfinding=NullVisualizer.default_pathfinding,
+                pathfinding=args.pathfinding,
             ),
             label=args.label,
             include_events=not args.no_events,

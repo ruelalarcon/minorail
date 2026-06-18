@@ -113,7 +113,7 @@ class ClientSession:
 
         path = None
         reason = None
-        if request.include_path:
+        if request.pathfinding:
             moving_piece = moving_piece_for(request.snapshot, chosen)
             if moving_piece is not None:
                 path = find_path(

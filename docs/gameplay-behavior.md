@@ -106,7 +106,7 @@ placement can be ignored even if it is better.
 
 ## Pathfinding
 
-When `include_path` is true, Minorail tries to find a path from spawn to the
+When `pathfinding` is true, Minorail tries to find a path from spawn to the
 selected placement.
 
 | Input | Used for |

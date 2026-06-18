@@ -77,6 +77,22 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.extensions, extensions)
         self.assertIsNot(request.extensions, extensions)
 
+    def test_request_uses_pathfinding_field(self) -> None:
+        request = request_from_json(
+            {
+                "type": "suggest",
+                "seq": 7,
+                "board": {"cols": [0] * 10},
+                "active": "T",
+                "queue": ["I", "O"],
+                "pathfinding": False,
+            },
+            base_rules=Rules(),
+            default_pathfinding=True,
+        )
+
+        self.assertFalse(request.pathfinding)
+
     def test_request_rejects_non_object_extensions(self) -> None:
         with self.assertRaises(WebSocketApiError) as cm:
             request_from_json(

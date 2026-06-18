@@ -80,17 +80,22 @@ field.
 
 ```toml
 [service.path]
+pathfinding = "default"
 convert_sonic_drops = false
 ```
 
 | Field | Behavior |
 | --- | --- |
-| `convert_sonic_drops` | Converts intermediate `sonic_drop` path steps into repeated `soft_drop` steps. |
+| `pathfinding` | `default` uses the selected consumer's pathfinding preference. `true` always runs pathfinding by default. `false` skips pathfinding by default. CLI `--pathfind` and `--no-pathfind` override this for one invocation. |
+| `convert_sonic_drops` | Converts intermediate `sonic_drop` path steps into repeated `soft_drop` steps when path output is requested. |
 
 The final `hard_drop` remains unchanged.
 
 This is a Minorail output option. It does not change the SBP rules sent to the
 bot.
+
+Terminal and web visualizers prefer paths by default because they can animate
+them. Headless runs and evaluation do not request paths by default.
 
 ---
 

@@ -19,6 +19,7 @@ from runner.observers import (
     PieceLockedEvent,
 )
 from runner.limits import EngineLimits, engine_limits
+from runner.pathfinding import PathfindingOptions
 from runner.seeding import base_seed
 from suggestion.bot_session import BotStartupError
 from suggestion.move_selection import moving_piece_for
@@ -29,6 +30,8 @@ from suggestion.suggestion_service import SuggestionService
 
 
 class Visualizer(Protocol):
+    default_pathfinding: bool
+
     def on_game_started(self, state: GameState) -> None: ...
 
     def on_spawn(self, state: GameState, piece: Piece) -> None: ...
@@ -63,6 +66,7 @@ class EngineSession:
         bot_args: list[str] | None = None,
         random_seed: int | None = None,
         limits: EngineLimits | None = None,
+        pathfinding_options: PathfindingOptions | None = None,
         observers: list[EngineObserver] | None = None,
     ) -> None:
         self._bot_path = bot_path
@@ -72,12 +76,13 @@ class EngineSession:
         self._session_id = session_id
         self._random_seed = random_seed
         self._limits = limits or engine_limits(self._settings)
+        self._pathfinding_options = pathfinding_options or PathfindingOptions(
+            pathfinding=True
+        )
         self._observers = observers or []
 
         protocol_cfg = self._settings.get("protocol", {})
         protocol_start_cfg = protocol_cfg.get("start", {})
-        service_path_cfg = self._settings.get("service", {}).get("path", {})
-        self._convert_sonic_drops = service_path_cfg.get("convert_sonic_drops", False)
         logging_cfg = self._settings.get("logging", {})
         bot_info_cfg = logging_cfg.get("bot_info", {})
         bot_cfg = self._settings.get("bot", {})
@@ -208,8 +213,10 @@ class EngineSession:
                         SuggestionRequest(
                             snapshot=self.snapshot(),
                             rules=self._rules,
-                            include_path=True,
-                            convert_sonic_drops=self._convert_sonic_drops,
+                            pathfinding=self._pathfinding_options.pathfinding,
+                            convert_sonic_drops=(
+                                self._pathfinding_options.convert_sonic_drops
+                            ),
                             session_id=self._session_id,
                             timeout_ms=cfg_b["suggest_timeout_ms"],
                         )

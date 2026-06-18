@@ -26,6 +26,8 @@ pip install -r requirements.txt
 | Run without rendering | `python run.py "path/to/sbp-bot" --headless` |
 | Run with a piece cap | `python run.py "path/to/sbp-bot" --piece-limit 1000` |
 | Run with a time cap | `python run.py "path/to/sbp-bot" --time-limit-ms 30000` |
+| Force pathfinding | `python run.py "path/to/sbp-bot" --pathfind` |
+| Skip pathfinding | `python run.py "path/to/sbp-bot" --no-pathfind` |
 | Start the websocket API | `python run.py "path/to/sbp-bot" --ws` |
 
 ?> The terminal visualizer is the default unless `--web`, `--headless`, or
@@ -45,6 +47,16 @@ For multiple games, it also prints total pieces.
 
 If `--piece-limit` or `--time-limit-ms` is provided, the game stops with status
 `piece_limit` or `time_limit` when that limit is reached.
+
+## Path Output
+
+Minorail only pathfinds when the selected consumer asks for path output.
+Terminal and web visualizers request paths by default for animation. Headless
+runs do not. Use `--pathfind` or `--no-pathfind` to override the setting and
+consumer default for one invocation.
+
+If no path is included, the engine still applies the selected placement and
+visualizers render the locked board after the move is applied.
 
 ## Bot Arguments
 

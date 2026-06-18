@@ -12,6 +12,7 @@ spawn_y = 19              # active piece spawn y coordinate
 piece_stream_limit = 11  # 0 omits piece_stream; otherwise send up to this many generated pieces
 
 [service.path]
+pathfinding = "default"      # "default", true, or false; default uses the consumer/visualizer's preference
 convert_sonic_drops = false  # replace sonic_drop path steps with repeated soft_drop steps
 
 [bot]

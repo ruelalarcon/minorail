@@ -29,6 +29,8 @@ Useful options:
 | `--bot-args ARGS` | Extra arguments passed to the bot process. |
 | `--piece-limit N` | Stops each game after this many accepted piece locks. Overrides `engine.limits.piece_limit`. |
 | `--time-limit-ms MS` | Stops each game after this many milliseconds. Overrides `engine.limits.time_limit_ms`. |
+| `--pathfind` | Runs pathfinding during evaluation. By default evaluation skips pathfinding. |
+| `--no-pathfind` | Skips pathfinding during evaluation, overriding settings. |
 | `--json-out PATH` | Writes evaluation JSON to a file. Use `-` for stdout. |
 | `--label TEXT` | Adds an experiment or candidate label to the output. |
 | `--no-events` | Omits per-game event logs and writes summaries only. |

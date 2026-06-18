@@ -32,6 +32,8 @@ GHOST = DIM + "\xb7\xb7" + RESET
 
 
 class TerminalVisualizer:
+    default_pathfinding = True
+
     def __init__(self, settings: dict[str, Any]) -> None:
         self._settings = settings
         cfg = self._settings["visualizer"]
@@ -105,11 +107,10 @@ class TerminalVisualizer:
             self._status = f"Move: {MoveStep.HardDrop.value}"
             self._render(state, moving_piece, (ax, ay, arot))
         else:
-            self.warning(result.reason or "no path found")
             placement = result.placement
             if placement is not None:
                 loc = placement.location
-                self._status = result.reason or "No path"
+                self._status = result.reason or "Placement selected"
                 self._render(state, moving_piece, (loc.x, loc.y, loc.rotation))
 
         time.sleep(self._lock_delay)

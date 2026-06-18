@@ -22,6 +22,7 @@ DEFAULT: dict[str, Any] = {
     },
     "service": {
         "path": {
+            "pathfinding": "default",
             "convert_sonic_drops": False,
         },
     },

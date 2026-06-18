@@ -11,6 +11,8 @@ from suggestion.contracts.suggestion_result import SuggestionResult
 
 
 class HeadlessVisualizer:
+    default_pathfinding = False
+
     def __init__(self, progress_every: int = 1000) -> None:
         self._progress_every = progress_every
         self._pieces = 0

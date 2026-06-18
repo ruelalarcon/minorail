@@ -13,6 +13,7 @@ from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.movegen.steps import MoveStep
+from runner.pathfinding import PathfindingOptions
 from suggestion.bot_session import BotStartupError
 from suggestion.contracts.observed_snapshot import ObservedSnapshot
 from suggestion.contracts.suggestion_request import SuggestionRequest
@@ -35,6 +36,7 @@ class SuggestionWebSocketServer:
         *,
         settings: dict[str, Any],
         bot_args: list[str] | None = None,
+        pathfinding_options: PathfindingOptions | None = None,
         host: str = "127.0.0.1",
         port: int = 8444,
     ) -> None:
@@ -50,8 +52,9 @@ class SuggestionWebSocketServer:
             info_print_topics=bot_info_cfg.get("print", ["warning"]),
             idle_ms=bot_cfg.get("idle_ms", 60_000),
         )
-        service_path_cfg = settings.get("service", {}).get("path", {})
-        self._convert_sonic_drops = service_path_cfg.get("convert_sonic_drops", False)
+        self._pathfinding_options = pathfinding_options or PathfindingOptions(
+            pathfinding=True
+        )
         self._timeout_ms = bot_cfg.get("suggest_timeout_ms", 10_000)
         self._rules = Rules.from_settings(settings)
         self._host = host
@@ -112,7 +115,10 @@ class SuggestionWebSocketServer:
                 base_rules=self._rules,
                 default_session_id=connection_session_id,
                 default_timeout_ms=self._timeout_ms,
-                default_convert_sonic_drops=self._convert_sonic_drops,
+                default_pathfinding=self._pathfinding_options.pathfinding,
+                default_convert_sonic_drops=(
+                    self._pathfinding_options.convert_sonic_drops
+                ),
             )
             session_ids.add(request.session_id)
             async with self._lock:
@@ -134,6 +140,7 @@ def request_from_json(
     base_rules: Rules,
     default_session_id: str = "default",
     default_timeout_ms: int = 10_000,
+    default_pathfinding: bool = True,
     default_convert_sonic_drops: bool = False,
 ) -> SuggestionRequest:
     if obj.get("type", "suggest") != "suggest":
@@ -162,7 +169,10 @@ def request_from_json(
         snapshot=snapshot,
         rules=rules,
         extensions=_extensions(obj.get("extensions")),
-        include_path=_bool(obj.get("include_path", True), "include_path"),
+        pathfinding=_bool(
+            obj.get("pathfinding", default_pathfinding),
+            "pathfinding",
+        ),
         convert_sonic_drops=_bool(
             obj.get("convert_sonic_drops", default_convert_sonic_drops),
             "convert_sonic_drops",
