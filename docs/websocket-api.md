@@ -23,8 +23,8 @@ Custom endpoint:
 python run.py "path/to/sbp-bot" --ws --ws-host 0.0.0.0 --ws-port 9000
 ```
 
-The default endpoint comes from `[api.websocket]` in settings. CLI host and port
-flags override those settings for one invocation.
+The default endpoint comes from `[api.websocket]` in settings. `--ws-host`
+overrides `api.websocket.host`; `--ws-port` overrides `api.websocket.port`.
 
 ---
 

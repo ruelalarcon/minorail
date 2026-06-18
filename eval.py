@@ -34,81 +34,93 @@ def main() -> None:
         formatter_class=_HelpFormatter,
     )
     parser.add_argument("bot", metavar="BOT", help="bot executable or script path")
-    parser.add_argument(
-        "--bot-args",
-        metavar="ARGS",
-        default="",
-        help="extra arguments passed to the bot, as one string; "
-        'use = when the value starts with a dash, e.g. --bot-args="--config bot.json"',
-    )
-    parser.add_argument(
-        "--games", metavar="N", type=int, default=1, help="games to run"
-    )
-    parser.add_argument(
+
+    settings_group = parser.add_argument_group("settings")
+    settings_group.add_argument(
         "--settings",
         metavar="PATH",
         default="settings.toml",
         help="settings TOML file",
     )
-    parser.add_argument(
+
+    bot_group = parser.add_argument_group("bot")
+    bot_group.add_argument(
+        "--bot-args",
+        metavar="ARGS",
+        default="",
+        help="extra arguments passed to the bot, as one string",
+    )
+
+    randomizer_group = parser.add_argument_group("randomizer")
+    randomizer_group.add_argument(
         "--seed",
         metavar="N",
         type=int,
         default=None,
-        help="per-run base seed for reproducible local piece streams; overrides settings",
+        help="base seed for local piece streams; overrides engine.randomizer.seed",
     )
-    parser.add_argument(
+    limits_group = parser.add_argument_group("limits")
+    limits_group.add_argument(
         "--piece-limit",
         metavar="N",
         type=int,
         default=None,
-        help="per-run accepted piece lock limit; overrides settings",
+        help="accepted piece lock limit; overrides engine.limits.piece_limit",
     )
-    parser.add_argument(
+    limits_group.add_argument(
         "--time-limit-ms",
         metavar="MS",
         type=int,
         default=None,
-        help="per-run wall-clock time limit in milliseconds; overrides settings",
+        help="wall-clock time limit in milliseconds; overrides engine.limits.time_limit_ms",
     )
-    path = parser.add_mutually_exclusive_group()
+
+    games_group = parser.add_argument_group("games")
+    games_group.add_argument(
+        "--games", metavar="N", type=int, default=1, help="games to run"
+    )
+
+    path_group = parser.add_argument_group("pathfinding")
+    path = path_group.add_mutually_exclusive_group()
     path.add_argument(
         "--pathfind",
         dest="pathfinding",
         action="store_true",
         default=None,
-        help="run pathfinding and return input paths; overrides settings",
+        help="run pathfinding and return input paths; overrides service.path.pathfinding",
     )
     path.add_argument(
         "--no-pathfind",
         dest="pathfinding",
         action="store_false",
         default=None,
-        help="skip pathfinding and return placements only; overrides settings",
+        help="skip pathfinding and return placements only; overrides service.path.pathfinding",
     )
-    parser.add_argument(
+
+    output_group = parser.add_argument_group("output")
+    output_group.add_argument(
         "--json-out",
         metavar="PATH",
         default="-",
         help="write evaluation JSON to PATH, or '-' for stdout",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--label",
         metavar="TEXT",
         default=None,
         help="optional label included in the output",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--no-events",
         action="store_true",
         help="omit per-game event logs and write summaries only",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--compact",
         action="store_true",
         help="write compact JSON instead of pretty-printed JSON",
     )
-    parser.add_argument(
+    output_group.add_argument(
         "--quiet",
         action="store_true",
         help="do not print per-game progress to stderr",

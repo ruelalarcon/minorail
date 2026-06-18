@@ -19,23 +19,23 @@ structured JSON for analysis.
 python eval.py "path/to/sbp-bot" --games 100 --json-out results.json
 ```
 
-Useful options:
+Options are grouped the same way as `eval.py --help`:
 
-| Option | Behavior |
-| --- | --- |
-| `--games N` | Number of games to evaluate. |
-| `--seed N` | Per-run base seed for local piece streams. Overrides `engine.randomizer.seed`. |
-| `--settings PATH` | Settings TOML file. |
-| `--bot-args ARGS` | Extra arguments passed to the bot process. |
-| `--piece-limit N` | Stops each game after this many accepted piece locks. Overrides `engine.limits.piece_limit`. |
-| `--time-limit-ms MS` | Stops each game after this many milliseconds. Overrides `engine.limits.time_limit_ms`. |
-| `--pathfind` | Runs pathfinding during evaluation. By default evaluation skips pathfinding. |
-| `--no-pathfind` | Skips pathfinding during evaluation, overriding settings. |
-| `--json-out PATH` | Writes evaluation JSON to a file. Use `-` for stdout. |
-| `--label TEXT` | Adds an experiment or candidate label to the output. |
-| `--no-events` | Omits per-game event logs and writes summaries only. |
-| `--compact` | Writes compact JSON. |
-| `--quiet` | Disables progress logs on stderr. |
+| Category | Options | Behavior |
+| --- | --- | --- |
+| `settings` | `--settings PATH` | Settings TOML file. |
+| `bot` | `--bot-args ARGS` | Extra arguments passed to the bot process. |
+| `randomizer` | `--seed N` | Base seed for local piece streams; overrides `engine.randomizer.seed`. |
+| `limits` | `--piece-limit N` | Stops each game after this many accepted piece locks; overrides `engine.limits.piece_limit`. |
+| `limits` | `--time-limit-ms MS` | Stops each game after this many milliseconds; overrides `engine.limits.time_limit_ms`. |
+| `games` | `--games N` | Number of games to evaluate. |
+| `pathfinding` | `--pathfind` | Runs pathfinding during evaluation; overrides `service.path.pathfinding`. |
+| `pathfinding` | `--no-pathfind` | Skips pathfinding during evaluation; overrides `service.path.pathfinding`. |
+| `output` | `--json-out PATH` | Writes evaluation JSON to a file. Use `-` for stdout. |
+| `output` | `--label TEXT` | Adds an experiment or candidate label to the output. |
+| `output` | `--no-events` | Omits per-game event logs and writes summaries only. |
+| `output` | `--compact` | Writes compact JSON. |
+| `output` | `--quiet` | Disables progress logs on stderr. |
 
 When multiple games run with a seed, each game uses `seed + game_index`, where
 `game_index` starts at `0`.

@@ -25,8 +25,9 @@ Options:
 python run.py "path/to/sbp-bot" --web --web-host 127.0.0.1 --web-port 8080
 ```
 
-The default bind address comes from `[visualizer.web]`. If no web port is set
-there or on the CLI, Minorail chooses one automatically.
+The default bind address comes from `[visualizer.web]`. `--web-host` overrides
+`visualizer.web.host`; `--web-port` overrides `visualizer.web.port`. If no web
+port is set there or on the CLI, Minorail chooses one automatically.
 
 ## Headless
 

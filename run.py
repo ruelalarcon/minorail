@@ -34,61 +34,69 @@ def main() -> None:
     )
     parser.add_argument("bot", metavar="BOT", help="bot executable or script path")
 
-    run_group = parser.add_argument_group("run options")
-    run_group.add_argument(
-        "--bot-args",
-        metavar="ARGS",
-        default="",
-        help="extra arguments passed to the bot, as one string; "
-        'use = when the value starts with a dash, e.g. --bot-args="--profile --nodes 5000"',
-    )
-    run_group.add_argument(
-        "--games", metavar="N", type=int, default=1, help="games to run"
-    )
-    run_group.add_argument(
+    settings_group = parser.add_argument_group("settings")
+    settings_group.add_argument(
         "--settings",
         metavar="PATH",
         default="settings.toml",
         help="settings TOML file",
     )
-    run_group.add_argument(
+
+    bot_group = parser.add_argument_group("bot")
+    bot_group.add_argument(
+        "--bot-args",
+        metavar="ARGS",
+        default="",
+        help="extra arguments passed to the bot, as one string",
+    )
+
+    randomizer_group = parser.add_argument_group("randomizer")
+    randomizer_group.add_argument(
         "--seed",
         metavar="N",
         type=int,
         default=None,
-        help="per-run base seed for reproducible local piece streams; overrides settings",
+        help="base seed for local piece streams; overrides engine.randomizer.seed",
     )
-    run_group.add_argument(
+    limits_group = parser.add_argument_group("limits")
+    limits_group.add_argument(
         "--piece-limit",
         metavar="N",
         type=int,
         default=None,
-        help="per-run accepted piece lock limit; overrides settings",
+        help="accepted piece lock limit; overrides engine.limits.piece_limit",
     )
-    run_group.add_argument(
+    limits_group.add_argument(
         "--time-limit-ms",
         metavar="MS",
         type=int,
         default=None,
-        help="per-run wall-clock time limit in milliseconds; overrides settings",
+        help="wall-clock time limit in milliseconds; overrides engine.limits.time_limit_ms",
     )
-    path = run_group.add_mutually_exclusive_group()
+
+    games_group = parser.add_argument_group("games")
+    games_group.add_argument(
+        "--games", metavar="N", type=int, default=1, help="games to run"
+    )
+
+    path_group = parser.add_argument_group("pathfinding")
+    path = path_group.add_mutually_exclusive_group()
     path.add_argument(
         "--pathfind",
         dest="pathfinding",
         action="store_true",
         default=None,
-        help="run pathfinding and return input paths; overrides settings",
+        help="run pathfinding and return input paths; overrides service.path.pathfinding",
     )
     path.add_argument(
         "--no-pathfind",
         dest="pathfinding",
         action="store_false",
         default=None,
-        help="skip pathfinding and return placements only; overrides settings",
+        help="skip pathfinding and return placements only; overrides service.path.pathfinding",
     )
 
-    display_group = parser.add_argument_group("visualization options")
+    display_group = parser.add_argument_group("visualizer")
     display = display_group.add_mutually_exclusive_group()
     display.add_argument(
         "--terminal",
@@ -105,20 +113,22 @@ def main() -> None:
         action="store_true",
         help="run without a visualizer and print periodic progress",
     )
-    display_group.add_argument(
+    web_visualizer_group = parser.add_argument_group("web visualizer")
+    web_visualizer_group.add_argument(
         "--web-host",
         metavar="HOST",
         default=None,
-        help="host for the web visualizer; overrides settings",
+        help="host for the web visualizer; overrides visualizer.web.host",
     )
-    display_group.add_argument(
+    web_visualizer_group.add_argument(
         "--web-port",
         metavar="PORT",
         type=int,
         default=None,
-        help="port for the web visualizer; overrides settings",
+        help="port for the web visualizer; overrides visualizer.web.port",
     )
-    api_group = parser.add_argument_group("api options")
+
+    api_group = parser.add_argument_group("websocket api")
     api_group.add_argument(
         "--ws",
         action="store_true",
@@ -128,14 +138,14 @@ def main() -> None:
         "--ws-host",
         metavar="HOST",
         default=None,
-        help="host for the websocket API; overrides settings",
+        help="host for the websocket API; overrides api.websocket.host",
     )
     api_group.add_argument(
         "--ws-port",
         metavar="PORT",
         type=int,
         default=None,
-        help="port for the websocket API; overrides settings",
+        help="port for the websocket API; overrides api.websocket.port",
     )
     args = parser.parse_args()
     if args.ws and (args.terminal or args.web or args.headless):

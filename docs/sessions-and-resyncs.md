@@ -99,8 +99,8 @@ Set `piece_stream_limit = 0` to omit piece stream data entirely.
 
 ## Idle Bot Processes
 
-If `bot.idle_ms` is positive, Minorail closes a bot process after the session is
-idle for that long.
+Minorail closes a bot process after the session is idle for `bot.idle_ms`
+milliseconds.
 
 The session state remains. On the next request, Minorail starts a new bot
 process from the latest known snapshot and continues the session.

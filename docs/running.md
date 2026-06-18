@@ -48,12 +48,12 @@ For multiple games, it also prints total pieces.
 If `--piece-limit` or `--time-limit-ms` is provided, the game stops with status
 `piece_limit` or `time_limit` when that limit is reached.
 
-## Path Output
+## Pathfinding
 
 Minorail only pathfinds when the selected consumer needs paths.
 Terminal and web visualizers request paths by default for animation. Headless
-runs do not. Use `--pathfind` or `--no-pathfind` to override the setting and
-consumer default for one invocation.
+runs do not. Use `--pathfind` or `--no-pathfind` to override
+`service.path.pathfinding` and the consumer default for one invocation.
 
 If no path is included, the engine still applies the selected placement and
 visualizers render the locked board after the move is applied.
@@ -92,6 +92,22 @@ python run.py "path/to/sbp-bot" --settings custom-settings.toml
 
 Missing settings fall back to built in defaults.
 
+## CLI Categories
+
+`run.py --help` groups options by the same concepts used in `settings.toml`:
+
+| Category | Options | Settings |
+| --- | --- | --- |
+| `settings` | `--settings` | Selects the TOML file. |
+| `bot` | `--bot-args` | Extra process arguments; not stored in settings. |
+| `randomizer` | `--seed` | Overrides `engine.randomizer.seed`. |
+| `limits` | `--piece-limit`, `--time-limit-ms` | Override `engine.limits.*`. |
+| `games` | `--games` | CLI-only run count. |
+| `pathfinding` | `--pathfind`, `--no-pathfind` | Override `service.path.pathfinding`. |
+| `visualizer` | `--terminal`, `--web`, `--headless` | Selects the current visualizer. |
+| `web visualizer` | `--web-host`, `--web-port` | Override `visualizer.web.*`. |
+| `websocket api` | `--ws`, `--ws-host`, `--ws-port` | `--ws-host` and `--ws-port` override `api.websocket.*`. |
+
 ---
 
 ## WebSocket Mode
@@ -108,8 +124,8 @@ Custom listener:
 python run.py "path/to/sbp-bot" --ws --ws-host 0.0.0.0 --ws-port 9000
 ```
 
-The default listener comes from `[api.websocket]`. `--ws-host` and `--ws-port`
-override those settings for one invocation.
+The default listener comes from `[api.websocket]`. `--ws-host` overrides
+`api.websocket.host`; `--ws-port` overrides `api.websocket.port`.
 
 !> Websocket mode cannot be combined with terminal, web, or headless visualizer
 modes in the same process.

@@ -86,13 +86,13 @@ convert_sonic_drops = false
 
 | Field | Behavior |
 | --- | --- |
-| `pathfinding` | Optional boolean. Omit it to use the selected consumer's pathfinding preference. `true` always runs pathfinding by default. `false` skips pathfinding by default. CLI `--pathfind` and `--no-pathfind` override this for one invocation. |
+| `pathfinding` | Optional boolean. Omit it to use the selected consumer's pathfinding preference. `true` always runs pathfinding by default. `false` skips pathfinding by default. CLI `--pathfind` and `--no-pathfind` override `service.path.pathfinding` for one invocation. |
 | `convert_sonic_drops` | Converts intermediate `sonic_drop` path steps into repeated `soft_drop` steps when pathfinding is enabled. |
 
 The final `hard_drop` remains unchanged.
 
-This is a Minorail output option. It does not change the SBP rules sent to the
-bot.
+These are service pathfinding options. They do not change the SBP rules sent
+to the bot.
 
 Terminal and web visualizers prefer paths by default because they can animate
 them. Headless runs and evaluation do not request paths by default.
@@ -115,7 +115,7 @@ idle_ms = 60000
 When a bot process goes idle, the session is not forgotten. On the next
 request, Minorail starts a new bot process from the latest known state.
 
-Set `idle_ms` to `0` or a negative value to disable the idle timer.
+`idle_ms` must be a positive integer.
 
 ---
 
@@ -129,8 +129,8 @@ port = 8444
 
 | Field | Behavior |
 | --- | --- |
-| `host` | Default bind host for `run.py --ws`. CLI `--ws-host` overrides this for one invocation. |
-| `port` | Default bind port for `run.py --ws`. CLI `--ws-port` overrides this for one invocation. |
+| `host` | Default bind host for `run.py --ws`. CLI `--ws-host` overrides `api.websocket.host` for one invocation. |
+| `port` | Default bind port for `run.py --ws`. CLI `--ws-port` overrides `api.websocket.port` for one invocation. |
 
 ---
 
@@ -182,11 +182,12 @@ When running multiple games through `run.py --games`, Minorail derives each
 game seed as `seed + game_index`, where `game_index` starts at `0`. For example,
 `--seed 100 --games 3` uses seeds `100`, `101`, and `102`.
 
-`run.py --seed` is a per-run override. If both `engine.randomizer.seed` and
-`--seed` are provided, the CLI value wins.
+`run.py --seed` overrides `engine.randomizer.seed` for one invocation. If both
+are provided, the CLI value wins.
 
-`run.py --piece-limit` and `run.py --time-limit-ms` are also per-run overrides.
-If the matching `engine.limits` field is set, the CLI value wins.
+`run.py --piece-limit` overrides `engine.limits.piece_limit`;
+`run.py --time-limit-ms` overrides `engine.limits.time_limit_ms`. If the
+matching setting is also set, the CLI value wins.
 
 ---
 
@@ -212,8 +213,8 @@ host = "127.0.0.1"
 | `first_move_delay_ms` | Pause before animating the first move. |
 | `visible_rows` | Number of board rows shown by visualizers. |
 | `queue_size` | Number of upcoming pieces shown by visualizers. |
-| `visualizer.web.host` | Default bind host for `run.py --web`. CLI `--web-host` overrides this for one invocation. |
-| `visualizer.web.port` | Default bind port for `run.py --web`. Omit it to choose an open port automatically. CLI `--web-port` overrides this for one invocation. |
+| `visualizer.web.host` | Default bind host for `run.py --web`. CLI `--web-host` overrides `visualizer.web.host` for one invocation. |
+| `visualizer.web.port` | Default bind port for `run.py --web`. Omit it to choose an open port automatically. CLI `--web-port` overrides `visualizer.web.port` for one invocation. |
 
 These settings affect presentation only. They do not change local rules, SBP
 messages, or websocket responses.
