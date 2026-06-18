@@ -12,6 +12,13 @@ from runner.events import EngineEvent, EngineEventType
 from tetris.randomizer import Randomizer, make_randomizer
 from tetris.model.rules import Rules
 from tetris.game.state import GameState, spawn_location
+from runner.observers import (
+    EngineObserver,
+    GameEndedEvent,
+    GameStartedEvent,
+    PieceLockedEvent,
+)
+from runner.seeding import base_seed
 from suggestion.bot_session import BotStartupError
 from suggestion.move_selection import moving_piece_for
 from suggestion.contracts.observed_snapshot import ObservedSnapshot
@@ -54,12 +61,15 @@ class EngineSession:
         session_id: str = "terminal",
         bot_args: list[str] | None = None,
         random_seed: int | None = None,
+        observers: list[EngineObserver] | None = None,
     ) -> None:
         self._bot_path = bot_path
         self._bot_args = bot_args or []
         self._settings = settings
         self._visualizer = visualizer
         self._session_id = session_id
+        self._random_seed = random_seed
+        self._observers = observers or []
 
         protocol_cfg = self._settings.get("protocol", {})
         protocol_start_cfg = protocol_cfg.get("start", {})
@@ -79,7 +89,7 @@ class EngineSession:
         self._rules = Rules.from_settings(self._settings)
         rand = make_randomizer(
             self._rules.randomizer,
-            seed=_randomizer_seed(self._settings, random_seed),
+            seed=base_seed(self._settings, random_seed),
         )
         assert rand is not None
         self._rand: Randomizer = rand
@@ -173,8 +183,10 @@ class EngineSession:
         pieces_placed = 0
         start_time = time.time()
         interrupted = False
+        status = "unknown"
 
         self._visualizer.on_game_started(self.state)
+        self._notify_game_started()
 
         try:
             while True:
@@ -197,12 +209,14 @@ class EngineSession:
                     )
                 except BotStartupError as e:
                     print(f"[error] bot startup failed: {e}", file=sys.stderr)
+                    status = "bot_startup_failed"
                     break
                 self.seq += 1
                 if result.placement is None:
                     self._visualizer.error(
                         f"no suggestion: {result.reason or result.status.value}"
                     )
+                    status = "no_suggestion"
                     break
 
                 chosen = result.placement
@@ -211,29 +225,44 @@ class EngineSession:
                 moving_piece = moving_piece_for(self.snapshot(), chosen)
                 if moving_piece is None:
                     self._visualizer.error(f"no valid move: {chosen}")
+                    status = "invalid_move"
                     break
 
                 self._visualizer.animate_suggestion(
                     self.state, moving_piece, result, hold_used, self._rules
                 )
 
-                ok = self.state.apply_move(chosen, self._rules)
-                if not ok:
+                applied = self.state.apply_move(chosen, self._rules)
+                if applied is None:
                     self._visualizer.error(f"apply_move rejected: {chosen}")
+                    status = "apply_move_rejected"
                     break
 
                 self.last_move = chosen
                 self._ensure_queue_refilled(self.state, self._rand, refill_at)
 
+                self._notify_piece_locked(
+                    PieceLockedEvent(
+                        session_id=self._session_id,
+                        piece_index=pieces_placed,
+                        placement=chosen,
+                        hold_used=hold_used,
+                        applied=applied,
+                        stack_height=_stack_height(self.state),
+                        occupied_cells=_occupied_cells(self.state),
+                    )
+                )
                 pieces_placed += 1
                 self._visualizer.on_piece_locked(self.state)
 
                 if any(self.state.board.cols[x] >> 20 != 0 for x in range(10)):
                     self._visualizer.on_top_out(self.state)
                     self._visualizer.error("topped out")
+                    status = "topout"
                     break
         except KeyboardInterrupt:
             interrupted = True
+            status = "interrupted"
             raise
         finally:
             elapsed = time.time() - start_time
@@ -242,11 +271,23 @@ class EngineSession:
             except KeyboardInterrupt:
                 if not interrupted:
                     raise
+            self._notify_game_ended(
+                GameEndedEvent(
+                    session_id=self._session_id,
+                    status=status,
+                    pieces=pieces_placed,
+                    elapsed=elapsed,
+                    pps=pieces_placed / elapsed if elapsed > 0 else 0,
+                    stack_height=_stack_height(self.state),
+                    occupied_cells=_occupied_cells(self.state),
+                )
+            )
 
         return {
             "pieces": pieces_placed,
             "elapsed": elapsed,
             "pps": pieces_placed / elapsed if elapsed > 0 else 0,
+            "status": status,
         }
 
     def _ensure_queue_refilled(
@@ -262,13 +303,23 @@ class EngineSession:
         if x < 0 or x >= 10 or y < 0 or y >= 40:
             raise ValueError(f"cell out of bounds: ({x}, {y})")
 
+    def _notify_game_started(self) -> None:
+        event = GameStartedEvent(session_id=self._session_id, seed=self._random_seed)
+        for observer in self._observers:
+            observer.on_game_started(event)
 
-def _randomizer_seed(settings: dict[str, Any], override: int | None) -> int | None:
-    if override is not None:
-        return override
-    seed = settings.get("engine", {}).get("randomizer", {}).get("seed")
-    if seed is None:
-        return None
-    if not isinstance(seed, int):
-        raise ValueError("engine.randomizer.seed must be an integer")
-    return seed
+    def _notify_piece_locked(self, event: PieceLockedEvent) -> None:
+        for observer in self._observers:
+            observer.on_piece_locked(event)
+
+    def _notify_game_ended(self, event: GameEndedEvent) -> None:
+        for observer in self._observers:
+            observer.on_game_ended(event)
+
+
+def _stack_height(state: GameState) -> int:
+    return max((col.bit_length() for col in state.board.cols), default=0)
+
+
+def _occupied_cells(state: GameState) -> int:
+    return sum(col.bit_count() for col in state.board.cols)

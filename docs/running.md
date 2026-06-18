@@ -41,8 +41,6 @@ Minorail prints per game stats to stderr:
 
 For multiple games, it also prints total pieces.
 
----
-
 ## Bot Arguments
 
 Pass extra bot arguments with `--bot-args`:

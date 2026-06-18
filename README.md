@@ -27,6 +27,7 @@ to Minorail's websocket API.
 | Terminal visualizer | Shows a local game directly in the terminal. |
 | Web visualizer | Provides a browser based view for watching games and inspecting state. |
 | Headless runs | Runs batches without rendering for testing or benchmarking. |
+| Evaluation output | Writes JSON summaries and lock-by-lock events for batch analysis. |
 | Websocket API | Serves Minorail suggestions to external clients while keeping per session state. |
 | Resync handling | Treats incoming snapshots as authoritative and resets or advances the bot session as needed. |
 | Piece stream tracking | Keeps generated piece chronology aligned for bots that support SBP `piece_stream`. |
@@ -69,6 +70,12 @@ Run a headless batch:
 
 ```bash
 python run.py "path/to/sbp-bot" --headless --games 100
+```
+
+Run a JSON evaluation batch:
+
+```bash
+python eval.py "path/to/sbp-bot" --games 100 --seed 123 --json-out results.json
 ```
 
 Start the websocket API:

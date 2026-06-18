@@ -2,9 +2,9 @@ import argparse
 import asyncio
 import shlex
 import sys
-from typing import Any
 
 from runner.engine_session import EngineSession
+from runner.seeding import base_seed, game_seed
 import settings as cfg
 from suggestion.websocket_api import SuggestionWebSocketServer
 from visualizers.headless import HeadlessVisualizer
@@ -144,7 +144,7 @@ def main() -> None:
         if args.web
         else None
     )
-    base_seed = _base_seed(settings, args.seed)
+    seed = base_seed(settings, args.seed)
     try:
         for i in range(args.games):
             print(f"[info] game={i + 1}/{args.games}", file=sys.stderr)
@@ -159,7 +159,7 @@ def main() -> None:
                 bot_args=bot_args,
                 settings=settings,
                 visualizer=visualizer,
-                random_seed=_game_seed(base_seed, i),
+                random_seed=game_seed(seed, i),
             ).play_game()
             print(
                 f"[info] pieces={stats['pieces']} "
@@ -173,23 +173,6 @@ def main() -> None:
 
     if args.games > 1:
         print(f"[info] total_pieces={total} games={args.games}", file=sys.stderr)
-
-
-def _base_seed(settings: dict[str, Any], override: int | None) -> int | None:
-    if override is not None:
-        return override
-    seed = settings.get("engine", {}).get("randomizer", {}).get("seed")
-    if seed is None:
-        return None
-    if not isinstance(seed, int):
-        raise ValueError("engine.randomizer.seed must be an integer")
-    return seed
-
-
-def _game_seed(base_seed: int | None, game_index: int) -> int | None:
-    if base_seed is None:
-        return None
-    return base_seed + game_index
 
 
 if __name__ == "__main__":

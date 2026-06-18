@@ -1,5 +1,6 @@
 * [Overview](README.md)
 * [Running Minorail](running.md)
+* [Evaluation](evaluation.md)
 * [Settings](settings.md)
 * [WebSocket API](websocket-api.md)
 * [Sessions And Resyncs](sessions-and-resyncs.md)

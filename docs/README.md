@@ -52,6 +52,7 @@ Use Minorail when you want to:
 * run an SBP bot against a local Tetris engine
 * watch bot decisions in a visualizer
 * batch run games from the command line
+* write evaluation JSON for analysis
 * serve an SBP backed suggestion service over websockets
 * test how a bot handles rule settings, hold, queues, piece streams, and resyncs
 
@@ -89,6 +90,7 @@ still correct.
 Read these first:
 
 * [Running Minorail](running.md)
+* [Evaluation](evaluation.md)
 * [Settings](settings.md)
 * [WebSocket API](websocket-api.md)
 * [Sessions And Resyncs](sessions-and-resyncs.md)

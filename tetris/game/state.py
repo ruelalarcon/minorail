@@ -24,6 +24,17 @@ spawn_location = _spawn.spawn_location
 
 
 @dataclass
+class AppliedMove:
+    placement: Placement
+    lines_cleared: int
+    perfect_clear: bool
+    combo_before: int
+    combo_after: int
+    back_to_back_before: int
+    back_to_back_after: int
+
+
+@dataclass
 class GameState:
     board: Board
     active: PieceLocation
@@ -48,9 +59,11 @@ class GameState:
     def active_piece(self) -> Piece:
         return self.active.piece
 
-    def apply_move(self, placement: Placement, rules: Rules | None = None) -> bool:
+    def apply_move(
+        self, placement: Placement, rules: Rules | None = None
+    ) -> AppliedMove | None:
         """
-        Apply a bot move. Returns False if the move is illegal.
+        Apply a bot move. Returns None if the move is illegal.
         Hold is inferred from the placed piece type vs active and hold state.
         """
         hold_result = Hold.infer_after_placement(
@@ -61,10 +74,10 @@ class GameState:
             hold_used_this_turn=self.hold_used_this_turn,
         )
         if hold_result is None:
-            return False
+            return None
 
         if not hold_result.queue:
-            return False
+            return None
         rules = rules or Rules()
         next_queue = list(hold_result.queue)
         next_active = spawn_location(
@@ -75,19 +88,21 @@ class GameState:
         cells = piece_cells(loc.piece, loc.rotation, loc.x, loc.y)
         for x, y in cells:
             if x < 0 or x >= 10 or y < 0 or y >= 40:
-                return False
+                return None
             if self.board.occupied(x, y):
-                return False
+                return None
 
         self.board.place(loc.piece, loc.rotation, loc.x, loc.y)
         self.active = next_active
         self.queue = next_queue
         self.hold = hold_result.hold
 
+        combo_before = self.combo
+        back_to_back_before = self.back_to_back
         clear_result = LineClear.apply(
             self.board,
-            combo=self.combo,
-            back_to_back=self.back_to_back,
+            combo=combo_before,
+            back_to_back=back_to_back_before,
             piece=loc.piece,
             spin=placement.spin,
             rules=rules,
@@ -96,4 +111,12 @@ class GameState:
         self.back_to_back = clear_result.back_to_back
 
         self.hold_used_this_turn = False
-        return True
+        return AppliedMove(
+            placement=placement,
+            lines_cleared=clear_result.lines_cleared,
+            perfect_clear=clear_result.perfect_clear,
+            combo_before=combo_before,
+            combo_after=self.combo,
+            back_to_back_before=back_to_back_before,
+            back_to_back_after=self.back_to_back,
+        )

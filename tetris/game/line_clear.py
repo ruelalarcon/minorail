@@ -10,6 +10,8 @@ from tetris.model.spin import Spin
 
 @dataclass(frozen=True)
 class LineClearResult:
+    lines_cleared: int
+    perfect_clear: bool
     combo: int
     back_to_back: int
 
@@ -27,7 +29,12 @@ class LineClear:
     ) -> LineClearResult:
         cleared = board.line_clears()
         if not cleared:
-            return LineClearResult(combo=0, back_to_back=back_to_back)
+            return LineClearResult(
+                lines_cleared=0,
+                perfect_clear=False,
+                combo=0,
+                back_to_back=back_to_back,
+            )
 
         board.remove_lines(cleared)
         all_clear = board.is_empty()
@@ -37,6 +44,8 @@ class LineClear:
             or (rules.allclear_b2b and all_clear)
         )
         return LineClearResult(
+            lines_cleared=cleared.bit_count(),
+            perfect_clear=all_clear,
             combo=combo + 1,
             back_to_back=back_to_back + 1 if hard else 0,
         )
