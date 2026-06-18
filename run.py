@@ -4,6 +4,7 @@ import shlex
 import sys
 
 from runner.engine_session import EngineSession
+from runner.endpoints import web_visualizer_endpoint, websocket_endpoint
 from runner.limits import engine_limits
 from runner.pathfinding import pathfinding_options
 from runner.seeding import base_seed, game_seed
@@ -111,15 +112,15 @@ def main() -> None:
     display_group.add_argument(
         "--web-host",
         metavar="HOST",
-        default="127.0.0.1",
-        help="host for the web visualizer",
+        default=None,
+        help="host for the web visualizer; overrides settings",
     )
     display_group.add_argument(
         "--web-port",
         metavar="PORT",
         type=int,
         default=None,
-        help="port for the web visualizer (default: auto)",
+        help="port for the web visualizer; overrides settings",
     )
     api_group = parser.add_argument_group("api options")
     api_group.add_argument(
@@ -130,15 +131,15 @@ def main() -> None:
     api_group.add_argument(
         "--ws-host",
         metavar="HOST",
-        default="127.0.0.1",
-        help="host for the websocket API",
+        default=None,
+        help="host for the websocket API; overrides settings",
     )
     api_group.add_argument(
         "--ws-port",
         metavar="PORT",
         type=int,
-        default=8444,
-        help="port for the websocket API",
+        default=None,
+        help="port for the websocket API; overrides settings",
     )
     args = parser.parse_args()
     if args.ws and (args.terminal or args.web or args.headless):
@@ -154,6 +155,12 @@ def main() -> None:
     bot_args = shlex.split(args.bot_args)
 
     if args.ws:
+        endpoint = websocket_endpoint(
+            settings,
+            host=args.ws_host,
+            port=args.ws_port,
+        )
+        assert endpoint.port is not None
         ws_pathfinding_options = pathfinding_options(
             settings,
             default_pathfinding=True,
@@ -164,8 +171,8 @@ def main() -> None:
             bot_args=bot_args,
             settings=settings,
             pathfinding_options=ws_pathfinding_options,
-            host=args.ws_host,
-            port=args.ws_port,
+            host=endpoint.host,
+            port=endpoint.port,
         )
         try:
             asyncio.run(server.serve_forever())
@@ -176,15 +183,18 @@ def main() -> None:
         return
 
     total: int = 0
-    web_visualizer = (
-        WebVisualizer(
+    web_visualizer = None
+    if args.web:
+        web_endpoint = web_visualizer_endpoint(
             settings,
             host=args.web_host,
             port=args.web_port,
         )
-        if args.web
-        else None
-    )
+        web_visualizer = WebVisualizer(
+            settings,
+            host=web_endpoint.host,
+            port=web_endpoint.port,
+        )
     seed = base_seed(settings, args.seed)
     limits = engine_limits(
         settings,

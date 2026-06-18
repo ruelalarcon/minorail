@@ -4,8 +4,8 @@ from runner.pathfinding import PathfindingOptions, pathfinding_options
 
 
 class PathfindingOptionsTests(unittest.TestCase):
-    def test_default_setting_uses_consumer_default(self) -> None:
-        settings = {"service": {"path": {"pathfinding": "default"}}}
+    def test_missing_setting_uses_consumer_default(self) -> None:
+        settings = {"service": {"path": {}}}
 
         self.assertTrue(
             pathfinding_options(settings, default_pathfinding=True).pathfinding
@@ -59,7 +59,7 @@ class PathfindingOptionsTests(unittest.TestCase):
     def test_invalid_pathfinding_setting_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             pathfinding_options(
-                {"service": {"path": {"pathfinding": "auto"}}},
+                {"service": {"path": {"pathfinding": "default"}}},
                 default_pathfinding=True,
             )
 

@@ -23,6 +23,9 @@ Custom endpoint:
 python run.py "path/to/sbp-bot" --ws --ws-host 0.0.0.0 --ws-port 9000
 ```
 
+The default endpoint comes from `[api.websocket]` in settings. CLI host and port
+flags override those settings for one invocation.
+
 ---
 
 ## Request Shape
@@ -61,7 +64,7 @@ Optional fields:
 | `last_move` | null | SBP placement or null. |
 | `rules` | server settings | Partial per request rule override. |
 | `extensions` | null | Object forwarded to the bot. |
-| `pathfinding` | server settings (`default` evaluates to true) | Whether Minorail should pathfind the selected placement. |
+| `pathfinding` | server settings; true when omitted | Whether Minorail should pathfind the selected placement. |
 | `convert_sonic_drops` | server settings | Whether returned paths rewrite intermediate sonic drops. Only matters when path output is requested. |
 | `session_id` | connection session | Non empty string. |
 | `timeout_ms` | settings value | Positive integer. |

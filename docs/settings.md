@@ -80,13 +80,13 @@ field.
 
 ```toml
 [service.path]
-pathfinding = "default"
+# pathfinding = false
 convert_sonic_drops = false
 ```
 
 | Field | Behavior |
 | --- | --- |
-| `pathfinding` | `default` uses the selected consumer's pathfinding preference. `true` always runs pathfinding by default. `false` skips pathfinding by default. CLI `--pathfind` and `--no-pathfind` override this for one invocation. |
+| `pathfinding` | Optional boolean. Omit it to use the selected consumer's pathfinding preference. `true` always runs pathfinding by default. `false` skips pathfinding by default. CLI `--pathfind` and `--no-pathfind` override this for one invocation. |
 | `convert_sonic_drops` | Converts intermediate `sonic_drop` path steps into repeated `soft_drop` steps when path output is requested. |
 
 The final `hard_drop` remains unchanged.
@@ -116,6 +116,21 @@ When a bot process goes idle, the session is not forgotten. On the next
 request, Minorail starts a new bot process from the latest known state.
 
 Set `idle_ms` to `0` or a negative value to disable the idle timer.
+
+---
+
+## API Options
+
+```toml
+[api.websocket]
+host = "127.0.0.1"
+port = 8444
+```
+
+| Field | Behavior |
+| --- | --- |
+| `host` | Default bind host for `run.py --ws`. CLI `--ws-host` overrides this for one invocation. |
+| `port` | Default bind port for `run.py --ws`. CLI `--ws-port` overrides this for one invocation. |
 
 ---
 
@@ -184,6 +199,10 @@ lock_delay_ms = 150
 first_move_delay_ms = 200
 visible_rows = 20
 queue_size = 5
+
+[visualizer.web]
+host = "127.0.0.1"
+# port = 8080
 ```
 
 | Field | Behavior |
@@ -193,6 +212,8 @@ queue_size = 5
 | `first_move_delay_ms` | Pause before animating the first move. |
 | `visible_rows` | Number of board rows shown by visualizers. |
 | `queue_size` | Number of upcoming pieces shown by visualizers. |
+| `visualizer.web.host` | Default bind host for `run.py --web`. CLI `--web-host` overrides this for one invocation. |
+| `visualizer.web.port` | Default bind port for `run.py --web`. Omit it to choose an open port automatically. CLI `--web-port` overrides this for one invocation. |
 
 These settings affect presentation only. They do not change local rules, SBP
 messages, or websocket responses.

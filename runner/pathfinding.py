@@ -23,13 +23,13 @@ def pathfinding_options(
     path_cfg = settings.get("service", {}).get("path", {})
     resolved_pathfinding = _pathfinding_value(
         pathfinding,
-        path_cfg.get("pathfinding", "default"),
+        path_cfg.get("pathfinding"),
         default_pathfinding,
     )
     convert_sonic_drops = _bool_value(
         "service.path.convert_sonic_drops",
         path_cfg.get("convert_sonic_drops", False),
-)
+    )
     return PathfindingOptions(
         pathfinding=resolved_pathfinding,
         convert_sonic_drops=convert_sonic_drops if resolved_pathfinding else False,
@@ -43,11 +43,11 @@ def _pathfinding_value(
 ) -> bool:
     if override is not None:
         return override
-    if configured == "default":
+    if configured is None:
         return default_pathfinding
     if isinstance(configured, bool):
         return configured
-    raise ValueError("service.path.pathfinding must be 'default', true, or false")
+    raise ValueError("service.path.pathfinding must be true or false")
 
 
 def _bool_value(name: str, value: object) -> bool:

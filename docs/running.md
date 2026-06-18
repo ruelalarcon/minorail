@@ -108,5 +108,8 @@ Custom listener:
 python run.py "path/to/sbp-bot" --ws --ws-host 0.0.0.0 --ws-port 9000
 ```
 
+The default listener comes from `[api.websocket]`. `--ws-host` and `--ws-port`
+override those settings for one invocation.
+
 !> Websocket mode cannot be combined with terminal, web, or headless visualizer
 modes in the same process.

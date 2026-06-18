@@ -22,13 +22,18 @@ DEFAULT: dict[str, Any] = {
     },
     "service": {
         "path": {
-            "pathfinding": "default",
             "convert_sonic_drops": False,
         },
     },
     "bot": {
         "suggest_timeout_ms": 10_000,
         "idle_ms": 60_000,
+    },
+    "api": {
+        "websocket": {
+            "host": "127.0.0.1",
+            "port": 8444,
+        },
     },
     "engine": {
         "randomizer": {
@@ -49,6 +54,10 @@ DEFAULT: dict[str, Any] = {
         },
     },
     "visualizer": {
+        "web": {
+            "host": "127.0.0.1",
+            "port": None,
+        },
         "move_delay_ms": 50,
         "lock_delay_ms": 150,
         "first_move_delay_ms": 200,

@@ -25,7 +25,8 @@ Options:
 python run.py "path/to/sbp-bot" --web --web-host 127.0.0.1 --web-port 8080
 ```
 
-If no web port is provided, Minorail chooses one automatically.
+The default bind address comes from `[visualizer.web]`. If no web port is set
+there or on the CLI, Minorail chooses one automatically.
 
 ## Headless
 
@@ -48,6 +49,10 @@ lock_delay_ms = 150
 first_move_delay_ms = 200
 visible_rows = 20
 queue_size = 5
+
+[visualizer.web]
+host = "127.0.0.1"
+# port = 8080
 ```
 
 These settings affect rendering only.
