@@ -4,10 +4,10 @@ import sys
 import time
 
 from tetris.model.piece import Piece
-from runner.visualizer_protocol import EngineControls
+from runner.controls import GameControls
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
-from suggestion.contracts.suggestion_result import SuggestionResult
+from contracts.suggestion_result import SuggestionResult
 
 
 class HeadlessVisualizer:
@@ -18,7 +18,7 @@ class HeadlessVisualizer:
         self._pieces = 0
         self._started_at = 0.0
 
-    def set_engine_controls(self, controls: EngineControls) -> None:
+    def set_game_controls(self, controls: GameControls) -> None:
         pass
 
     def on_game_started(self, state: GameState) -> None:

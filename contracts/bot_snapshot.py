@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from contracts.piece_stream_snapshot import PieceStreamSnapshot
 from tetris.model.board import Board
 from tetris.model.piece import Piece
-from suggestion.contracts.piece_stream_snapshot import PieceStreamSnapshot
 
 
 @dataclass

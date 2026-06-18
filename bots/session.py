@@ -10,9 +10,9 @@ from bots.process import BotProcess
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
-from suggestion.contracts.bot_snapshot import BotSnapshot
-from suggestion.contracts.piece_stream_snapshot import PieceStreamSnapshot
-from protocols.sbp.messages import BotCapabilities, MsgStart
+from contracts.bot_snapshot import BotSnapshot
+from contracts.piece_stream_snapshot import PieceStreamSnapshot
+from sbp.messages import BotCapabilities, MsgStart
 
 
 class BotStartupError(RuntimeError):

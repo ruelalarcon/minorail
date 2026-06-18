@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Any
 
+from contracts.observed_snapshot import ObservedSnapshot
 from tetris.model.rules import Rules
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
 
 
 @dataclass

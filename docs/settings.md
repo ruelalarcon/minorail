@@ -2,10 +2,10 @@
 
 Minorail reads settings from TOML. The default file is `settings.toml`.
 
-Settings are merged over built in defaults from `config/settings.py`, so a
+Settings are merged over built in defaults from `settings/model.py`, so a
 custom file can contain only the fields you want to change.
 
-?> Settings affect two things: Minorail's local engine behavior and the SBP
+?> Settings affect two things: Minorail's local game behavior and the SBP
 rules or start data sent to the bot. Visualizer settings only affect display.
 
 ---
@@ -58,7 +58,7 @@ rotation = North
 
 ---
 
-## Start Options
+## Start Settings
 
 ```toml
 [protocol.start]
@@ -76,7 +76,7 @@ field.
 
 ---
 
-## Service Path Options
+## Service Path Settings
 
 ```toml
 [service.path]
@@ -91,7 +91,7 @@ convert_sonic_drops = false
 
 The final `hard_drop` remains unchanged.
 
-These are service pathfinding options. They do not change the SBP rules sent
+These are service pathfinding settings. They do not change the SBP rules sent
 to the bot.
 
 Terminal and web visualizers prefer paths by default because they can animate
@@ -99,7 +99,7 @@ them. Headless runs and evaluation do not request paths by default.
 
 ---
 
-## Bot Options
+## Bot Settings
 
 ```toml
 [bot]
@@ -119,7 +119,7 @@ request, Minorail starts a new bot process from the latest known state.
 
 ---
 
-## API Options
+## API Settings
 
 ```toml
 [api.websocket]
@@ -150,28 +150,28 @@ ignored.
 
 ---
 
-## Engine Queue
+## Local Game And Run Settings
 
 ```toml
-[engine.randomizer]
+[game.randomizer]
 seed = 0
 
-[engine.limits]
-piece_limit = 1000
-time_limit_ms = 30000
-
-[engine.queue]
+[game.queue]
 initial = 5
 refill_threshold = 5
+
+[game.limits]
+piece_limit = 1000
+time_limit_ms = 30000
 ```
 
 | Field | Behavior |
 | --- | --- |
-| `engine.randomizer.seed` | Optional integer default base seed for reproducible local piece streams. Omit it to use entropy unless a CLI seed override is provided. |
-| `engine.limits.piece_limit` | Optional integer default accepted piece lock limit. Omit it to run until another terminal condition occurs. |
-| `engine.limits.time_limit_ms` | Optional integer default wall-clock game time limit in milliseconds. Omit it to run until another terminal condition occurs. |
-| `initial` | Number of generated pieces available at game start, including the active piece. |
-| `refill_threshold` | Minorail refills the upcoming queue until its length reaches this value. |
+| `game.randomizer.seed` | Optional integer default base seed for reproducible local piece streams. Omit it to use entropy unless a CLI seed override is provided. |
+| `game.queue.initial` | Number of generated pieces available at game start, including the active piece. |
+| `game.queue.refill_threshold` | Minorail refills the upcoming queue until its length reaches this value. |
+| `game.limits.piece_limit` | Optional accepted piece lock limit. Omit it to run until another terminal condition occurs. |
+| `game.limits.time_limit_ms` | Optional wall-clock game time limit in milliseconds. Omit it to run until another terminal condition occurs. |
 
 For example, `initial = 5` creates one active piece and four upcoming pieces.
 
@@ -182,11 +182,11 @@ When running multiple games through `run.py --games`, Minorail derives each
 game seed as `seed + game_index`, where `game_index` starts at `0`. For example,
 `--seed 100 --games 3` uses seeds `100`, `101`, and `102`.
 
-`run.py --seed` overrides `engine.randomizer.seed` for one invocation. If both
+`run.py --seed` overrides `game.randomizer.seed` for one invocation. If both
 are provided, the CLI value wins.
 
-`run.py --piece-limit` overrides `engine.limits.piece_limit`;
-`run.py --time-limit-ms` overrides `engine.limits.time_limit_ms`. If the
+`run.py --piece-limit` overrides `game.limits.piece_limit`;
+`run.py --time-limit-ms` overrides `game.limits.time_limit_ms`. If the
 matching setting is also set, the CLI value wins.
 
 ---

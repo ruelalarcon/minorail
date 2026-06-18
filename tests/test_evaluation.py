@@ -1,7 +1,7 @@
 import unittest
 
 from evaluation.collector import EvaluationCollector
-from runner.observers import GameEndedEvent, GameStartedEvent, PieceLockedEvent
+from runner.events import GameEndedEvent, GameStartedEvent, PieceLockedEvent
 from tetris.game.state import AppliedMove
 from tetris.model.location import PieceLocation
 from tetris.model.piece import Piece

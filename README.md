@@ -1,6 +1,6 @@
 # Minorail
 
-> A local Tetris engine and bot runner for bots that implement the [Stacker Bot Protocol (SBP)](https://github.com/ruelalarcon/stacker_bot_protocol).
+> A local Tetris game runner for bots that implement the [Stacker Bot Protocol (SBP)](https://github.com/ruelalarcon/stacker_bot_protocol).
 
 Minorail provides an SBP bot a complete local game to play against. Minorail owns the
 board, active piece, queue, hold state, rules, and sequence numbers, while the
@@ -22,7 +22,7 @@ to Minorail's websocket API.
 
 | Feature | What it does |
 | --- | --- |
-| Local Tetris engine | Runs the board, active piece, queue, hold, line clears, combo, and back to back state. |
+| Local Tetris game | Runs the board, active piece, queue, hold, line clears, combo, and back to back state. |
 | SBP bot runner | Starts an SBP bot subprocess and exchanges `rules`, `start`, `suggest`, `play`, `new_piece`, `stop`, and `quit` messages. |
 | Terminal visualizer | Shows a local game directly in the terminal. |
 | Web visualizer | Provides a browser based view for watching games and inspecting state. |
@@ -32,7 +32,7 @@ to Minorail's websocket API.
 | Resync handling | Treats incoming snapshots as authoritative and resets or advances the bot session as needed. |
 | Piece stream tracking | Keeps generated piece chronology aligned for bots that support SBP `piece_stream`. |
 | Path output | Finds input paths to selected placements and can convert sonic drops to soft drops. |
-| Configurable rules | Supports randomizer, kickset, 180s, sonic drop mode, all spin back to back, all clear back to back, and spawn position settings. |
+| Rule settings | Supports randomizer, kickset, 180s, sonic drop mode, all spin back to back, all clear back to back, and spawn position settings. |
 
 ## Documentation
 
@@ -90,7 +90,7 @@ Start the websocket API:
 python run.py "path/to/sbp-bot" --ws
 ```
 
-## Configuration
+## Settings
 
 Minorail reads `settings.toml` by default. Use `--settings` to load another
 file:

@@ -6,7 +6,7 @@ from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.pieces.cells import piece_cells
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
+from contracts.observed_snapshot import ObservedSnapshot
 
 
 def moving_piece_for(

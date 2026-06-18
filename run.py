@@ -3,9 +3,9 @@ import asyncio
 import shlex
 import sys
 
-from config import Settings, seed_for_game
-from runner.engine_session import EngineSession
-from suggestion.websocket_api import SuggestionWebSocketServer
+from settings import Settings, seed_for_game
+from runner.session import LocalGameSession
+from api.websocket import SuggestionWebSocketServer
 from visualizers.headless import HeadlessVisualizer
 from visualizers.terminal import TerminalVisualizer
 from visualizers.web import WebVisualizer
@@ -29,7 +29,7 @@ class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="minorail",
-        description="Run a bot against Minorail's local game engine.",
+        description="Run a bot against Minorail's local Tetris game.",
         formatter_class=_HelpFormatter,
     )
     parser.add_argument("bot", metavar="BOT", help="bot executable or script path")
@@ -56,7 +56,7 @@ def main() -> None:
         metavar="N",
         type=int,
         default=None,
-        help="base seed for local piece streams; overrides engine.randomizer.seed",
+        help="base seed for local piece streams; overrides game.randomizer.seed",
     )
     limits_group = parser.add_argument_group("limits")
     limits_group.add_argument(
@@ -64,14 +64,14 @@ def main() -> None:
         metavar="N",
         type=int,
         default=None,
-        help="accepted piece lock limit; overrides engine.limits.piece_limit",
+        help="accepted piece lock limit; overrides game.limits.piece_limit",
     )
     limits_group.add_argument(
         "--time-limit-ms",
         metavar="MS",
         type=int,
         default=None,
-        help="wall-clock time limit in milliseconds; overrides engine.limits.time_limit_ms",
+        help="wall-clock time limit in milliseconds; overrides game.limits.time_limit_ms",
     )
 
     games_group = parser.add_argument_group("games")
@@ -199,7 +199,7 @@ def main() -> None:
             port=web_endpoint.port,
         )
     seed = settings.base_seed(args.seed)
-    limits = settings.engine_limits(
+    limits = settings.run_limits(
         piece_limit=args.piece_limit,
         time_limit_ms=args.time_limit_ms,
     )
@@ -216,7 +216,7 @@ def main() -> None:
                 default_pathfinding=visualizer.default_pathfinding,
                 pathfinding=args.pathfinding,
             )
-            stats = EngineSession(
+            stats = LocalGameSession(
                 args.bot,
                 bot_args=bot_args,
                 settings=settings,

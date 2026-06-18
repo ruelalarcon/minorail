@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from tetris.model.spin import Spin
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
+from contracts.observed_snapshot import ObservedSnapshot
 
 
 @dataclass

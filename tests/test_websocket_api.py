@@ -10,13 +10,13 @@ from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
 from tetris.model.spin import Spin
 from tetris.movegen.steps import MoveStep
-from suggestion.contracts.suggestion_result import SuggestionResult
-from suggestion.contracts.suggestion_status import SuggestionStatus
-from suggestion.websocket_api import (
+from api.websocket import (
     WebSocketApiError,
     request_from_json,
     result_to_json,
 )
+from contracts.suggestion_result import SuggestionResult
+from contracts.suggestion_status import SuggestionStatus
 
 
 class WebSocketApiTests(unittest.TestCase):

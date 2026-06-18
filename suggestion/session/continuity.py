@@ -8,6 +8,11 @@ from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.movegen.pathfinder import convert_sonic_drops, find_path
+from contracts.bot_snapshot import BotSnapshot
+from contracts.observed_snapshot import ObservedSnapshot
+from contracts.suggestion_request import SuggestionRequest
+from contracts.suggestion_result import SuggestionResult
+from contracts.suggestion_status import SuggestionStatus
 from suggestion.derived_state import DerivedState
 from suggestion.move_selection import moving_piece_for, pick_move
 from suggestion.piece_stream_tracker import PieceStreamTracker
@@ -19,11 +24,6 @@ from suggestion.session.transition import (
     classify_transition,
     observed_pieces,
 )
-from suggestion.contracts.bot_snapshot import BotSnapshot
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
-from suggestion.contracts.suggestion_request import SuggestionRequest
-from suggestion.contracts.suggestion_result import SuggestionResult
-from suggestion.contracts.suggestion_status import SuggestionStatus
 
 
 class BotSessionLike(Protocol):
@@ -47,7 +47,7 @@ class BotSessionLike(Protocol):
 BotSessionFactory = Callable[[], BotSessionLike]
 
 
-class ClientSession:
+class SuggestionContinuity:
     def __init__(
         self,
         bot_session_factory: BotSessionFactory,

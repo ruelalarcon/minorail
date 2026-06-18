@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from tetris.model.piece import Piece
-from runner.visualizer_protocol import EngineControls
+from runner.controls import GameControls
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
-from suggestion.contracts.suggestion_result import SuggestionResult
+from contracts.suggestion_result import SuggestionResult
 
 
 class NullVisualizer:
     default_pathfinding = False
 
-    def set_engine_controls(self, controls: EngineControls) -> None:
+    def set_game_controls(self, controls: GameControls) -> None:
         pass
 
     def on_game_started(self, state: GameState) -> None:

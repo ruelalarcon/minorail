@@ -1,6 +1,6 @@
 # Minorail
 
-> A local Tetris engine and bot runner for bots that implement the Stacker Bot Protocol (SBP).
+> A local Tetris game runner for bots that implement the Stacker Bot Protocol (SBP).
 
 ---
 
@@ -49,7 +49,7 @@ writing a bot, read the SBP docs for the exact protocol contract.
 
 Use Minorail when you want to:
 
-* run an SBP bot against a local Tetris engine
+* run an SBP bot against a local Tetris game
 * watch bot decisions in a visualizer
 * batch run games from the command line
 * write evaluation JSON for analysis
@@ -58,11 +58,11 @@ Use Minorail when you want to:
 
 ## What Minorail Owns
 
-The local engine is the authority for physical game state:
+The local game is the authority for physical state:
 
 | State | Meaning |
 | --- | --- |
-| `board` | Occupied cells in the local engine |
+| `board` | Occupied cells in the local game |
 | `active` | Current falling piece |
 | `queue` | Upcoming pieces, excluding active |
 | `hold` | Current hold piece or none |

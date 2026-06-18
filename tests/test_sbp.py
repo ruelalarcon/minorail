@@ -5,15 +5,16 @@ import unittest
 from typing import Any
 from unittest.mock import patch
 
-from suggestion.bot_session import BotSession
-from suggestion.contracts.bot_snapshot import BotSnapshot
+from bots.session import BotSession
+from contracts.bot_snapshot import BotSnapshot
 from bots.process import BotProcess
+from sbp.state import game_state_from_start
 from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.rules import Rules
-from tetris.game.state import GameState, spawn_location
-from protocols.sbp.parser import parse
-from protocols.sbp.messages import MsgRules, MsgStart, MsgSuggest
+from tetris.game.state import spawn_location
+from sbp.parser import parse
+from sbp.messages import MsgRules, MsgStart, MsgSuggest
 
 
 def empty_board() -> list[list[None]]:
@@ -55,7 +56,7 @@ class SbpParserTests(unittest.TestCase):
         self.assertIsInstance(msg, MsgStart)
         assert isinstance(msg, MsgStart)
         self.assertEqual(msg.active, Piece.T)
-        self.assertEqual(GameState.from_start(msg).active, spawn_location(Piece.T))
+        self.assertEqual(game_state_from_start(msg).active, spawn_location(Piece.T))
 
     def test_start_preserves_extensions_object(self) -> None:
         msg = parse(
@@ -167,7 +168,7 @@ class SbpParserTests(unittest.TestCase):
         first = BotSnapshot(Board(), Piece.T, [Piece.I], None, 0, 0)
         second = BotSnapshot(Board(), Piece.O, [Piece.L], None, 0, 0)
 
-        with patch("suggestion.bot_session.BotProcess", FakeProcess):
+        with patch("bots.session.BotProcess", FakeProcess):
             session = BotSession("fake-bot")
             session.start_from(first, Rules())
             session.reset_from(second, Rules())

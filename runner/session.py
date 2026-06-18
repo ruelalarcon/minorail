@@ -2,63 +2,31 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Any, Optional, Protocol
+from typing import Any
 
-from config import (
-    EngineLimits,
-    PathfindingConfig,
-    Settings,
-)
-from tetris.model.board import Board
-from tetris.model.piece import Piece
-from tetris.model.placement import Placement
-from runner.visualizer_protocol import CellEdit, EngineControls
-from runner.events import EngineEvent, EngineEventType
-from tetris.randomizer import Randomizer, make_randomizer
-from tetris.model.rules import Rules
-from tetris.game.state import GameState, spawn_location
-from runner.observers import (
-    EngineObserver,
+from settings import PathSettings, RunLimits, Settings
+from bots.session import BotStartupError
+from contracts.observed_snapshot import ObservedSnapshot
+from contracts.suggestion_request import SuggestionRequest
+from runner.controls import GameControls
+from runner.events import (
     GameEndedEvent,
     GameStartedEvent,
     PieceLockedEvent,
+    RunObserver,
 )
-from suggestion.bot_session import BotStartupError
+from runner.local_game import LocalGame
+from runner.metrics import occupied_cells, stack_height
+from runner.visualizer import Visualizer
 from suggestion.move_selection import moving_piece_for
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
-from suggestion.contracts.suggestion_request import SuggestionRequest
-from suggestion.contracts.suggestion_result import SuggestionResult
-from suggestion.suggestion_service import SuggestionService
+from suggestion.service import SuggestionService
+from tetris.game.state import GameState
+from tetris.model.placement import Placement
+from tetris.model.rules import Rules
+from tetris.randomizer import Randomizer, make_randomizer
 
 
-class Visualizer(Protocol):
-    default_pathfinding: bool
-
-    def on_game_started(self, state: GameState) -> None: ...
-
-    def on_spawn(self, state: GameState, piece: Piece) -> None: ...
-
-    def animate_suggestion(
-        self,
-        state: GameState,
-        moving_piece: Piece,
-        result: SuggestionResult,
-        hold_used: bool,
-        rules: Rules,
-    ) -> None: ...
-
-    def on_piece_locked(self, state: GameState) -> None: ...
-
-    def on_top_out(self, state: GameState) -> None: ...
-
-    def warning(self, message: str) -> None: ...
-
-    def error(self, message: str) -> None: ...
-
-    def set_engine_controls(self, controls: EngineControls) -> None: ...
-
-
-class EngineSession:
+class LocalGameSession:
     def __init__(
         self,
         bot_path: str,
@@ -67,9 +35,9 @@ class EngineSession:
         session_id: str = "terminal",
         bot_args: list[str] | None = None,
         random_seed: int | None = None,
-        limits: EngineLimits | None = None,
-        pathfinding: PathfindingConfig | None = None,
-        observers: list[EngineObserver] | None = None,
+        limits: RunLimits | None = None,
+        pathfinding: PathSettings | None = None,
+        observers: list[RunObserver] | None = None,
     ) -> None:
         self._bot_path = bot_path
         self._bot_args = bot_args or []
@@ -77,8 +45,8 @@ class EngineSession:
         self._visualizer = visualizer
         self._session_id = session_id
         self._random_seed = random_seed
-        self._limits = limits or self._settings.engine_limits()
-        self._pathfinding = pathfinding or PathfindingConfig(pathfinding=True)
+        self._limits = limits or self._settings.run_limits()
+        self._pathfinding = pathfinding or PathSettings(pathfinding=True)
         self._observers = observers or []
 
         protocol_start = self._settings.protocol_start()
@@ -91,99 +59,55 @@ class EngineSession:
             idle_ms=bot_cfg.idle_ms,
         )
 
-        self._rules = Rules.from_config(self._settings.rules_config())
+        self._rules = Rules.from_values(self._settings.rules_values())
         rand = make_randomizer(
             self._rules.randomizer,
             seed=self._settings.base_seed(random_seed),
         )
         assert rand is not None
-        self._rand: Randomizer = rand
-        active = spawn_location(
-            self._rand.next(), x=self._rules.spawn_x, y=self._rules.spawn_y
+        self._randomizer: Randomizer = rand
+        queue_cfg = self._settings.game_queue()
+        self._game = LocalGame.start(
+            rules=self._rules,
+            randomizer=self._randomizer,
+            initial_pieces=queue_cfg.initial,
         )
-        self.state = GameState(
-            board=Board(),
-            active=active,
-            queue=[
-                self._rand.next()
-                for _ in range(max(0, self._settings.engine_queue().initial - 1))
-            ],
-            hold=None,
-            combo=0,
-            back_to_back=0,
-        )
-        self.seq = 0
-        self.last_move: Optional[Placement] = None
 
-        self._visualizer.set_engine_controls(
-            EngineControls(
+        self._visualizer.set_game_controls(
+            GameControls(
                 set_cell=self.set_cell,
                 clear_board=self.clear_board,
                 get_state=lambda: self.state,
             )
         )
 
+    @property
+    def state(self) -> GameState:
+        return self._game.state
+
+    @property
+    def seq(self) -> int:
+        return self._game.seq
+
+    @property
+    def last_move(self) -> Placement | None:
+        return self._game.last_move
+
     def close(self) -> None:
         self._service.close()
 
-    def set_cell(self, x: int, y: int, filled: bool) -> list[EngineEvent]:
-        return self.set_cells([CellEdit(x, y, filled)])
+    def set_cell(self, x: int, y: int, filled: bool) -> None:
+        self._game.set_cell(x, y, filled)
 
-    def set_cells(self, edits: list[CellEdit]) -> list[EngineEvent]:
-        changed: list[CellEdit] = []
-        for edit in edits:
-            self._validate_cell(edit.x, edit.y)
-            mask = 1 << edit.y
-            was_filled = bool(self.state.board.cols[edit.x] & mask)
-            if was_filled == edit.filled:
-                continue
-            if edit.filled:
-                self.state.board.cols[edit.x] |= mask
-            else:
-                self.state.board.cols[edit.x] &= ~mask
-            changed.append(edit)
-
-        if not changed:
-            return []
-
-        self.seq += 1
-        self.last_move = None
-        return [
-            EngineEvent(
-                EngineEventType.CellsChanged,
-                self.seq,
-                {"cells": changed},
-            ),
-            EngineEvent(
-                EngineEventType.SnapshotChanged,
-                self.seq,
-                {"snapshot": self.snapshot()},
-            ),
-        ]
-
-    def clear_board(self) -> list[EngineEvent]:
-        edits = [
-            CellEdit(x, y, False)
-            for x in range(10)
-            for y in range(40)
-            if self.state.board.cols[x] & (1 << y)
-        ]
-        return self.set_cells(edits)
+    def clear_board(self) -> None:
+        self._game.clear_board()
 
     def snapshot(self) -> ObservedSnapshot:
-        return ObservedSnapshot(
-            board=self.state.board.copy(),
-            active=self.state.active,
-            queue=list(self.state.queue),
-            hold=self.state.hold,
-            can_hold=not self.state.hold_used_this_turn,
-            seq=self.seq,
-            last_move=self.last_move,
-        )
+        return self._game.snapshot()
 
     def play_game(self) -> dict[str, Any]:
         bot_cfg = self._settings.bot()
-        refill_at = self._settings.engine_queue().refill_threshold
+        refill_at = self._settings.game_queue().refill_threshold
 
         pieces_placed = 0
         start_time = time.time()
@@ -199,10 +123,8 @@ class EngineSession:
                     status = "time_limit"
                     break
 
-                self._ensure_queue_refilled(self.state, self._rand, refill_at)
-
+                self._game.refill_queue(refill_at)
                 spawn_piece = self.state.active.piece
-
                 self._visualizer.on_spawn(self.state, spawn_piece)
 
                 try:
@@ -211,9 +133,7 @@ class EngineSession:
                             snapshot=self.snapshot(),
                             rules=self._rules,
                             pathfinding=self._pathfinding.pathfinding,
-                            convert_sonic_drops=(
-                                self._pathfinding.convert_sonic_drops
-                            ),
+                            convert_sonic_drops=(self._pathfinding.convert_sonic_drops),
                             session_id=self._session_id,
                             timeout_ms=bot_cfg.suggest_timeout_ms,
                         )
@@ -222,7 +142,8 @@ class EngineSession:
                     print(f"[error] bot startup failed: {e}", file=sys.stderr)
                     status = "bot_startup_failed"
                     break
-                self.seq += 1
+
+                self._game.advance_seq()
                 if result.placement is None:
                     self._visualizer.error(
                         f"no suggestion: {result.reason or result.status.value}"
@@ -232,7 +153,6 @@ class EngineSession:
 
                 chosen = result.placement
                 hold_used = chosen.location.piece != spawn_piece
-
                 moving_piece = moving_piece_for(self.snapshot(), chosen)
                 if moving_piece is None:
                     self._visualizer.error(f"no valid move: {chosen}")
@@ -240,18 +160,20 @@ class EngineSession:
                     break
 
                 self._visualizer.animate_suggestion(
-                    self.state, moving_piece, result, hold_used, self._rules
+                    self.state,
+                    moving_piece,
+                    result,
+                    hold_used,
+                    self._rules,
                 )
 
-                applied = self.state.apply_move(chosen, self._rules)
+                applied = self._game.apply_placement(chosen)
                 if applied is None:
                     self._visualizer.error(f"apply_move rejected: {chosen}")
                     status = "apply_move_rejected"
                     break
 
-                self.last_move = chosen
-                self._ensure_queue_refilled(self.state, self._rand, refill_at)
-
+                self._game.refill_queue(refill_at)
                 self._notify_piece_locked(
                     PieceLockedEvent(
                         session_id=self._session_id,
@@ -259,14 +181,14 @@ class EngineSession:
                         placement=chosen,
                         hold_used=hold_used,
                         applied=applied,
-                        stack_height=_stack_height(self.state),
-                        occupied_cells=_occupied_cells(self.state),
+                        stack_height=stack_height(self.state),
+                        occupied_cells=occupied_cells(self.state),
                     )
                 )
                 pieces_placed += 1
                 self._visualizer.on_piece_locked(self.state)
 
-                if any(self.state.board.cols[x] >> 20 != 0 for x in range(10)):
+                if self._game.is_topped_out():
                     self._visualizer.on_top_out(self.state)
                     self._visualizer.error("topped out")
                     status = "topout"
@@ -298,8 +220,8 @@ class EngineSession:
                     pieces=pieces_placed,
                     elapsed=elapsed,
                     pps=pieces_placed / elapsed if elapsed > 0 else 0,
-                    stack_height=_stack_height(self.state),
-                    occupied_cells=_occupied_cells(self.state),
+                    stack_height=stack_height(self.state),
+                    occupied_cells=occupied_cells(self.state),
                 )
             )
 
@@ -309,19 +231,6 @@ class EngineSession:
             "pps": pieces_placed / elapsed if elapsed > 0 else 0,
             "status": status,
         }
-
-    def _ensure_queue_refilled(
-        self,
-        state: GameState,
-        rand: Randomizer,
-        refill_at: int,
-    ) -> None:
-        while len(state.queue) < refill_at:
-            state.queue.append(rand.next())
-
-    def _validate_cell(self, x: int, y: int) -> None:
-        if x < 0 or x >= 10 or y < 0 or y >= 40:
-            raise ValueError(f"cell out of bounds: ({x}, {y})")
 
     def _notify_game_started(self) -> None:
         event = GameStartedEvent(session_id=self._session_id, seed=self._random_seed)
@@ -340,11 +249,3 @@ class EngineSession:
         if self._limits.time_limit_ms is None:
             return False
         return (time.time() - start_time) * 1000 >= self._limits.time_limit_ms
-
-
-def _stack_height(state: GameState) -> int:
-    return max((col.bit_length() for col in state.board.cols), default=0)
-
-
-def _occupied_cells(state: GameState) -> int:
-    return sum(col.bit_count() for col in state.board.cols)

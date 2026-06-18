@@ -7,7 +7,7 @@ visualized game run.
 python eval.py "path/to/sbp-bot" --games 100 --seed 123 --json-out results.json
 ```
 
-Evaluation still uses Minorail's local engine, settings, SBP bot launcher, and
+Evaluation still uses Minorail's local game, settings, SBP bot launcher, and
 seed handling. The difference is that it runs with a null visualizer and writes
 structured JSON for analysis.
 
@@ -19,15 +19,15 @@ structured JSON for analysis.
 python eval.py "path/to/sbp-bot" --games 100 --json-out results.json
 ```
 
-Options are grouped the same way as `eval.py --help`:
+Flags are grouped the same way as `eval.py --help`:
 
-| Category | Options | Behavior |
+| Category | Flags | Behavior |
 | --- | --- | --- |
 | `settings` | `--settings PATH` | Settings TOML file. |
 | `bot` | `--bot-args ARGS` | Extra arguments passed to the bot process. |
-| `randomizer` | `--seed N` | Base seed for local piece streams; overrides `engine.randomizer.seed`. |
-| `limits` | `--piece-limit N` | Stops each game after this many accepted piece locks; overrides `engine.limits.piece_limit`. |
-| `limits` | `--time-limit-ms MS` | Stops each game after this many milliseconds; overrides `engine.limits.time_limit_ms`. |
+| `randomizer` | `--seed N` | Base seed for local piece streams; overrides `game.randomizer.seed`. |
+| `limits` | `--piece-limit N` | Stops each game after this many accepted piece locks; overrides `game.limits.piece_limit`. |
+| `limits` | `--time-limit-ms MS` | Stops each game after this many milliseconds; overrides `game.limits.time_limit_ms`. |
 | `games` | `--games N` | Number of games to evaluate. |
 | `pathfinding` | `--pathfind` | Runs pathfinding during evaluation; overrides `service.path.pathfinding`. |
 | `pathfinding` | `--no-pathfind` | Skips pathfinding during evaluation; overrides `service.path.pathfinding`. |
@@ -73,7 +73,7 @@ unless `--no-events` is used.
 
 ## Summaries
 
-Per-game summaries include generic engine rollups:
+Per-game summaries include generic run rollups:
 
 | Field | Meaning |
 | --- | --- |
@@ -108,13 +108,13 @@ Terminal statuses:
 | `invalid_move` | The selected placement could not be matched to the current active, hold, or empty-hold swap state. |
 | `apply_move_rejected` | The selected placement failed local legality checks during application. |
 | `bot_startup_failed` | The bot process failed during startup or capability negotiation. |
-| `interrupted` | The engine was interrupted while the game was running. |
+| `interrupted` | The run was interrupted while the game was active. |
 
 ---
 
 ## Events
 
-Each `piece_locked` event records the accepted placement and engine facts after
+Each `piece_locked` event records the accepted placement and local game facts after
 the lock:
 
 ```json

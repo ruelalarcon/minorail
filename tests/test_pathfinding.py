@@ -1,9 +1,9 @@
 import unittest
 
-from config import PathfindingConfig, Settings
+from settings import PathSettings, Settings
 
 
-class PathfindingConfigTests(unittest.TestCase):
+class PathSettingsTests(unittest.TestCase):
     def test_missing_setting_uses_consumer_default(self) -> None:
         settings = {"service": {"path": {}}}
 
@@ -40,7 +40,7 @@ class PathfindingConfigTests(unittest.TestCase):
         )
 
     def test_conversion_is_inert_without_pathfinding(self) -> None:
-        options = Settings.from_values(
+        path_settings = Settings.from_values(
             {
                 "service": {
                     "path": {
@@ -51,9 +51,9 @@ class PathfindingConfigTests(unittest.TestCase):
             }
         ).pathfinding(default_pathfinding=True)
 
-        self.assertFalse(options.pathfinding)
-        self.assertFalse(options.convert_sonic_drops)
-        self.assertFalse(PathfindingConfig(False, True).convert_sonic_drops)
+        self.assertFalse(path_settings.pathfinding)
+        self.assertFalse(path_settings.convert_sonic_drops)
+        self.assertFalse(PathSettings(False, True).convert_sonic_drops)
 
     def test_invalid_pathfinding_setting_is_rejected(self) -> None:
         with self.assertRaises(ValueError):

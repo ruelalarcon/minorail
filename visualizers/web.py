@@ -8,15 +8,15 @@ import time
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from config import VisualizerConfig
+from settings import VisualizerSettings
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.pieces.cells import piece_cells
-from runner.visualizer_protocol import EngineControls
+from runner.controls import GameControls
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
 from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed
-from suggestion.contracts.suggestion_result import SuggestionResult
+from contracts.suggestion_result import SuggestionResult
 
 PIECE_COLORS = {
     Piece.I: "#38bdf8",
@@ -56,15 +56,15 @@ class WebVisualizer:
 
     def __init__(
         self,
-        config: VisualizerConfig,
+        settings: VisualizerSettings,
         *,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
     ) -> None:
-        self._config = config
-        self._move_delay = config.move_delay_ms / 1000
-        self._lock_delay = config.lock_delay_ms / 1000
-        self._first_move_delay = config.first_move_delay_ms / 1000
+        self._settings = settings
+        self._move_delay = settings.move_delay_ms / 1000
+        self._lock_delay = settings.lock_delay_ms / 1000
+        self._first_move_delay = settings.first_move_delay_ms / 1000
         self._first_spawn = True
         self._host = host
         self._port = port
@@ -77,7 +77,7 @@ class WebVisualizer:
         self._paused = False
         self._editable = False
         self._pause_condition = threading.Condition()
-        self._controls: Optional[EngineControls] = None
+        self._controls: Optional[GameControls] = None
 
     @property
     def url(self) -> str:
@@ -85,7 +85,7 @@ class WebVisualizer:
             return f"http://{self._host}:auto"
         return f"http://{self._host}:{self._port}"
 
-    def set_engine_controls(self, controls: EngineControls) -> None:
+    def set_game_controls(self, controls: GameControls) -> None:
         self._controls = controls
 
     def on_game_started(self, state: GameState) -> None:
@@ -205,8 +205,8 @@ class WebVisualizer:
             state,
             active_piece,
             active_loc,
-            self._config.visible_rows,
-            self._config.queue_size,
+            self._settings.visible_rows,
+            self._settings.queue_size,
             status,
             self._paused,
             self._editable,

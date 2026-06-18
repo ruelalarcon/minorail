@@ -14,7 +14,7 @@ class CellEdit:
 
 
 @dataclass(frozen=True)
-class EngineControls:
-    set_cell: Callable[[int, int, bool], object]
-    clear_board: Callable[[], object]
+class GameControls:
+    set_cell: Callable[[int, int, bool], None]
+    clear_board: Callable[[], None]
     get_state: Callable[[], GameState]

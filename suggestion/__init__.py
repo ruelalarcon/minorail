@@ -1,1 +1,1 @@
-"""Suggestion service and bot-session orchestration."""
+"""Suggestion continuity, derived state, and move selection."""

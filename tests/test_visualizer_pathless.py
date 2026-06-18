@@ -2,9 +2,9 @@ import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 
-from config import VisualizerConfig
-from suggestion.contracts.suggestion_result import SuggestionResult
-from suggestion.contracts.suggestion_status import SuggestionStatus
+from settings import VisualizerSettings
+from contracts.suggestion_result import SuggestionResult
+from contracts.suggestion_status import SuggestionStatus
 from tetris.game.state import GameState, spawn_location
 from tetris.model.board import Board
 from tetris.model.location import PieceLocation
@@ -81,8 +81,8 @@ def _pathless_result() -> SuggestionResult:
     )
 
 
-def _settings() -> VisualizerConfig:
-    return VisualizerConfig(
+def _settings() -> VisualizerSettings:
+    return VisualizerSettings(
         move_delay_ms=0,
         lock_delay_ms=0,
         first_move_delay_ms=0,

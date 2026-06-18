@@ -19,7 +19,7 @@ python run.py "path/to/sbp-bot" --web
 
 The web visualizer uses NiceGUI and opens a browser based view.
 
-Options:
+Modes:
 
 ```bash
 python run.py "path/to/sbp-bot" --web --web-host 127.0.0.1 --web-port 8080
@@ -60,7 +60,7 @@ These settings affect rendering only.
 
 ## Board Edits
 
-Visualizers can request board edits through engine controls.
+Visualizers can request board edits through runner game controls.
 
 Supported controls:
 

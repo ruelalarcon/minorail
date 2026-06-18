@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Callable
 
-from suggestion.bot_session import BotSession
-from suggestion.contracts.suggestion_request import SuggestionRequest
-from suggestion.contracts.suggestion_result import SuggestionResult
-from suggestion.session.client_session import ClientSession
+from bots.session import BotSession
+from contracts.suggestion_request import SuggestionRequest
+from contracts.suggestion_result import SuggestionResult
+from suggestion.session.continuity import SuggestionContinuity
 
 
 class SuggestionService:
@@ -24,12 +24,12 @@ class SuggestionService:
         self._info_print_topics = {
             topic for topic in info_print_topics or [] if isinstance(topic, str)
         }
-        self._sessions: dict[str, ClientSession] = {}
+        self._sessions: dict[str, SuggestionContinuity] = {}
 
     def suggest(self, request: SuggestionRequest) -> SuggestionResult:
         session = self._sessions.get(request.session_id)
         if session is None:
-            session = ClientSession(
+            session = SuggestionContinuity(
                 self._bot_session_factory(),
                 piece_stream_limit=self._piece_stream_limit,
                 idle_ms=self._idle_ms,

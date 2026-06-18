@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
 from typing import Optional
 
 from tetris.model.board import Board
@@ -13,9 +12,6 @@ from tetris.pieces.cells import piece_cells
 from tetris.pieces import spawn as _spawn
 from tetris.game.hold import Hold
 from tetris.game.line_clear import LineClear
-
-if TYPE_CHECKING:
-    from protocols.sbp.messages import MsgStart
 
 _ALL_PIECES = list(Piece)
 SPAWN_X = _spawn.SPAWN_X
@@ -43,18 +39,6 @@ class GameState:
     combo: int
     back_to_back: int
     hold_used_this_turn: bool = False
-
-    @staticmethod
-    def from_start(msg: MsgStart) -> GameState:
-        """Build initial state from an SBP start message."""
-        return GameState(
-            board=msg.board.copy(),
-            active=spawn_location(msg.active),
-            queue=list(msg.queue),
-            hold=msg.hold,
-            combo=msg.combo,
-            back_to_back=msg.back_to_back,
-        )
 
     def active_piece(self) -> Piece:
         return self.active.piece

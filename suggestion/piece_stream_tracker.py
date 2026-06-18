@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from tetris.model.piece import Piece
-from suggestion.contracts.piece_stream_snapshot import PieceStreamSnapshot
+from contracts.piece_stream_snapshot import PieceStreamSnapshot
 
 
 class PieceStreamTracker:

@@ -55,7 +55,7 @@ Terminal and web visualizers request paths by default for animation. Headless
 runs do not. Use `--pathfind` or `--no-pathfind` to override
 `service.path.pathfinding` and the consumer default for one invocation.
 
-If no path is included, the engine still applies the selected placement and
+If no path is included, the local game still applies the selected placement and
 visualizers render the locked board after the move is applied.
 
 ## Bot Arguments
@@ -94,14 +94,14 @@ Missing settings fall back to built in defaults.
 
 ## CLI Categories
 
-`run.py --help` groups options by the same concepts used in `settings.toml`:
+`run.py --help` groups flags by the same concepts used in `settings.toml`:
 
-| Category | Options | Settings |
+| Category | Flags | Settings |
 | --- | --- | --- |
 | `settings` | `--settings` | Selects the TOML file. |
 | `bot` | `--bot-args` | Extra process arguments; not stored in settings. |
-| `randomizer` | `--seed` | Overrides `engine.randomizer.seed`. |
-| `limits` | `--piece-limit`, `--time-limit-ms` | Override `engine.limits.*`. |
+| `randomizer` | `--seed` | Overrides `game.randomizer.seed`. |
+| `limits` | `--piece-limit`, `--time-limit-ms` | Override `game.limits.*`. |
 | `games` | `--games` | CLI-only run count. |
 | `pathfinding` | `--pathfind`, `--no-pathfind` | Override `service.path.pathfinding`. |
 | `visualizer` | `--terminal`, `--web`, `--headless` | Selects the current visualizer. |

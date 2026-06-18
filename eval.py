@@ -7,8 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from config import Settings
-from evaluation.session import run_evaluation
+from settings import Settings
+from evaluation.batch import run_evaluation
 from visualizers.null import NullVisualizer
 
 
@@ -57,7 +57,7 @@ def main() -> None:
         metavar="N",
         type=int,
         default=None,
-        help="base seed for local piece streams; overrides engine.randomizer.seed",
+        help="base seed for local piece streams; overrides game.randomizer.seed",
     )
     limits_group = parser.add_argument_group("limits")
     limits_group.add_argument(
@@ -65,14 +65,14 @@ def main() -> None:
         metavar="N",
         type=int,
         default=None,
-        help="accepted piece lock limit; overrides engine.limits.piece_limit",
+        help="accepted piece lock limit; overrides game.limits.piece_limit",
     )
     limits_group.add_argument(
         "--time-limit-ms",
         metavar="MS",
         type=int,
         default=None,
-        help="wall-clock time limit in milliseconds; overrides engine.limits.time_limit_ms",
+        help="wall-clock time limit in milliseconds; overrides game.limits.time_limit_ms",
     )
 
     games_group = parser.add_argument_group("games")
@@ -141,7 +141,7 @@ def main() -> None:
             settings=settings,
             games=args.games,
             base_seed=settings.base_seed(args.seed),
-            limits=settings.engine_limits(
+            limits=settings.run_limits(
                 piece_limit=args.piece_limit,
                 time_limit_ms=args.time_limit_ms,
             ),

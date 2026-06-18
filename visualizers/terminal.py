@@ -4,15 +4,15 @@ import sys
 import time
 from typing import Optional
 
-from config import VisualizerConfig
+from settings import VisualizerSettings
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.pieces.cells import piece_cells
-from runner.visualizer_protocol import EngineControls
+from runner.controls import GameControls
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
 from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed
-from suggestion.contracts.suggestion_result import SuggestionResult
+from contracts.suggestion_result import SuggestionResult
 
 RESET = "\033[0m"
 DIM = "\033[2m"
@@ -35,15 +35,15 @@ GHOST = DIM + "\xb7\xb7" + RESET
 class TerminalVisualizer:
     default_pathfinding = True
 
-    def __init__(self, config: VisualizerConfig) -> None:
-        self._config = config
-        self._move_delay = config.move_delay_ms / 1000
-        self._lock_delay = config.lock_delay_ms / 1000
-        self._first_move_delay = config.first_move_delay_ms / 1000
+    def __init__(self, settings: VisualizerSettings) -> None:
+        self._settings = settings
+        self._move_delay = settings.move_delay_ms / 1000
+        self._lock_delay = settings.lock_delay_ms / 1000
+        self._first_move_delay = settings.first_move_delay_ms / 1000
         self._first_spawn = True
         self._status = ""
 
-    def set_engine_controls(self, controls: EngineControls) -> None:
+    def set_game_controls(self, controls: GameControls) -> None:
         pass
 
     def on_game_started(self, state: GameState) -> None:
@@ -145,8 +145,8 @@ class TerminalVisualizer:
             state,
             active_piece,
             active_loc,
-            self._config.visible_rows,
-            self._config.queue_size,
+            self._settings.visible_rows,
+            self._settings.queue_size,
             self._status,
         )
 

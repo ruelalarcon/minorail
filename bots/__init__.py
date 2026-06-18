@@ -1,1 +1,1 @@
-"""Bot subprocess adapters."""
+"""Bot subprocess transport and SBP session lifecycle."""

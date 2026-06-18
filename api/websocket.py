@@ -7,18 +7,18 @@ import uuid
 from dataclasses import replace
 from typing import Any
 
-from config import PathfindingConfig, Settings
+from settings import PathSettings, Settings
 from tetris.game.state import spawn_location
 from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.movegen.steps import MoveStep
-from suggestion.bot_session import BotStartupError
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
-from suggestion.contracts.suggestion_request import SuggestionRequest
-from suggestion.contracts.suggestion_result import SuggestionResult
-from suggestion.suggestion_service import SuggestionService
+from bots.session import BotStartupError
+from contracts.observed_snapshot import ObservedSnapshot
+from contracts.suggestion_request import SuggestionRequest
+from contracts.suggestion_result import SuggestionResult
+from suggestion.service import SuggestionService
 
 
 class WebSocketApiError(ValueError):
@@ -36,7 +36,7 @@ class SuggestionWebSocketServer:
         *,
         settings: Settings,
         bot_args: list[str] | None = None,
-        pathfinding: PathfindingConfig | None = None,
+        pathfinding: PathSettings | None = None,
         host: str = "127.0.0.1",
         port: int = 8444,
     ) -> None:
@@ -49,9 +49,9 @@ class SuggestionWebSocketServer:
             info_print_topics=settings.bot_info_topics(),
             idle_ms=bot_cfg.idle_ms,
         )
-        self._pathfinding = pathfinding or PathfindingConfig(pathfinding=True)
+        self._pathfinding = pathfinding or PathSettings(pathfinding=True)
         self._timeout_ms = bot_cfg.suggest_timeout_ms
-        self._rules = Rules.from_config(settings.rules_config())
+        self._rules = Rules.from_values(settings.rules_values())
         self._host = host
         self._port = port
         self._lock = asyncio.Lock()
@@ -111,9 +111,7 @@ class SuggestionWebSocketServer:
                 default_session_id=connection_session_id,
                 default_timeout_ms=self._timeout_ms,
                 default_pathfinding=self._pathfinding.pathfinding,
-                default_convert_sonic_drops=(
-                    self._pathfinding.convert_sonic_drops
-                ),
+                default_convert_sonic_drops=(self._pathfinding.convert_sonic_drops),
             )
             session_ids.add(request.session_id)
             async with self._lock:

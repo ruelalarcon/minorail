@@ -9,7 +9,7 @@ from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 
 if TYPE_CHECKING:
-    from suggestion.contracts.piece_stream_snapshot import PieceStreamSnapshot
+    from contracts.piece_stream_snapshot import PieceStreamSnapshot
 
 
 @dataclass

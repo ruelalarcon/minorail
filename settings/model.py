@@ -37,7 +37,7 @@ DEFAULT: dict[str, Any] = {
             "port": 8444,
         },
     },
-    "engine": {
+    "game": {
         "randomizer": {
             "seed": None,
         },
@@ -70,13 +70,13 @@ DEFAULT: dict[str, Any] = {
 
 
 @dataclass(frozen=True)
-class EngineLimits:
+class RunLimits:
     piece_limit: int | None = None
     time_limit_ms: int | None = None
 
 
 @dataclass(frozen=True)
-class PathfindingConfig:
+class PathSettings:
     pathfinding: bool
     convert_sonic_drops: bool = False
 
@@ -92,24 +92,24 @@ class BindEndpoint:
 
 
 @dataclass(frozen=True)
-class BotConfig:
+class BotSettings:
     suggest_timeout_ms: int
     idle_ms: int
 
 
 @dataclass(frozen=True)
-class EngineQueueConfig:
+class QueueSettings:
     initial: int
     refill_threshold: int
 
 
 @dataclass(frozen=True)
-class ProtocolStartConfig:
+class ProtocolStartSettings:
     piece_stream_limit: int
 
 
 @dataclass(frozen=True)
-class VisualizerConfig:
+class VisualizerSettings:
     move_delay_ms: int
     lock_delay_ms: int
     first_move_delay_ms: int
@@ -135,21 +135,21 @@ class Settings:
         _merge_nested(merged, values)
         return cls(merged)
 
-    def rules_config(self) -> dict[str, Any]:
+    def rules_values(self) -> dict[str, Any]:
         return dict(self._section("protocol", "rules"))
 
-    def protocol_start(self) -> ProtocolStartConfig:
+    def protocol_start(self) -> ProtocolStartSettings:
         cfg = self._section("protocol", "start")
-        return ProtocolStartConfig(
+        return ProtocolStartSettings(
             piece_stream_limit=_int(
                 "protocol.start.piece_stream_limit",
                 cfg.get("piece_stream_limit"),
             )
         )
 
-    def bot(self) -> BotConfig:
+    def bot(self) -> BotSettings:
         cfg = self._section("bot")
-        return BotConfig(
+        return BotSettings(
             suggest_timeout_ms=_positive_int(
                 "bot.suggest_timeout_ms",
                 cfg.get("suggest_timeout_ms"),
@@ -159,35 +159,37 @@ class Settings:
 
     def bot_info_topics(self) -> list[str]:
         value = self._section("logging", "bot_info").get("print")
-        if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        if not isinstance(value, list) or not all(
+            isinstance(item, str) for item in value
+        ):
             raise ValueError("logging.bot_info.print must be a list of strings")
         return list(value)
 
-    def engine_queue(self) -> EngineQueueConfig:
-        cfg = self._section("engine", "queue")
-        return EngineQueueConfig(
-            initial=_positive_int("engine.queue.initial", cfg.get("initial")),
+    def game_queue(self) -> QueueSettings:
+        cfg = self._section("game", "queue")
+        return QueueSettings(
+            initial=_positive_int("game.queue.initial", cfg.get("initial")),
             refill_threshold=_positive_int(
-                "engine.queue.refill_threshold",
+                "game.queue.refill_threshold",
                 cfg.get("refill_threshold"),
             ),
         )
 
-    def engine_limits(
+    def run_limits(
         self,
         *,
         piece_limit: int | None = None,
         time_limit_ms: int | None = None,
-    ) -> EngineLimits:
-        cfg = self._section("engine", "limits")
-        return EngineLimits(
+    ) -> RunLimits:
+        cfg = self._section("game", "limits")
+        return RunLimits(
             piece_limit=_optional_positive_int(
-                "engine.limits.piece_limit",
+                "game.limits.piece_limit",
                 piece_limit,
                 cfg.get("piece_limit"),
             ),
             time_limit_ms=_optional_positive_int(
-                "engine.limits.time_limit_ms",
+                "game.limits.time_limit_ms",
                 time_limit_ms,
                 cfg.get("time_limit_ms"),
             ),
@@ -198,7 +200,7 @@ class Settings:
         *,
         default_pathfinding: bool,
         pathfinding: bool | None = None,
-    ) -> PathfindingConfig:
+    ) -> PathSettings:
         cfg = self._section("service", "path")
         resolved_pathfinding = _pathfinding_value(
             pathfinding,
@@ -209,7 +211,7 @@ class Settings:
             "service.path.convert_sonic_drops",
             cfg.get("convert_sonic_drops", False),
         )
-        return PathfindingConfig(
+        return PathSettings(
             pathfinding=resolved_pathfinding,
             convert_sonic_drops=convert_sonic_drops if resolved_pathfinding else False,
         )
@@ -217,11 +219,11 @@ class Settings:
     def base_seed(self, override: int | None) -> int | None:
         if override is not None:
             return override
-        seed = self._section("engine", "randomizer").get("seed")
+        seed = self._section("game", "randomizer").get("seed")
         if seed is None:
             return None
         if isinstance(seed, bool) or not isinstance(seed, int):
-            raise ValueError("engine.randomizer.seed must be an integer")
+            raise ValueError("game.randomizer.seed must be an integer")
         return seed
 
     def web_visualizer_endpoint(
@@ -248,9 +250,9 @@ class Settings:
             port=_port("api.websocket.port", port, cfg.get("port"), allow_none=False),
         )
 
-    def visualizer(self) -> VisualizerConfig:
+    def visualizer(self) -> VisualizerSettings:
         cfg = self._section("visualizer")
-        return VisualizerConfig(
+        return VisualizerSettings(
             move_delay_ms=_non_negative_int(
                 "visualizer.move_delay_ms",
                 cfg.get("move_delay_ms"),
@@ -263,7 +265,9 @@ class Settings:
                 "visualizer.first_move_delay_ms",
                 cfg.get("first_move_delay_ms"),
             ),
-            visible_rows=_positive_int("visualizer.visible_rows", cfg.get("visible_rows")),
+            visible_rows=_positive_int(
+                "visualizer.visible_rows", cfg.get("visible_rows")
+            ),
             queue_size=_positive_int("visualizer.queue_size", cfg.get("queue_size")),
         )
 

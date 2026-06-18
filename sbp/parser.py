@@ -6,8 +6,8 @@ from typing import Optional
 from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
-from suggestion.contracts.piece_stream_snapshot import PieceStreamSnapshot
-from protocols.sbp.messages import (
+from contracts.piece_stream_snapshot import PieceStreamSnapshot
+from sbp.messages import (
     MsgNewPiece,
     MsgPlay,
     MsgQuit,

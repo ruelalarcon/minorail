@@ -4,13 +4,13 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
+from contracts.observed_snapshot import ObservedSnapshot
+from contracts.suggestion_status import SuggestionStatus
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
 from suggestion.derived_state import DerivedState
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
-from suggestion.contracts.suggestion_status import SuggestionStatus
 
 
 class BotAction(Enum):

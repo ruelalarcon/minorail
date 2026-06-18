@@ -3,9 +3,9 @@ from __future__ import annotations
 import time
 from typing import Any, Callable
 
-from config import EngineLimits, PathfindingConfig, Settings, seed_for_game
+from settings import PathSettings, RunLimits, Settings, seed_for_game
 from evaluation.collector import EvaluationCollector
-from runner.engine_session import EngineSession
+from runner.session import LocalGameSession
 from tetris.model.rules import Rules
 from visualizers.null import NullVisualizer
 
@@ -19,8 +19,8 @@ def run_evaluation(
     settings: Settings,
     games: int,
     base_seed: int | None,
-    limits: EngineLimits,
-    pathfinding: PathfindingConfig,
+    limits: RunLimits,
+    pathfinding: PathSettings,
     label: str | None = None,
     include_events: bool = True,
     progress: ProgressCallback | None = None,
@@ -40,7 +40,7 @@ def run_evaluation(
         if progress is not None:
             progress(f"[info] game={game_number}/{games} seed={seed}")
 
-        session = EngineSession(
+        session = LocalGameSession(
             bot_path,
             bot_args=bot_args,
             settings=settings,
@@ -81,7 +81,7 @@ def run_evaluation(
 
 
 def _rules(settings: Settings) -> dict[str, Any]:
-    rules = Rules.from_config(settings.rules_config())
+    rules = Rules.from_values(settings.rules_values())
     return {
         "randomizer": rules.randomizer,
         "kickset": rules.kickset,
@@ -94,7 +94,7 @@ def _rules(settings: Settings) -> dict[str, Any]:
     }
 
 
-def _limits(limits: EngineLimits) -> dict[str, Any]:
+def _limits(limits: RunLimits) -> dict[str, Any]:
     return {
         "piece_limit": limits.piece_limit,
         "time_limit_ms": limits.time_limit_ms,

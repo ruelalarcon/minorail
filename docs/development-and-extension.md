@@ -28,10 +28,13 @@ Minorail is organized by responsibility:
 
 ```text
 tetris/       Tetris model, rules, kicks, movement, randomizers, state
-protocols/    SBP parsing and message shape
-bots/         bot subprocess adapter
-suggestion/   session continuity and suggestion contracts
-runner/       local engine loop and visualizer controls
+contracts/    shared request, result, and snapshot dataclasses
+api/          external API transports
+sbp/          SBP parsing, serialization, capabilities, and message shape
+bots/         bot subprocess transport and SBP session lifecycle
+suggestion/   session continuity, derived state, and move selection
+runner/       local game sessions, run observers, and visualizer controls
+evaluation/   batch evaluation runner and collector
 visualizers/  terminal, web, headless, and null renderers
 ```
 
@@ -67,8 +70,8 @@ After adding one:
 
 Visualizers are observers and controllers.
 
-A visualizer should implement the engine visualizer callbacks and receive
-`EngineControls` from the runner.
+A visualizer should implement the runner visualizer callbacks and receive
+`GameControls` from the runner.
 
 It can request edits through controls, but it should not mutate
 `GameState.board` directly.
@@ -84,7 +87,7 @@ Both must agree on when active, hold, and empty hold swap placements are legal.
 
 ## Changing SBP Behavior
 
-SBP wire format handling belongs in `protocols/sbp/` and the bot adapter.
+SBP wire format handling belongs in `sbp/` and the bot adapter.
 
 Do not duplicate SBP protocol documentation in Minorail docs or code comments.
 Link to the SBP docs when the exact protocol definition is needed.

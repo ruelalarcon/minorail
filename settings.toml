@@ -26,14 +26,14 @@ port = 8444         # port for python run.py --ws
 [logging.bot_info]
 print = ["warning", "log"]  # runtime info topics to print, e.g. ["warning", "status", "search"]
 
-[engine.queue]
+[game.queue]
 initial = 5           # pieces to seed before sending start
 refill_threshold = 5  # when queue length drops below this, add pieces until it reaches this value
 
-[engine.randomizer]
+[game.randomizer]
 # seed = 0  # integer base seed for reproducible local piece streams
 
-[engine.limits]
+[game.limits]
 # piece_limit = 1000      # stop after this many accepted piece locks
 # time_limit_ms = 30_000  # stop after this many milliseconds
 

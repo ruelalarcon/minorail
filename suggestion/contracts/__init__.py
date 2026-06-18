@@ -1,1 +1,0 @@
-"""Suggestion request/response contracts."""

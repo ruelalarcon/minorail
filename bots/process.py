@@ -9,7 +9,15 @@ from typing import Any, Callable, Optional
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
-from protocols.sbp.messages import MsgStart
+from sbp.codec import rules_message, to_jsonable
+from sbp.messages import (
+    MsgNewPiece,
+    MsgPlay,
+    MsgQuit,
+    MsgStart,
+    MsgStop,
+    MsgSuggest,
+)
 
 
 class BotProcess:
@@ -56,61 +64,25 @@ class BotProcess:
             self._proc.stdin.flush()
 
     def send_rules(self, rules: Rules) -> None:
-        self._send(
-            {
-                "type": "rules",
-                "randomizer": rules.randomizer,
-                "kickset": rules.kickset,
-                "rot180": rules.rot180,
-                "sonic_drop": rules.sonic_drop,
-                "allspin_b2b": rules.allspin_b2b,
-                "allclear_b2b": rules.allclear_b2b,
-                "spawn_x": rules.spawn_x,
-                "spawn_y": rules.spawn_y,
-            }
-        )
+        self._send(to_jsonable(rules_message(rules)))
 
     def send_start(self, msg: MsgStart) -> None:
-        board_rows: list[list[Optional[str]]] = [[None] * 10 for _ in range(40)]
-        for x in range(10):
-            for y in range(40):
-                if msg.board.cols[x] & (1 << y):
-                    board_rows[y][x] = "G"
-        obj: dict[str, Any] = {
-            "type": "start",
-            "board": board_rows,
-            "active": msg.active.value,
-            "queue": [p.value for p in msg.queue],
-            "hold": msg.hold.value if msg.hold is not None else None,
-            "combo": msg.combo,
-            "back_to_back": msg.back_to_back,
-        }
-        if msg.piece_stream is not None:
-            obj["piece_stream"] = {
-                "offset": msg.piece_stream.offset,
-                "pieces": [p.value for p in msg.piece_stream.pieces],
-            }
-        if msg.extensions is not None:
-            obj["extensions"] = msg.extensions
-        self._send(obj)
+        self._send(to_jsonable(msg))
 
     def send_play(self, placement: Placement) -> None:
-        self._send({"type": "play", "move": placement.to_sbp()})
+        self._send(to_jsonable(MsgPlay(placement)))
 
     def send_new_piece(self, piece: Piece) -> None:
-        self._send({"type": "new_piece", "piece": piece.value})
+        self._send(to_jsonable(MsgNewPiece(piece)))
 
     def send_suggest(self, extensions: dict[str, Any] | None = None) -> None:
-        obj: dict[str, Any] = {"type": "suggest"}
-        if extensions is not None:
-            obj["extensions"] = extensions
-        self._send(obj)
+        self._send(to_jsonable(MsgSuggest(extensions)))
 
     def send_stop(self) -> None:
-        self._send({"type": "stop"})
+        self._send(to_jsonable(MsgStop()))
 
     def send_quit(self) -> None:
-        self._send({"type": "quit"})
+        self._send(to_jsonable(MsgQuit()))
 
     def wait(self, timeout: float = 5.0) -> None:
         try:

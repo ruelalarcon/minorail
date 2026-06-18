@@ -15,14 +15,14 @@ from tetris.model.spin import Spin
 from tetris.model.rules import Rules
 from tetris.game.state import GameState, spawn_location
 from tetris.movegen.pathfinder import MoveStep
-from suggestion.session.client_session import ClientSession
+from contracts.bot_snapshot import BotSnapshot
+from contracts.observed_snapshot import ObservedSnapshot
+from contracts.suggestion_request import SuggestionRequest
+from contracts.suggestion_status import SuggestionStatus
+from suggestion.session.continuity import SuggestionContinuity
 from suggestion.move_selection import pick_move
 from suggestion.piece_stream_tracker import PieceStreamTracker
-from suggestion.contracts.bot_snapshot import BotSnapshot
-from suggestion.contracts.observed_snapshot import ObservedSnapshot
-from suggestion.contracts.suggestion_request import SuggestionRequest
-from suggestion.contracts.suggestion_status import SuggestionStatus
-from protocols.sbp.messages import BotCapabilities
+from sbp.messages import BotCapabilities
 
 
 def placement(
@@ -143,7 +143,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_first_snapshot_starts_bot_with_normalized_state(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
 
         result = session.suggest(SuggestionRequest(snapshot=snapshot(), rules=Rules()))
 
@@ -163,7 +163,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_extensions_are_forwarded_to_start_and_suggest(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
         extensions = {"minorail.garbage.v1": {"incoming_garbage": 4}}
 
         session.suggest(
@@ -182,7 +182,7 @@ class ServiceTests(unittest.TestCase):
         first = placement(Piece.O, 4, 0)
         second = placement(Piece.I, 0, 2, Rotation.East)
         fake = FakeBotSession([[first], [second]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
         rules = Rules()
 
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
@@ -222,7 +222,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_same_rules_and_same_snapshot_keep_bot_session(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
         rules = Rules(rot180=True)
 
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
@@ -238,7 +238,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_rules_change_resets_bot_session_before_suggesting(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
         old_rules = Rules(rot180=True)
         new_rules = Rules(rot180=False)
 
@@ -258,7 +258,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_rules_change_preserves_unexpected_piece_stream_resync(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.T, 4, 0)]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
         old_rules = Rules(rot180=True)
         new_rules = Rules(rot180=False)
 
@@ -289,7 +289,7 @@ class ServiceTests(unittest.TestCase):
         fake = FakeBotSession(
             [[placement(Piece.O, 4, 0)], [placement(Piece.I, 0, 2, Rotation.East)]]
         )
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
         rules = Rules()
 
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
@@ -317,7 +317,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_unexpected_piece_chronology_resets_piece_stream_offset(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.T, 4, 0)]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
         rules = Rules()
 
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
@@ -347,7 +347,7 @@ class ServiceTests(unittest.TestCase):
 
     def test_piece_stream_limit_zero_omits_stream(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
-        session = ClientSession(lambda: fake, piece_stream_limit=0)
+        session = SuggestionContinuity(lambda: fake, piece_stream_limit=0)
 
         session.suggest(SuggestionRequest(snapshot=snapshot(), rules=Rules()))
 
@@ -355,10 +355,10 @@ class ServiceTests(unittest.TestCase):
 
     def test_convert_sonic_drops_request_option_rewrites_path(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
-        session = ClientSession(lambda: fake)
+        session = SuggestionContinuity(lambda: fake)
 
         with patch(
-            "suggestion.session.client_session.find_path",
+            "suggestion.session.continuity.find_path",
             return_value=[MoveStep.SonicDrop, MoveStep.HardDrop],
         ):
             result = session.suggest(
@@ -397,8 +397,8 @@ class ServiceTests(unittest.TestCase):
 
         first_move = placement(Piece.O, 4, 0)
         fake = FakeBotSession([[first_move], [placement(Piece.I, 0, 2, Rotation.East)]])
-        with patch("suggestion.session.client_session.threading.Timer", FakeTimer):
-            session = ClientSession(lambda: fake, idle_ms=60_000)
+        with patch("suggestion.session.continuity.threading.Timer", FakeTimer):
+            session = SuggestionContinuity(lambda: fake, idle_ms=60_000)
             rules = Rules()
 
             first = session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
