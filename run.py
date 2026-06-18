@@ -4,6 +4,7 @@ import shlex
 import sys
 
 from runner.engine_session import EngineSession
+from runner.limits import engine_limits
 from runner.seeding import base_seed, game_seed
 import settings as cfg
 from suggestion.websocket_api import SuggestionWebSocketServer
@@ -58,6 +59,20 @@ def main() -> None:
         type=int,
         default=None,
         help="per-run base seed for reproducible local piece streams; overrides settings",
+    )
+    run_group.add_argument(
+        "--piece-limit",
+        metavar="N",
+        type=int,
+        default=None,
+        help="per-run accepted piece lock limit; overrides settings",
+    )
+    run_group.add_argument(
+        "--time-limit-ms",
+        metavar="MS",
+        type=int,
+        default=None,
+        help="per-run wall-clock time limit in milliseconds; overrides settings",
     )
 
     display_group = parser.add_argument_group("visualization options")
@@ -114,6 +129,10 @@ def main() -> None:
         parser.error("--ws cannot be combined with visualization modes")
     if args.ws and args.seed is not None:
         parser.error("--seed cannot be combined with --ws")
+    if args.ws and args.piece_limit is not None:
+        parser.error("--piece-limit cannot be combined with --ws")
+    if args.ws and args.time_limit_ms is not None:
+        parser.error("--time-limit-ms cannot be combined with --ws")
 
     settings = cfg.load(args.settings)
     bot_args = shlex.split(args.bot_args)
@@ -145,6 +164,11 @@ def main() -> None:
         else None
     )
     seed = base_seed(settings, args.seed)
+    limits = engine_limits(
+        settings,
+        piece_limit=args.piece_limit,
+        time_limit_ms=args.time_limit_ms,
+    )
     try:
         for i in range(args.games):
             print(f"[info] game={i + 1}/{args.games}", file=sys.stderr)
@@ -160,6 +184,7 @@ def main() -> None:
                 settings=settings,
                 visualizer=visualizer,
                 random_seed=game_seed(seed, i),
+                limits=limits,
             ).play_game()
             print(
                 f"[info] pieces={stats['pieces']} "

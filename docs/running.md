@@ -24,6 +24,8 @@ pip install -r requirements.txt
 | Run multiple games | `python run.py "path/to/sbp-bot" --games 20` |
 | Run the web visualizer | `python run.py "path/to/sbp-bot" --web` |
 | Run without rendering | `python run.py "path/to/sbp-bot" --headless` |
+| Run with a piece cap | `python run.py "path/to/sbp-bot" --piece-limit 1000` |
+| Run with a time cap | `python run.py "path/to/sbp-bot" --time-limit-ms 30000` |
 | Start the websocket API | `python run.py "path/to/sbp-bot" --ws` |
 
 ?> The terminal visualizer is the default unless `--web`, `--headless`, or
@@ -40,6 +42,9 @@ Minorail prints per game stats to stderr:
 ```
 
 For multiple games, it also prints total pieces.
+
+If `--piece-limit` or `--time-limit-ms` is provided, the game stops with status
+`piece_limit` or `time_limit` when that limit is reached.
 
 ## Bot Arguments
 

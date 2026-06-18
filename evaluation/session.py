@@ -5,6 +5,7 @@ from typing import Any, Callable
 
 from evaluation.collector import EvaluationCollector
 from runner.engine_session import EngineSession
+from runner.limits import EngineLimits
 from runner.seeding import game_seed
 from tetris.model.rules import Rules
 from visualizers.null import NullVisualizer
@@ -19,6 +20,7 @@ def run_evaluation(
     settings: dict[str, Any],
     games: int,
     base_seed: int | None,
+    limits: EngineLimits,
     label: str | None = None,
     include_events: bool = True,
     progress: ProgressCallback | None = None,
@@ -45,6 +47,7 @@ def run_evaluation(
             visualizer=NullVisualizer(),
             session_id=session_id,
             random_seed=seed,
+            limits=limits,
             observers=[collector],
         )
         session.play_game()
@@ -69,6 +72,7 @@ def run_evaluation(
             "args": bot_args,
         },
         "rules": _rules(settings),
+        "limits": _limits(limits),
         "summary": _batch_summary(game_results),
         "elapsed_ms": round(elapsed * 1000),
         "games": game_results,
@@ -86,6 +90,13 @@ def _rules(settings: dict[str, Any]) -> dict[str, Any]:
         "allclear_b2b": rules.allclear_b2b,
         "spawn_x": rules.spawn_x,
         "spawn_y": rules.spawn_y,
+    }
+
+
+def _limits(limits: EngineLimits) -> dict[str, Any]:
+    return {
+        "piece_limit": limits.piece_limit,
+        "time_limit_ms": limits.time_limit_ms,
     }
 
 

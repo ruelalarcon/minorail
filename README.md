@@ -78,6 +78,12 @@ Run a JSON evaluation batch:
 python eval.py "path/to/sbp-bot" --games 100 --seed 123 --json-out results.json
 ```
 
+Limit a run by accepted piece locks or wall-clock time:
+
+```bash
+python eval.py "path/to/sbp-bot" --games 100 --piece-limit 1000 --time-limit-ms 30000
+```
+
 Start the websocket API:
 
 ```bash

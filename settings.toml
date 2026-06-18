@@ -28,6 +28,10 @@ refill_threshold = 5  # when queue length drops below this, add pieces until it 
 [engine.randomizer]
 # seed = 0  # integer base seed for reproducible local piece streams
 
+[engine.limits]
+# piece_limit = 1000      # stop after this many accepted piece locks
+# time_limit_ms = 30_000  # stop after this many milliseconds
+
 [visualizer]
 move_delay_ms = 50         # delay between each animated input step
 lock_delay_ms = 150        # pause after a piece locks before the next piece appears

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from evaluation.session import run_evaluation
+from runner.limits import engine_limits
 from runner.seeding import base_seed
 import settings as cfg
 
@@ -58,6 +59,20 @@ def main() -> None:
         help="per-run base seed for reproducible local piece streams; overrides settings",
     )
     parser.add_argument(
+        "--piece-limit",
+        metavar="N",
+        type=int,
+        default=None,
+        help="per-run accepted piece lock limit; overrides settings",
+    )
+    parser.add_argument(
+        "--time-limit-ms",
+        metavar="MS",
+        type=int,
+        default=None,
+        help="per-run wall-clock time limit in milliseconds; overrides settings",
+    )
+    parser.add_argument(
         "--json-out",
         metavar="PATH",
         default="-",
@@ -100,6 +115,11 @@ def main() -> None:
             settings=settings,
             games=args.games,
             base_seed=base_seed(settings, args.seed),
+            limits=engine_limits(
+                settings,
+                piece_limit=args.piece_limit,
+                time_limit_ms=args.time_limit_ms,
+            ),
             label=args.label,
             include_events=not args.no_events,
             progress=progress,

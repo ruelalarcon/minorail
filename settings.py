@@ -37,6 +37,10 @@ DEFAULT: dict[str, Any] = {
             "initial": 5,
             "refill_threshold": 5,
         },
+        "limits": {
+            "piece_limit": None,
+            "time_limit_ms": None,
+        },
     },
     "logging": {
         "bot_info": {

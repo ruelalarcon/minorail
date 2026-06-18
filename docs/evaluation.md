@@ -27,6 +27,8 @@ Useful options:
 | `--seed N` | Per-run base seed for local piece streams. Overrides `engine.randomizer.seed`. |
 | `--settings PATH` | Settings TOML file. |
 | `--bot-args ARGS` | Extra arguments passed to the bot process. |
+| `--piece-limit N` | Stops each game after this many accepted piece locks. Overrides `engine.limits.piece_limit`. |
+| `--time-limit-ms MS` | Stops each game after this many milliseconds. Overrides `engine.limits.time_limit_ms`. |
 | `--json-out PATH` | Writes evaluation JSON to a file. Use `-` for stdout. |
 | `--label TEXT` | Adds an experiment or candidate label to the output. |
 | `--no-events` | Omits per-game event logs and writes summaries only. |
@@ -51,6 +53,10 @@ The output uses schema `minorail.eval.v1`:
     "args": ["--config", "candidate.json"]
   },
   "rules": {},
+  "limits": {
+    "piece_limit": 1000,
+    "time_limit_ms": 30000
+  },
   "summary": {},
   "elapsed_ms": 1234,
   "games": []
@@ -88,6 +94,19 @@ The batch summary includes the same aggregate counters plus batch-level fields
 such as `games`, `statuses`, `topouts`, `total_pieces`, `average_pieces`,
 `min_pieces`, `max_pieces`, `total_elapsed_ms`, `average_elapsed_ms`, and
 `average_pps`.
+
+Terminal statuses:
+
+| Status | Meaning |
+| --- | --- |
+| `topout` | The board reached above the visible 20-row playfield after a lock. |
+| `piece_limit` | The configured accepted piece lock limit was reached. |
+| `time_limit` | The configured wall-clock time limit was reached. |
+| `no_suggestion` | The bot did not return a usable suggestion. |
+| `invalid_move` | The selected placement could not be matched to the current active, hold, or empty-hold swap state. |
+| `apply_move_rejected` | The selected placement failed local legality checks during application. |
+| `bot_startup_failed` | The bot process failed during startup or capability negotiation. |
+| `interrupted` | The engine was interrupted while the game was running. |
 
 ---
 

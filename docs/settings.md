@@ -136,6 +136,10 @@ ignored.
 [engine.randomizer]
 seed = 0
 
+[engine.limits]
+piece_limit = 1000
+time_limit_ms = 30000
+
 [engine.queue]
 initial = 5
 refill_threshold = 5
@@ -144,6 +148,8 @@ refill_threshold = 5
 | Field | Behavior |
 | --- | --- |
 | `engine.randomizer.seed` | Optional integer default base seed for reproducible local piece streams. Omit it to use entropy unless a CLI seed override is provided. |
+| `engine.limits.piece_limit` | Optional integer default accepted piece lock limit. Omit it to run until another terminal condition occurs. |
+| `engine.limits.time_limit_ms` | Optional integer default wall-clock game time limit in milliseconds. Omit it to run until another terminal condition occurs. |
 | `initial` | Number of generated pieces available at game start, including the active piece. |
 | `refill_threshold` | Minorail refills the upcoming queue until its length reaches this value. |
 
@@ -158,6 +164,9 @@ game seed as `seed + game_index`, where `game_index` starts at `0`. For example,
 
 `run.py --seed` is a per-run override. If both `engine.randomizer.seed` and
 `--seed` are provided, the CLI value wins.
+
+`run.py --piece-limit` and `run.py --time-limit-ms` are also per-run overrides.
+If the matching `engine.limits` field is set, the CLI value wins.
 
 ---
 

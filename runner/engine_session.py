@@ -18,6 +18,7 @@ from runner.observers import (
     GameStartedEvent,
     PieceLockedEvent,
 )
+from runner.limits import EngineLimits, engine_limits
 from runner.seeding import base_seed
 from suggestion.bot_session import BotStartupError
 from suggestion.move_selection import moving_piece_for
@@ -61,6 +62,7 @@ class EngineSession:
         session_id: str = "terminal",
         bot_args: list[str] | None = None,
         random_seed: int | None = None,
+        limits: EngineLimits | None = None,
         observers: list[EngineObserver] | None = None,
     ) -> None:
         self._bot_path = bot_path
@@ -69,6 +71,7 @@ class EngineSession:
         self._visualizer = visualizer
         self._session_id = session_id
         self._random_seed = random_seed
+        self._limits = limits or engine_limits(self._settings)
         self._observers = observers or []
 
         protocol_cfg = self._settings.get("protocol", {})
@@ -190,6 +193,10 @@ class EngineSession:
 
         try:
             while True:
+                if self._time_limit_reached(start_time):
+                    status = "time_limit"
+                    break
+
                 self._ensure_queue_refilled(self.state, self._rand, refill_at)
 
                 spawn_piece = self.state.active.piece
@@ -260,6 +267,15 @@ class EngineSession:
                     self._visualizer.error("topped out")
                     status = "topout"
                     break
+
+                if self._limits.piece_limit is not None:
+                    if pieces_placed >= self._limits.piece_limit:
+                        status = "piece_limit"
+                        break
+
+                if self._time_limit_reached(start_time):
+                    status = "time_limit"
+                    break
         except KeyboardInterrupt:
             interrupted = True
             status = "interrupted"
@@ -315,6 +331,11 @@ class EngineSession:
     def _notify_game_ended(self, event: GameEndedEvent) -> None:
         for observer in self._observers:
             observer.on_game_ended(event)
+
+    def _time_limit_reached(self, start_time: float) -> bool:
+        if self._limits.time_limit_ms is None:
+            return False
+        return (time.time() - start_time) * 1000 >= self._limits.time_limit_ms
 
 
 def _stack_height(state: GameState) -> int:
