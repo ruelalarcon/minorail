@@ -3,12 +3,8 @@ import asyncio
 import shlex
 import sys
 
+from config import Settings, seed_for_game
 from runner.engine_session import EngineSession
-from runner.endpoints import web_visualizer_endpoint, websocket_endpoint
-from runner.limits import engine_limits
-from runner.pathfinding import pathfinding_options
-from runner.seeding import base_seed, game_seed
-import settings as cfg
 from suggestion.websocket_api import SuggestionWebSocketServer
 from visualizers.headless import HeadlessVisualizer
 from visualizers.terminal import TerminalVisualizer
@@ -151,18 +147,16 @@ def main() -> None:
     if args.ws and args.time_limit_ms is not None:
         parser.error("--time-limit-ms cannot be combined with --ws")
 
-    settings = cfg.load(args.settings)
+    settings = Settings.load(args.settings)
     bot_args = shlex.split(args.bot_args)
 
     if args.ws:
-        endpoint = websocket_endpoint(
-            settings,
+        endpoint = settings.websocket_endpoint(
             host=args.ws_host,
             port=args.ws_port,
         )
         assert endpoint.port is not None
-        ws_pathfinding_options = pathfinding_options(
-            settings,
+        pathfinding = settings.pathfinding(
             default_pathfinding=True,
             pathfinding=args.pathfinding,
         )
@@ -170,7 +164,7 @@ def main() -> None:
             args.bot,
             bot_args=bot_args,
             settings=settings,
-            pathfinding_options=ws_pathfinding_options,
+            pathfinding=pathfinding,
             host=endpoint.host,
             port=endpoint.port,
         )
@@ -185,19 +179,17 @@ def main() -> None:
     total: int = 0
     web_visualizer = None
     if args.web:
-        web_endpoint = web_visualizer_endpoint(
-            settings,
+        web_endpoint = settings.web_visualizer_endpoint(
             host=args.web_host,
             port=args.web_port,
         )
         web_visualizer = WebVisualizer(
-            settings,
+            settings.visualizer(),
             host=web_endpoint.host,
             port=web_endpoint.port,
         )
-    seed = base_seed(settings, args.seed)
-    limits = engine_limits(
-        settings,
+    seed = settings.base_seed(args.seed)
+    limits = settings.engine_limits(
         piece_limit=args.piece_limit,
         time_limit_ms=args.time_limit_ms,
     )
@@ -209,9 +201,8 @@ def main() -> None:
             elif web_visualizer is not None:
                 visualizer = web_visualizer
             else:
-                visualizer = TerminalVisualizer(settings)
-            resolved_pathfinding_options = pathfinding_options(
-                settings,
+                visualizer = TerminalVisualizer(settings.visualizer())
+            pathfinding = settings.pathfinding(
                 default_pathfinding=visualizer.default_pathfinding,
                 pathfinding=args.pathfinding,
             )
@@ -220,9 +211,9 @@ def main() -> None:
                 bot_args=bot_args,
                 settings=settings,
                 visualizer=visualizer,
-                random_seed=game_seed(seed, i),
+                random_seed=seed_for_game(seed, i),
                 limits=limits,
-                pathfinding_options=resolved_pathfinding_options,
+                pathfinding=pathfinding,
             ).play_game()
             print(
                 f"[info] pieces={stats['pieces']} "

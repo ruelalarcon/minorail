@@ -65,7 +65,7 @@ Optional fields:
 | `rules` | server settings | Partial per request rule override. |
 | `extensions` | null | Object forwarded to the bot. |
 | `pathfinding` | server settings; true when omitted | Whether Minorail should pathfind the selected placement. |
-| `convert_sonic_drops` | server settings | Whether returned paths rewrite intermediate sonic drops. Only matters when path output is requested. |
+| `convert_sonic_drops` | server settings | Whether returned paths rewrite intermediate sonic drops. Only matters when pathfinding is enabled. |
 | `session_id` | connection session | Non empty string. |
 | `timeout_ms` | settings value | Positive integer. |
 

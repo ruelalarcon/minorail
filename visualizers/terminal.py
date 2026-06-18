@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Any, Optional
+from typing import Optional
 
+from config import VisualizerConfig
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.pieces.cells import piece_cells
@@ -34,12 +35,11 @@ GHOST = DIM + "\xb7\xb7" + RESET
 class TerminalVisualizer:
     default_pathfinding = True
 
-    def __init__(self, settings: dict[str, Any]) -> None:
-        self._settings = settings
-        cfg = self._settings["visualizer"]
-        self._move_delay = cfg["move_delay_ms"] / 1000
-        self._lock_delay = cfg["lock_delay_ms"] / 1000
-        self._first_move_delay = cfg["first_move_delay_ms"] / 1000
+    def __init__(self, config: VisualizerConfig) -> None:
+        self._config = config
+        self._move_delay = config.move_delay_ms / 1000
+        self._lock_delay = config.lock_delay_ms / 1000
+        self._first_move_delay = config.first_move_delay_ms / 1000
         self._first_spawn = True
         self._status = ""
 
@@ -141,13 +141,12 @@ class TerminalVisualizer:
         if active_piece is None or active_loc is None:
             active_piece = state.active.piece
             active_loc = (state.active.x, state.active.y, state.active.rotation)
-        cfg = self._settings["visualizer"]
         _render(
             state,
             active_piece,
             active_loc,
-            cfg["visible_rows"],
-            cfg["queue_size"],
+            self._config.visible_rows,
+            self._config.queue_size,
             self._status,
         )
 

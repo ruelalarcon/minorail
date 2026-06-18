@@ -1,11 +1,11 @@
 import unittest
 
-from runner.limits import EngineLimits, engine_limits
+from config import EngineLimits, Settings
 
 
 class EngineLimitsTests(unittest.TestCase):
     def test_missing_limits_default_to_none(self) -> None:
-        self.assertEqual(engine_limits({}), EngineLimits())
+        self.assertEqual(Settings.from_values({}).engine_limits(), EngineLimits())
 
     def test_settings_limits_are_used(self) -> None:
         settings = {
@@ -18,7 +18,7 @@ class EngineLimitsTests(unittest.TestCase):
         }
 
         self.assertEqual(
-            engine_limits(settings),
+            Settings.from_values(settings).engine_limits(),
             EngineLimits(piece_limit=100, time_limit_ms=5000),
         )
 
@@ -33,15 +33,22 @@ class EngineLimitsTests(unittest.TestCase):
         }
 
         self.assertEqual(
-            engine_limits(settings, piece_limit=10, time_limit_ms=50),
+            Settings.from_values(settings).engine_limits(
+                piece_limit=10,
+                time_limit_ms=50,
+            ),
             EngineLimits(piece_limit=10, time_limit_ms=50),
         )
 
     def test_limits_must_be_positive(self) -> None:
         with self.assertRaises(ValueError):
-            engine_limits({"engine": {"limits": {"piece_limit": 0}}})
+            Settings.from_values(
+                {"engine": {"limits": {"piece_limit": 0}}}
+            ).engine_limits()
         with self.assertRaises(ValueError):
-            engine_limits({"engine": {"limits": {"time_limit_ms": 0}}})
+            Settings.from_values(
+                {"engine": {"limits": {"time_limit_ms": 0}}}
+            ).engine_limits()
 
 
 if __name__ == "__main__":

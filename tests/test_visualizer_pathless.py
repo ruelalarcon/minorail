@@ -1,8 +1,8 @@
 import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
-from typing import Any
 
+from config import VisualizerConfig
 from suggestion.contracts.suggestion_result import SuggestionResult
 from suggestion.contracts.suggestion_status import SuggestionStatus
 from tetris.game.state import GameState, spawn_location
@@ -81,16 +81,14 @@ def _pathless_result() -> SuggestionResult:
     )
 
 
-def _settings() -> dict[str, Any]:
-    return {
-        "visualizer": {
-            "move_delay_ms": 0,
-            "lock_delay_ms": 0,
-            "first_move_delay_ms": 0,
-            "visible_rows": 20,
-            "queue_size": 5,
-        }
-    }
+def _settings() -> VisualizerConfig:
+    return VisualizerConfig(
+        move_delay_ms=0,
+        lock_delay_ms=0,
+        first_move_delay_ms=0,
+        visible_rows=20,
+        queue_size=5,
+    )
 
 
 if __name__ == "__main__":

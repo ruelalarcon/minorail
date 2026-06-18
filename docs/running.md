@@ -50,7 +50,7 @@ If `--piece-limit` or `--time-limit-ms` is provided, the game stops with status
 
 ## Path Output
 
-Minorail only pathfinds when the selected consumer asks for path output.
+Minorail only pathfinds when the selected consumer needs paths.
 Terminal and web visualizers request paths by default for animation. Headless
 runs do not. Use `--pathfind` or `--no-pathfind` to override the setting and
 consumer default for one invocation.

@@ -4,6 +4,11 @@ import sys
 import time
 from typing import Any, Optional, Protocol
 
+from config import (
+    EngineLimits,
+    PathfindingConfig,
+    Settings,
+)
 from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
@@ -18,9 +23,6 @@ from runner.observers import (
     GameStartedEvent,
     PieceLockedEvent,
 )
-from runner.limits import EngineLimits, engine_limits
-from runner.pathfinding import PathfindingOptions
-from runner.seeding import base_seed
 from suggestion.bot_session import BotStartupError
 from suggestion.move_selection import moving_piece_for
 from suggestion.contracts.observed_snapshot import ObservedSnapshot
@@ -60,13 +62,13 @@ class EngineSession:
     def __init__(
         self,
         bot_path: str,
-        settings: dict[str, Any],
+        settings: Settings,
         visualizer: Visualizer,
         session_id: str = "terminal",
         bot_args: list[str] | None = None,
         random_seed: int | None = None,
         limits: EngineLimits | None = None,
-        pathfinding_options: PathfindingOptions | None = None,
+        pathfinding: PathfindingConfig | None = None,
         observers: list[EngineObserver] | None = None,
     ) -> None:
         self._bot_path = bot_path
@@ -75,29 +77,24 @@ class EngineSession:
         self._visualizer = visualizer
         self._session_id = session_id
         self._random_seed = random_seed
-        self._limits = limits or engine_limits(self._settings)
-        self._pathfinding_options = pathfinding_options or PathfindingOptions(
-            pathfinding=True
-        )
+        self._limits = limits or self._settings.engine_limits()
+        self._pathfinding = pathfinding or PathfindingConfig(pathfinding=True)
         self._observers = observers or []
 
-        protocol_cfg = self._settings.get("protocol", {})
-        protocol_start_cfg = protocol_cfg.get("start", {})
-        logging_cfg = self._settings.get("logging", {})
-        bot_info_cfg = logging_cfg.get("bot_info", {})
-        bot_cfg = self._settings.get("bot", {})
+        protocol_start = self._settings.protocol_start()
+        bot_cfg = self._settings.bot()
         self._service = SuggestionService(
             self._bot_path,
             bot_args=self._bot_args,
-            piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
-            info_print_topics=bot_info_cfg.get("print", ["warning"]),
-            idle_ms=bot_cfg.get("idle_ms", 60_000),
+            piece_stream_limit=protocol_start.piece_stream_limit,
+            info_print_topics=self._settings.bot_info_topics(),
+            idle_ms=bot_cfg.idle_ms,
         )
 
-        self._rules = Rules.from_settings(self._settings)
+        self._rules = Rules.from_config(self._settings.rules_config())
         rand = make_randomizer(
             self._rules.randomizer,
-            seed=base_seed(self._settings, random_seed),
+            seed=self._settings.base_seed(random_seed),
         )
         assert rand is not None
         self._rand: Randomizer = rand
@@ -109,7 +106,7 @@ class EngineSession:
             active=active,
             queue=[
                 self._rand.next()
-                for _ in range(max(0, self._settings["engine"]["queue"]["initial"] - 1))
+                for _ in range(max(0, self._settings.engine_queue().initial - 1))
             ],
             hold=None,
             combo=0,
@@ -185,8 +182,8 @@ class EngineSession:
         )
 
     def play_game(self) -> dict[str, Any]:
-        cfg_b = self._settings["bot"]
-        refill_at = self._settings["engine"]["queue"]["refill_threshold"]
+        bot_cfg = self._settings.bot()
+        refill_at = self._settings.engine_queue().refill_threshold
 
         pieces_placed = 0
         start_time = time.time()
@@ -213,12 +210,12 @@ class EngineSession:
                         SuggestionRequest(
                             snapshot=self.snapshot(),
                             rules=self._rules,
-                            pathfinding=self._pathfinding_options.pathfinding,
+                            pathfinding=self._pathfinding.pathfinding,
                             convert_sonic_drops=(
-                                self._pathfinding_options.convert_sonic_drops
+                                self._pathfinding.convert_sonic_drops
                             ),
                             session_id=self._session_id,
-                            timeout_ms=cfg_b["suggest_timeout_ms"],
+                            timeout_ms=bot_cfg.suggest_timeout_ms,
                         )
                     )
                 except BotStartupError as e:

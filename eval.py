@@ -7,11 +7,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from config import Settings
 from evaluation.session import run_evaluation
-from runner.limits import engine_limits
-from runner.pathfinding import pathfinding_options
-from runner.seeding import base_seed
-import settings as cfg
 from visualizers.null import NullVisualizer
 
 
@@ -121,7 +118,7 @@ def main() -> None:
     if args.games < 1:
         parser.error("--games must be at least 1")
 
-    settings = cfg.load(args.settings)
+    settings = Settings.load(args.settings)
     bot_args = shlex.split(args.bot_args)
     progress = None if args.quiet else _print_progress
 
@@ -131,14 +128,12 @@ def main() -> None:
             bot_args=bot_args,
             settings=settings,
             games=args.games,
-            base_seed=base_seed(settings, args.seed),
-            limits=engine_limits(
-                settings,
+            base_seed=settings.base_seed(args.seed),
+            limits=settings.engine_limits(
                 piece_limit=args.piece_limit,
                 time_limit_ms=args.time_limit_ms,
             ),
-            pathfinding_options=pathfinding_options(
-                settings,
+            pathfinding=settings.pathfinding(
                 default_pathfinding=NullVisualizer.default_pathfinding,
                 pathfinding=args.pathfinding,
             ),

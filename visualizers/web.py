@@ -8,6 +8,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Optional
 
+from config import VisualizerConfig
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.pieces.cells import piece_cells
@@ -55,16 +56,15 @@ class WebVisualizer:
 
     def __init__(
         self,
-        settings: dict[str, Any],
+        config: VisualizerConfig,
         *,
         host: str = "127.0.0.1",
         port: Optional[int] = None,
     ) -> None:
-        self._settings = settings
-        cfg = self._settings["visualizer"]
-        self._move_delay = cfg["move_delay_ms"] / 1000
-        self._lock_delay = cfg["lock_delay_ms"] / 1000
-        self._first_move_delay = cfg["first_move_delay_ms"] / 1000
+        self._config = config
+        self._move_delay = config.move_delay_ms / 1000
+        self._lock_delay = config.lock_delay_ms / 1000
+        self._first_move_delay = config.first_move_delay_ms / 1000
         self._first_spawn = True
         self._host = host
         self._port = port
@@ -201,13 +201,12 @@ class WebVisualizer:
             active_piece = state.active.piece
             active_loc = (state.active.x, state.active.y, state.active.rotation)
 
-        cfg = self._settings["visualizer"]
         frame = _make_frame(
             state,
             active_piece,
             active_loc,
-            cfg["visible_rows"],
-            cfg["queue_size"],
+            self._config.visible_rows,
+            self._config.queue_size,
             status,
             self._paused,
             self._editable,

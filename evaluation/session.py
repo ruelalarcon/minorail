@@ -3,11 +3,9 @@ from __future__ import annotations
 import time
 from typing import Any, Callable
 
+from config import EngineLimits, PathfindingConfig, Settings, seed_for_game
 from evaluation.collector import EvaluationCollector
 from runner.engine_session import EngineSession
-from runner.limits import EngineLimits
-from runner.pathfinding import PathfindingOptions
-from runner.seeding import game_seed
 from tetris.model.rules import Rules
 from visualizers.null import NullVisualizer
 
@@ -18,11 +16,11 @@ def run_evaluation(
     *,
     bot_path: str,
     bot_args: list[str],
-    settings: dict[str, Any],
+    settings: Settings,
     games: int,
     base_seed: int | None,
     limits: EngineLimits,
-    pathfinding_options: PathfindingOptions,
+    pathfinding: PathfindingConfig,
     label: str | None = None,
     include_events: bool = True,
     progress: ProgressCallback | None = None,
@@ -35,7 +33,7 @@ def run_evaluation(
 
     for game_index in range(games):
         game_number = game_index + 1
-        seed = game_seed(base_seed, game_index)
+        seed = seed_for_game(base_seed, game_index)
         session_id = f"eval-{game_number}"
         collector = EvaluationCollector(include_events=include_events)
 
@@ -50,7 +48,7 @@ def run_evaluation(
             session_id=session_id,
             random_seed=seed,
             limits=limits,
-            pathfinding_options=pathfinding_options,
+            pathfinding=pathfinding,
             observers=[collector],
         )
         session.play_game()
@@ -82,8 +80,8 @@ def run_evaluation(
     }
 
 
-def _rules(settings: dict[str, Any]) -> dict[str, Any]:
-    rules = Rules.from_settings(settings)
+def _rules(settings: Settings) -> dict[str, Any]:
+    rules = Rules.from_config(settings.rules_config())
     return {
         "randomizer": rules.randomizer,
         "kickset": rules.kickset,

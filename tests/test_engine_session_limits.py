@@ -2,9 +2,8 @@ import unittest
 from time import sleep
 from typing import Any, cast
 
+from config import EngineLimits, PathfindingConfig, Settings
 from runner.engine_session import EngineSession
-from runner.limits import EngineLimits
-from runner.pathfinding import PathfindingOptions
 from suggestion.contracts.suggestion_request import SuggestionRequest
 from suggestion.contracts.suggestion_result import SuggestionResult
 from suggestion.contracts.suggestion_status import SuggestionStatus
@@ -71,13 +70,13 @@ class EngineSessionLimitsTests(unittest.TestCase):
 
         self.assertEqual(stats["status"], "time_limit")
 
-    def test_pathfinding_options_are_passed_to_suggestion_request(self) -> None:
+    def test_pathfinding_config_is_passed_to_suggestion_request(self) -> None:
         session = EngineSession(
             "fake-bot",
             settings=_settings(),
             visualizer=NullVisualizer(),
             limits=EngineLimits(piece_limit=1),
-            pathfinding_options=PathfindingOptions(
+            pathfinding=PathfindingConfig(
                 pathfinding=False,
                 convert_sonic_drops=True,
             ),
@@ -92,8 +91,8 @@ class EngineSessionLimitsTests(unittest.TestCase):
         self.assertFalse(service.requests[0].convert_sonic_drops)
 
 
-def _settings():
-    return {
+def _settings() -> Settings:
+    return Settings.from_values({
         "protocol": {
             "rules": {
                 "randomizer": "seven_bag",
@@ -115,7 +114,7 @@ def _settings():
             "limits": {"piece_limit": None, "time_limit_ms": None},
         },
         "logging": {"bot_info": {"print": ["warning"]}},
-    }
+    })
 
 
 if __name__ == "__main__":

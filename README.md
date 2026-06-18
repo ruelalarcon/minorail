@@ -99,8 +99,8 @@ file:
 python run.py "path/to/sbp-bot" --settings custom-settings.toml
 ```
 
-Settings cover gameplay rules, bot timeouts, queue refill behavior, path output
-options, bot info logging, and visualizer timing.
+Settings cover gameplay rules, bot timeouts, queue refill behavior, pathfinding,
+bot info logging, and visualizer timing.
 
 ## Development
 

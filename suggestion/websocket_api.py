@@ -7,13 +7,13 @@ import uuid
 from dataclasses import replace
 from typing import Any
 
+from config import PathfindingConfig, Settings
 from tetris.game.state import spawn_location
 from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.movegen.steps import MoveStep
-from runner.pathfinding import PathfindingOptions
 from suggestion.bot_session import BotStartupError
 from suggestion.contracts.observed_snapshot import ObservedSnapshot
 from suggestion.contracts.suggestion_request import SuggestionRequest
@@ -34,29 +34,24 @@ class SuggestionWebSocketServer:
         self,
         bot_path: str,
         *,
-        settings: dict[str, Any],
+        settings: Settings,
         bot_args: list[str] | None = None,
-        pathfinding_options: PathfindingOptions | None = None,
+        pathfinding: PathfindingConfig | None = None,
         host: str = "127.0.0.1",
         port: int = 8444,
     ) -> None:
-        protocol_cfg = settings.get("protocol", {})
-        protocol_start_cfg = protocol_cfg.get("start", {})
-        logging_cfg = settings.get("logging", {})
-        bot_info_cfg = logging_cfg.get("bot_info", {})
-        bot_cfg = settings.get("bot", {})
+        protocol_start = settings.protocol_start()
+        bot_cfg = settings.bot()
         self._service = SuggestionService(
             bot_path,
             bot_args=bot_args,
-            piece_stream_limit=protocol_start_cfg.get("piece_stream_limit", 11),
-            info_print_topics=bot_info_cfg.get("print", ["warning"]),
-            idle_ms=bot_cfg.get("idle_ms", 60_000),
+            piece_stream_limit=protocol_start.piece_stream_limit,
+            info_print_topics=settings.bot_info_topics(),
+            idle_ms=bot_cfg.idle_ms,
         )
-        self._pathfinding_options = pathfinding_options or PathfindingOptions(
-            pathfinding=True
-        )
-        self._timeout_ms = bot_cfg.get("suggest_timeout_ms", 10_000)
-        self._rules = Rules.from_settings(settings)
+        self._pathfinding = pathfinding or PathfindingConfig(pathfinding=True)
+        self._timeout_ms = bot_cfg.suggest_timeout_ms
+        self._rules = Rules.from_config(settings.rules_config())
         self._host = host
         self._port = port
         self._lock = asyncio.Lock()
@@ -115,9 +110,9 @@ class SuggestionWebSocketServer:
                 base_rules=self._rules,
                 default_session_id=connection_session_id,
                 default_timeout_ms=self._timeout_ms,
-                default_pathfinding=self._pathfinding_options.pathfinding,
+                default_pathfinding=self._pathfinding.pathfinding,
                 default_convert_sonic_drops=(
-                    self._pathfinding_options.convert_sonic_drops
+                    self._pathfinding.convert_sonic_drops
                 ),
             )
             session_ids.add(request.session_id)

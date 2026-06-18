@@ -2,8 +2,8 @@
 
 Minorail reads settings from TOML. The default file is `settings.toml`.
 
-Settings are merged over built in defaults from `settings.py`, so a custom file
-can contain only the fields you want to change.
+Settings are merged over built in defaults from `config/settings.py`, so a
+custom file can contain only the fields you want to change.
 
 ?> Settings affect two things: Minorail's local engine behavior and the SBP
 rules or start data sent to the bot. Visualizer settings only affect display.
@@ -87,7 +87,7 @@ convert_sonic_drops = false
 | Field | Behavior |
 | --- | --- |
 | `pathfinding` | Optional boolean. Omit it to use the selected consumer's pathfinding preference. `true` always runs pathfinding by default. `false` skips pathfinding by default. CLI `--pathfind` and `--no-pathfind` override this for one invocation. |
-| `convert_sonic_drops` | Converts intermediate `sonic_drop` path steps into repeated `soft_drop` steps when path output is requested. |
+| `convert_sonic_drops` | Converts intermediate `sonic_drop` path steps into repeated `soft_drop` steps when pathfinding is enabled. |
 
 The final `hard_drop` remains unchanged.
 
