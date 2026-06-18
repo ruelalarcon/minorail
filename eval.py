@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shlex
 import sys
 from pathlib import Path
@@ -131,7 +132,7 @@ def main() -> None:
         parser.error("--games must be at least 1")
 
     settings = Settings.load(args.settings)
-    bot_args = shlex.split(args.bot_args)
+    bot_args = shlex.split(args.bot_args, posix=os.name != "nt")
     progress = None if args.quiet else _print_progress
 
     try:

@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import os
 import shlex
 import sys
 
@@ -159,7 +160,7 @@ def main() -> None:
         parser.error("--time-limit-ms cannot be combined with --ws")
 
     settings = Settings.load(args.settings)
-    bot_args = shlex.split(args.bot_args)
+    bot_args = shlex.split(args.bot_args, posix=os.name != "nt")
 
     if args.ws:
         endpoint = settings.websocket_endpoint(
