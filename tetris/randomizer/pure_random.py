@@ -8,10 +8,13 @@ _ALL_PIECES = list(Piece)
 
 
 class PureRandom:
-    """Fully random randomizer — each piece is drawn independently."""
+    """Fully random randomizer where each piece is drawn independently."""
+
+    def __init__(self, seed: int | None = None) -> None:
+        self._rng = random.Random(seed)
 
     def next(self) -> Piece:
-        return random.choice(_ALL_PIECES)
+        return self._rng.choice(_ALL_PIECES)
 
     def peek_bag(self) -> list[Piece]:
         return []

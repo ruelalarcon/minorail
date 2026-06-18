@@ -53,6 +53,7 @@ class EngineSession:
         visualizer: Visualizer,
         session_id: str = "terminal",
         bot_args: list[str] | None = None,
+        random_seed: int | None = None,
     ) -> None:
         self._bot_path = bot_path
         self._bot_args = bot_args or []
@@ -76,7 +77,10 @@ class EngineSession:
         )
 
         self._rules = Rules.from_settings(self._settings)
-        rand = make_randomizer(self._rules.randomizer)
+        rand = make_randomizer(
+            self._rules.randomizer,
+            seed=_randomizer_seed(self._settings, random_seed),
+        )
         assert rand is not None
         self._rand: Randomizer = rand
         active = spawn_location(
@@ -257,3 +261,14 @@ class EngineSession:
     def _validate_cell(self, x: int, y: int) -> None:
         if x < 0 or x >= 10 or y < 0 or y >= 40:
             raise ValueError(f"cell out of bounds: ({x}, {y})")
+
+
+def _randomizer_seed(settings: dict[str, Any], override: int | None) -> int | None:
+    if override is not None:
+        return override
+    seed = settings.get("engine", {}).get("randomizer", {}).get("seed")
+    if seed is None:
+        return None
+    if not isinstance(seed, int):
+        raise ValueError("engine.randomizer.seed must be an integer")
+    return seed

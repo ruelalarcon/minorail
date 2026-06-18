@@ -25,6 +25,9 @@ print = ["warning", "log"]  # runtime info topics to print, e.g. ["warning", "st
 initial = 5           # pieces to seed before sending start
 refill_threshold = 5  # when queue length drops below this, add pieces until it reaches this value
 
+[engine.randomizer]
+# seed = 0  # integer base seed for reproducible local piece streams
+
 [visualizer]
 move_delay_ms = 50         # delay between each animated input step
 lock_delay_ms = 150        # pause after a piece locks before the next piece appears

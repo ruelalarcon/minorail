@@ -30,6 +30,9 @@ DEFAULT: dict[str, Any] = {
         "idle_ms": 60_000,
     },
     "engine": {
+        "randomizer": {
+            "seed": None,
+        },
         "queue": {
             "initial": 5,
             "refill_threshold": 5,

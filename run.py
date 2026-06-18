@@ -2,6 +2,7 @@ import argparse
 import asyncio
 import shlex
 import sys
+from typing import Any
 
 from runner.engine_session import EngineSession
 import settings as cfg
@@ -50,6 +51,13 @@ def main() -> None:
         metavar="PATH",
         default="settings.toml",
         help="settings TOML file",
+    )
+    run_group.add_argument(
+        "--seed",
+        metavar="N",
+        type=int,
+        default=None,
+        help="per-run base seed for reproducible local piece streams; overrides settings",
     )
 
     display_group = parser.add_argument_group("visualization options")
@@ -104,6 +112,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.ws and (args.terminal or args.web or args.headless):
         parser.error("--ws cannot be combined with visualization modes")
+    if args.ws and args.seed is not None:
+        parser.error("--seed cannot be combined with --ws")
 
     settings = cfg.load(args.settings)
     bot_args = shlex.split(args.bot_args)
@@ -134,6 +144,7 @@ def main() -> None:
         if args.web
         else None
     )
+    base_seed = _base_seed(settings, args.seed)
     try:
         for i in range(args.games):
             print(f"[info] game={i + 1}/{args.games}", file=sys.stderr)
@@ -148,6 +159,7 @@ def main() -> None:
                 bot_args=bot_args,
                 settings=settings,
                 visualizer=visualizer,
+                random_seed=_game_seed(base_seed, i),
             ).play_game()
             print(
                 f"[info] pieces={stats['pieces']} "
@@ -161,6 +173,23 @@ def main() -> None:
 
     if args.games > 1:
         print(f"[info] total_pieces={total} games={args.games}", file=sys.stderr)
+
+
+def _base_seed(settings: dict[str, Any], override: int | None) -> int | None:
+    if override is not None:
+        return override
+    seed = settings.get("engine", {}).get("randomizer", {}).get("seed")
+    if seed is None:
+        return None
+    if not isinstance(seed, int):
+        raise ValueError("engine.randomizer.seed must be an integer")
+    return seed
+
+
+def _game_seed(base_seed: int | None, game_index: int) -> int | None:
+    if base_seed is None:
+        return None
+    return base_seed + game_index
 
 
 if __name__ == "__main__":

@@ -133,6 +133,9 @@ ignored.
 ## Engine Queue
 
 ```toml
+[engine.randomizer]
+seed = 0
+
 [engine.queue]
 initial = 5
 refill_threshold = 5
@@ -140,6 +143,7 @@ refill_threshold = 5
 
 | Field | Behavior |
 | --- | --- |
+| `engine.randomizer.seed` | Optional integer default base seed for reproducible local piece streams. Omit it to use entropy unless a CLI seed override is provided. |
 | `initial` | Number of generated pieces available at game start, including the active piece. |
 | `refill_threshold` | Minorail refills the upcoming queue until its length reaches this value. |
 
@@ -147,6 +151,13 @@ For example, `initial = 5` creates one active piece and four upcoming pieces.
 
 `GameState.queue` and websocket request `queue` values contain upcoming pieces
 only. They never include the active piece.
+
+When running multiple games through `run.py --games`, Minorail derives each
+game seed as `seed + game_index`, where `game_index` starts at `0`. For example,
+`--seed 100 --games 3` uses seeds `100`, `101`, and `102`.
+
+`run.py --seed` is a per-run override. If both `engine.randomizer.seed` and
+`--seed` are provided, the CLI value wins.
 
 ---
 

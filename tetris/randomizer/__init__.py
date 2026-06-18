@@ -12,12 +12,16 @@ class Randomizer(Protocol):
     def peek_bag(self) -> list[Piece]: ...
 
 
-def make_randomizer(rules_type: Optional[str]) -> Optional[Randomizer]:
+def make_randomizer(
+    rules_type: Optional[str],
+    *,
+    seed: int | None = None,
+) -> Optional[Randomizer]:
     match rules_type:
         case "seven_bag":
-            return SevenBag()
+            return SevenBag(seed=seed)
         case "pure_random":
-            return PureRandom()
+            return PureRandom(seed=seed)
         case _:
             return None
 
