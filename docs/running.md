@@ -43,7 +43,9 @@ Minorail prints per game stats to stderr:
 [info] pieces=123 elapsed=12.3s pps=10.00
 ```
 
-For multiple games, it also prints total pieces.
+For multiple games, it also prints total pieces. A multi-game run keeps one bot
+process alive when possible: each finished game sends SBP `stop`, the next game
+sends a fresh `start`, and Minorail sends `quit` when the whole run ends.
 
 If `--piece-limit` or `--time-limit-ms` is provided, the game stops with status
 `piece_limit` or `time_limit` when that limit is reached.

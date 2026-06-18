@@ -59,6 +59,8 @@ class SuggestionContinuity:
         self._go_idle_timer: threading.Timer | None = None
         self._go_idle_generation = 0
         self._bot_needs_start = False
+        self._bot_game_active = False
+        self._piece_stream_limit = piece_stream_limit
         self.latest_observed: Optional[ObservedSnapshot] = None
         self.shadow_observed: Optional[ObservedSnapshot] = None
         self.derived_state = DerivedState.neutral()
@@ -78,8 +80,17 @@ class SuggestionContinuity:
     def close(self) -> None:
         with self._lock:
             self._cancel_go_idle()
-            self.bot_session.stop()
+            if self._bot_game_active:
+                self.bot_session.stop()
             self.bot_session.close()
+            self._bot_game_active = False
+
+    def stop_game(self) -> None:
+        with self._lock:
+            self._cancel_go_idle()
+            if self._bot_game_active:
+                self.bot_session.stop()
+            self._reset_game_continuity()
 
     def _suggest_locked(self, request: SuggestionRequest) -> SuggestionResult:
         validation_error = self._validate(request.snapshot)
@@ -197,12 +208,14 @@ class SuggestionContinuity:
         bot_snapshot = self._to_bot_snapshot(request.snapshot, request.extensions)
         if self._bot_needs_start:
             self.bot_session.start_from(bot_snapshot, request.rules)
+            self._bot_game_active = True
             self._bot_needs_start = False
             return
 
         match transition.bot_action:
             case BotAction.Start:
                 self.bot_session.start_from(bot_snapshot, request.rules)
+                self._bot_game_active = True
             case BotAction.Keep:
                 pass
             case BotAction.Advance:
@@ -213,6 +226,17 @@ class SuggestionContinuity:
                 )
             case BotAction.Reset:
                 self.bot_session.reset_from(bot_snapshot, request.rules)
+                self._bot_game_active = True
+
+    def _reset_game_continuity(self) -> None:
+        self._bot_game_active = False
+        self._bot_needs_start = False
+        self.latest_observed = None
+        self.shadow_observed = None
+        self.derived_state = DerivedState.neutral()
+        self.piece_stream = PieceStreamTracker(self._piece_stream_limit)
+        self.previous_suggestion = None
+        self.rules = None
 
     def _to_bot_snapshot(
         self, snapshot: ObservedSnapshot, extensions: dict[str, Any] | None = None
@@ -271,4 +295,5 @@ class SuggestionContinuity:
             self._go_idle_timer = None
             print("[info] minorail going idle; closing bot process", file=sys.stderr)
             self.bot_session.close()
+            self._bot_game_active = False
             self._bot_needs_start = True

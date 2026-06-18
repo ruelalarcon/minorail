@@ -42,6 +42,10 @@ snapshot, then asks for suggestions.
 | Session resets | Minorail sends `stop`, then starts again from a new snapshot |
 | Process closes | Minorail sends `quit` |
 
+Local multi-game runs and evaluation batches use that same session boundary:
+Minorail sends `stop` at the end of each game, sends a fresh `start` for the
+next game, and keeps `quit` for final process cleanup.
+
 !> Minorail docs intentionally do not redefine SBP message schemas. If you are
 writing a bot, read the SBP docs for the exact protocol contract.
 

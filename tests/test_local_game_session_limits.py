@@ -19,6 +19,8 @@ class FakeSuggestionService:
         self._delay = delay
         self._suggestions = 0
         self.requests: list[SuggestionRequest] = []
+        self.stopped_games: list[str] = []
+        self.closed = False
 
     def suggest(self, request: SuggestionRequest) -> SuggestionResult:
         self.requests.append(request)
@@ -39,38 +41,46 @@ class FakeSuggestionService:
         )
 
     def close(self) -> None:
-        pass
+        self.closed = True
+
+    def stop_game(self, session_id: str) -> None:
+        self.stopped_games.append(session_id)
 
 
 class LocalGameSessionLimitsTests(unittest.TestCase):
     def test_piece_limit_stops_after_limit_piece_locks(self) -> None:
+        service = FakeSuggestionService()
         session = LocalGameSession(
             "fake-bot",
             settings=_settings(),
             visualizer=NullVisualizer(),
             limits=RunLimits(piece_limit=2),
+            suggestion_service=service,
         )
-        cast(Any, session)._service = FakeSuggestionService()
 
         stats = session.play_game()
 
         self.assertEqual(stats["status"], "piece_limit")
         self.assertEqual(stats["pieces"], 2)
+        self.assertEqual(service.stopped_games, ["terminal"])
+        self.assertFalse(service.closed)
 
     def test_time_limit_can_stop_before_first_suggestion(self) -> None:
+        service = FakeSuggestionService(delay=0.002)
         session = LocalGameSession(
             "fake-bot",
             settings=_settings(),
             visualizer=NullVisualizer(),
             limits=RunLimits(time_limit_ms=1),
+            suggestion_service=service,
         )
-        cast(Any, session)._service = FakeSuggestionService(delay=0.002)
 
         stats = session.play_game()
 
         self.assertEqual(stats["status"], "time_limit")
 
     def test_path_settings_are_passed_to_suggestion_request(self) -> None:
+        service = FakeSuggestionService()
         session = LocalGameSession(
             "fake-bot",
             settings=_settings(),
@@ -80,15 +90,29 @@ class LocalGameSessionLimitsTests(unittest.TestCase):
                 pathfinding=False,
                 convert_sonic_drops=True,
             ),
+            suggestion_service=service,
         )
-        service = FakeSuggestionService()
-        cast(Any, session)._service = service
 
         session.play_game()
 
         self.assertEqual(len(service.requests), 1)
         self.assertFalse(service.requests[0].pathfinding)
         self.assertFalse(service.requests[0].convert_sonic_drops)
+
+    def test_owned_service_is_closed_after_game(self) -> None:
+        service = FakeSuggestionService()
+        session = LocalGameSession(
+            "fake-bot",
+            settings=_settings(),
+            visualizer=NullVisualizer(),
+            limits=RunLimits(piece_limit=1),
+        )
+        cast(Any, session)._service = service
+
+        session.play_game()
+
+        self.assertEqual(service.stopped_games, ["terminal"])
+        self.assertTrue(service.closed)
 
 
 def _settings() -> Settings:

@@ -40,6 +40,10 @@ Flags are grouped the same way as `eval.py --help`:
 When multiple games run with a seed, each game uses `seed + game_index`, where
 `game_index` starts at `0`.
 
+Evaluation keeps one bot process alive across the batch when possible. Each
+game boundary sends SBP `stop`, the next game sends a fresh `start`, and the
+process receives `quit` when the evaluation run ends.
+
 ---
 
 ## Output

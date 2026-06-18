@@ -436,6 +436,31 @@ class ServiceTests(unittest.TestCase):
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )
 
+    def test_stop_game_keeps_process_and_next_snapshot_starts_fresh_game(self) -> None:
+        first = placement(Piece.O, 4, 0)
+        second = placement(Piece.T, 4, 0)
+        fake = FakeBotSession([[first], [second]])
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        first_result = session.suggest(
+            SuggestionRequest(snapshot=snapshot(active=Piece.O), rules=rules)
+        )
+        session.stop_game()
+        second_result = session.suggest(
+            SuggestionRequest(snapshot=snapshot(active=Piece.T), rules=rules)
+        )
+
+        self.assertEqual(first_result.status, SuggestionStatus.Synced)
+        self.assertEqual(second_result.status, SuggestionStatus.Synced)
+        self.assertTrue(fake.stopped)
+        self.assertFalse(fake.closed)
+        self.assertEqual(len(fake.started), 2)
+        self.assertEqual(fake.started[0].active, Piece.O)
+        self.assertEqual(fake.started[1].active, Piece.T)
+        self.assertEqual(fake.advanced, [])
+        self.assertEqual(fake.resets, [])
+
     def test_capabilities_validate_configured_rules(self) -> None:
         capabilities = BotCapabilities.from_sbp(
             {

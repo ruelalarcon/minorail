@@ -6,6 +6,7 @@ from typing import Any, Callable
 from settings import PathSettings, RunLimits, Settings, seed_for_game
 from evaluation.collector import EvaluationCollector
 from runner.session import LocalGameSession
+from suggestion.service import SuggestionService
 from tetris.model.rules import Rules
 from visualizers.null import NullVisualizer
 
@@ -30,39 +31,53 @@ def run_evaluation(
 
     started_at = time.time()
     game_results: list[dict[str, Any]] = []
+    protocol_start = settings.protocol_start()
+    bot_cfg = settings.bot()
+    suggestion_service = SuggestionService(
+        bot_path,
+        bot_args=bot_args,
+        piece_stream_limit=protocol_start.piece_stream_limit,
+        info_print_topics=settings.bot_info_topics(),
+        idle_ms=bot_cfg.idle_ms,
+    )
 
-    for game_index in range(games):
-        game_number = game_index + 1
-        seed = seed_for_game(base_seed, game_index)
-        session_id = f"eval-{game_number}"
-        collector = EvaluationCollector(include_events=include_events)
+    try:
+        for game_index in range(games):
+            game_number = game_index + 1
+            seed = seed_for_game(base_seed, game_index)
+            session_id = f"eval-{game_number}"
+            collector = EvaluationCollector(include_events=include_events)
 
-        if progress is not None:
-            progress(f"[info] game={game_number}/{games} seed={seed}")
+            if progress is not None:
+                progress(f"[info] game={game_number}/{games} seed={seed}")
 
-        session = LocalGameSession(
-            bot_path,
-            bot_args=bot_args,
-            settings=settings,
-            visualizer=NullVisualizer(),
-            session_id=session_id,
-            random_seed=seed,
-            limits=limits,
-            pathfinding=pathfinding,
-            observers=[collector],
-        )
-        session.play_game()
-        result = collector.result(game=game_index)
-        game_results.append(result)
-
-        if progress is not None:
-            summary = result["summary"]
-            progress(
-                f"[info] game={game_number}/{games} "
-                f"status={summary['status']} "
-                f"pieces={summary['pieces']} "
-                f"elapsed_ms={summary['elapsed_ms']}"
+            session = LocalGameSession(
+                bot_path,
+                bot_args=bot_args,
+                settings=settings,
+                visualizer=NullVisualizer(),
+                session_id=session_id,
+                suggestion_session_id="evaluation",
+                suggestion_service=suggestion_service,
+                random_seed=seed,
+                limits=limits,
+                pathfinding=pathfinding,
+                observers=[collector],
             )
+            session.play_game()
+            result = collector.result(game=game_index)
+            game_results.append(result)
+
+            if progress is not None:
+                summary = result["summary"]
+                progress(
+                    f"[info] game={game_number}/{games} "
+                    f"status={summary['status']} "
+                    f"pieces={summary['pieces']} "
+                    f"elapsed_ms={summary['elapsed_ms']}"
+                )
+    finally:
+        suggestion_service.close()
 
     elapsed = time.time() - started_at
     return {

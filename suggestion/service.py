@@ -42,6 +42,11 @@ class SuggestionService:
         if session is not None:
             session.close()
 
+    def stop_game(self, session_id: str) -> None:
+        session = self._sessions.get(session_id)
+        if session is not None:
+            session.stop_game()
+
     def close(self) -> None:
         for session in self._sessions.values():
             session.close()

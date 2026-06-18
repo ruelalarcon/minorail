@@ -6,6 +6,7 @@ import sys
 from settings import Settings, seed_for_game
 from runner.session import LocalGameSession
 from api.websocket import SuggestionWebSocketServer
+from suggestion.service import SuggestionService
 from visualizers.headless import HeadlessVisualizer
 from visualizers.terminal import TerminalVisualizer
 from visualizers.web import WebVisualizer
@@ -203,6 +204,15 @@ def main() -> None:
         piece_limit=args.piece_limit,
         time_limit_ms=args.time_limit_ms,
     )
+    protocol_start = settings.protocol_start()
+    bot_cfg = settings.bot()
+    suggestion_service = SuggestionService(
+        args.bot,
+        bot_args=bot_args,
+        piece_stream_limit=protocol_start.piece_stream_limit,
+        info_print_topics=settings.bot_info_topics(),
+        idle_ms=bot_cfg.idle_ms,
+    )
     try:
         for i in range(args.games):
             print(f"[info] game={i + 1}/{args.games}", file=sys.stderr)
@@ -221,6 +231,8 @@ def main() -> None:
                 bot_args=bot_args,
                 settings=settings,
                 visualizer=visualizer,
+                suggestion_service=suggestion_service,
+                suggestion_session_id="local-run",
                 random_seed=seed_for_game(seed, i),
                 limits=limits,
                 pathfinding=pathfinding,
@@ -234,6 +246,8 @@ def main() -> None:
             total += int(stats["pieces"])
     except KeyboardInterrupt:
         raise SystemExit(130) from None
+    finally:
+        suggestion_service.close()
 
     if args.games > 1:
         print(f"[info] total_pieces={total} games={args.games}", file=sys.stderr)

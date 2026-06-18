@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import sys
 import time
-from typing import Any
+from typing import Any, Protocol
 
 from settings import PathSettings, RunLimits, Settings
 from bots.session import BotStartupError
 from contracts.observed_snapshot import ObservedSnapshot
 from contracts.suggestion_request import SuggestionRequest
+from contracts.suggestion_result import SuggestionResult
 from runner.controls import GameControls
 from runner.events import (
     GameEndedEvent,
@@ -26,6 +27,14 @@ from tetris.model.rules import Rules
 from tetris.randomizer import Randomizer, make_randomizer
 
 
+class SuggestionServiceLike(Protocol):
+    def suggest(self, request: SuggestionRequest) -> SuggestionResult: ...
+
+    def stop_game(self, session_id: str) -> None: ...
+
+    def close(self) -> None: ...
+
+
 class LocalGameSession:
     def __init__(
         self,
@@ -33,6 +42,8 @@ class LocalGameSession:
         settings: Settings,
         visualizer: Visualizer,
         session_id: str = "terminal",
+        suggestion_session_id: str | None = None,
+        suggestion_service: SuggestionServiceLike | None = None,
         bot_args: list[str] | None = None,
         random_seed: int | None = None,
         limits: RunLimits | None = None,
@@ -44,14 +55,16 @@ class LocalGameSession:
         self._settings = settings
         self._visualizer = visualizer
         self._session_id = session_id
+        self._suggestion_session_id = suggestion_session_id or session_id
         self._random_seed = random_seed
         self._limits = limits or self._settings.run_limits()
         self._pathfinding = pathfinding or PathSettings(pathfinding=True)
         self._observers = observers or []
+        self._owns_service = suggestion_service is None
 
         protocol_start = self._settings.protocol_start()
         bot_cfg = self._settings.bot()
-        self._service = SuggestionService(
+        self._service = suggestion_service or SuggestionService(
             self._bot_path,
             bot_args=self._bot_args,
             piece_stream_limit=protocol_start.piece_stream_limit,
@@ -134,7 +147,7 @@ class LocalGameSession:
                             rules=self._rules,
                             pathfinding=self._pathfinding.pathfinding,
                             convert_sonic_drops=(self._pathfinding.convert_sonic_drops),
-                            session_id=self._session_id,
+                            session_id=self._suggestion_session_id,
                             timeout_ms=bot_cfg.suggest_timeout_ms,
                         )
                     )
@@ -209,7 +222,9 @@ class LocalGameSession:
         finally:
             elapsed = time.time() - start_time
             try:
-                self.close()
+                self._service.stop_game(self._suggestion_session_id)
+                if self._owns_service:
+                    self.close()
             except KeyboardInterrupt:
                 if not interrupted:
                     raise
