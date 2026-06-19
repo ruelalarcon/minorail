@@ -19,10 +19,8 @@ class EvaluationCollector:
             "lines_cleared": 0,
             "line_clear_placements": 0,
             "combo_steps": 0,
-            "combo_total": 0,
             "max_combo": 0,
             "back_to_back_steps": 0,
-            "back_to_back_total": 0,
             "max_back_to_back": 0,
             "perfect_clears": 0,
             "holds": 0,
@@ -41,11 +39,9 @@ class EvaluationCollector:
             self._summary["line_clear_placements"] += 1
         if applied.combo_after > applied.combo_before:
             self._summary["combo_steps"] += 1
-        self._summary["combo_total"] += combo_after
         self._summary["max_combo"] = max(self._summary["max_combo"], combo_after)
         if applied.back_to_back_after > applied.back_to_back_before:
             self._summary["back_to_back_steps"] += 1
-        self._summary["back_to_back_total"] += back_to_back_after
         self._summary["max_back_to_back"] = max(
             self._summary["max_back_to_back"],
             back_to_back_after,

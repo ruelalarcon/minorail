@@ -88,10 +88,8 @@ Per-game summaries include generic run rollups:
 | `lines_cleared` | Total cleared lines. |
 | `line_clear_placements` | Locks that cleared at least one line. |
 | `combo_steps` | Locks where `combo_after > combo_before`. |
-| `combo_total` | Sum of `combo_after` over accepted locks. |
 | `max_combo` | Maximum `combo_after`. |
 | `back_to_back_steps` | Locks where `back_to_back_after > back_to_back_before`. |
-| `back_to_back_total` | Sum of `back_to_back_after` over accepted locks. |
 | `max_back_to_back` | Maximum `back_to_back_after`. |
 | `perfect_clears` | Locks that produced a perfect clear. |
 | `holds` | Accepted locks that used hold. |

@@ -144,13 +144,9 @@ def _batch_summary(games: list[dict[str, Any]]) -> dict[str, Any]:
             summary["line_clear_placements"] for summary in summaries
         ),
         "combo_steps": sum(summary["combo_steps"] for summary in summaries),
-        "combo_total": sum(summary["combo_total"] for summary in summaries),
         "max_combo": max((summary["max_combo"] for summary in summaries), default=0),
         "back_to_back_steps": sum(
             summary["back_to_back_steps"] for summary in summaries
-        ),
-        "back_to_back_total": sum(
-            summary["back_to_back_total"] for summary in summaries
         ),
         "max_back_to_back": max(
             (summary["max_back_to_back"] for summary in summaries),
