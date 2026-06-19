@@ -129,8 +129,8 @@ port = 8444
 
 | Field | Behavior |
 | --- | --- |
-| `host` | Default bind host for `run.py --ws`. CLI `--ws-host` overrides `api.websocket.host` for one invocation. |
-| `port` | Default bind port for `run.py --ws`. CLI `--ws-port` overrides `api.websocket.port` for one invocation. |
+| `host` | Default bind host for `minorail.py solo ws`. CLI `--ws-host` overrides `api.websocket.host` for one invocation. |
+| `port` | Default bind port for `minorail.py solo ws`. CLI `--ws-port` overrides `api.websocket.port` for one invocation. |
 
 ---
 
@@ -178,16 +178,43 @@ For example, `initial = 5` creates one active piece and four upcoming pieces.
 `GameState.queue` and websocket request `queue` values contain upcoming pieces
 only. They never include the active piece.
 
-When running multiple games through `run.py --games`, Minorail derives each
-game seed as `seed + game_index`, where `game_index` starts at `0`. For example,
+When running multiple games, Minorail derives each game seed as
+`seed + game_index`, where `game_index` starts at `0`. For example,
 `--seed 100 --games 3` uses seeds `100`, `101`, and `102`.
 
-`run.py --seed` overrides `game.randomizer.seed` for one invocation. If both
-are provided, the CLI value wins.
+`--seed` overrides `game.randomizer.seed` for one invocation. If both are
+provided, the CLI value wins.
 
-`run.py --piece-limit` overrides `game.limits.piece_limit`;
-`run.py --time-limit-ms` overrides `game.limits.time_limit_ms`. If the
-matching setting is also set, the CLI value wins.
+`--piece-limit` overrides `game.limits.piece_limit`; `--time-limit-ms`
+overrides `game.limits.time_limit_ms`. If the matching setting is also set, the
+CLI value wins.
+
+---
+
+## Battle Settings
+
+```toml
+[battle.attack]
+calculator = "generic"
+
+[battle.garbage]
+rules = "generic"
+```
+
+| Field | Values | Behavior |
+| --- | --- | --- |
+| `battle.attack.calculator` | `generic` | Selects the battle attack calculator registry entry. |
+| `battle.garbage.rules` | `generic` | Selects the battle garbage rules registry entry. |
+
+The generic attack calculator is Minorail's built-in default, not a TETR.IO or
+PPT implementation. It sends 0/1/2/4 for single/double/triple/quad, 2/4/6 for
+T-spin single/double/triple, adds a perfect clear bonus of 10, adds an explicit
+combo bonus, and adds a static back-to-back bonus when
+`back_to_back_after >= 2`.
+
+The generic garbage rules use full cancellation/blocking, no passthrough,
+garbage rise on non-line-clearing locks, a maximum rise of 8 lines per lock,
+and deterministic holes from the battle seed.
 
 ---
 
@@ -213,8 +240,8 @@ host = "127.0.0.1"
 | `first_move_delay_ms` | Pause before animating the first move. |
 | `visible_rows` | Number of board rows shown by visualizers. |
 | `queue_size` | Number of upcoming pieces shown by visualizers. |
-| `visualizer.web.host` | Default bind host for `run.py --web`. CLI `--web-host` overrides `visualizer.web.host` for one invocation. |
-| `visualizer.web.port` | Default bind port for `run.py --web`. Omit it to choose an open port automatically. CLI `--web-port` overrides `visualizer.web.port` for one invocation. |
+| `visualizer.web.host` | Default bind host for `minorail.py solo play --web`. CLI `--web-host` overrides `visualizer.web.host` for one invocation. |
+| `visualizer.web.port` | Default bind port for `minorail.py solo play --web`. Omit it to choose an open port automatically. CLI `--web-port` overrides `visualizer.web.port` for one invocation. |
 
 These settings affect presentation only. They do not change local rules, SBP
 messages, or websocket responses.

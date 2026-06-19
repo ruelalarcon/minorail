@@ -8,7 +8,7 @@ client, then Minorail talks to the SBP bot internally.
 Start it with:
 
 ```bash
-python run.py "path/to/sbp-bot" --ws
+python minorail.py solo ws "path/to/sbp-bot"
 ```
 
 Default endpoint:
@@ -20,7 +20,7 @@ ws://127.0.0.1:8444
 Custom endpoint:
 
 ```bash
-python run.py "path/to/sbp-bot" --ws --ws-host 0.0.0.0 --ws-port 9000
+python minorail.py solo ws "path/to/sbp-bot" --ws-host 0.0.0.0 --ws-port 9000
 ```
 
 The default endpoint comes from `[api.websocket]` in settings. `--ws-host`

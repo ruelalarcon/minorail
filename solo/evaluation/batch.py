@@ -4,11 +4,11 @@ import time
 from typing import Any, Callable
 
 from settings import PathSettings, RunLimits, Settings, seed_for_game
-from evaluation.collector import EvaluationCollector
-from runner.session import LocalGameSession
+from solo.evaluation.collector import EvaluationCollector
+from solo.runner.session import LocalGameSession
 from suggestion.service import SuggestionService
 from tetris.model.rules import Rules
-from visualizers.null import NullVisualizer
+from solo.visualizers.null import NullVisualizer
 
 ProgressCallback = Callable[[str], None]
 

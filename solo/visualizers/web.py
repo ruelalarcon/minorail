@@ -12,7 +12,7 @@ from settings import VisualizerSettings
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.pieces.cells import piece_cells
-from runner.controls import GameControls
+from solo.runner.controls import GameControls
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
 from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed

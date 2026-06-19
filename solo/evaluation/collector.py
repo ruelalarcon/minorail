@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from runner.events import GameEndedEvent, GameStartedEvent, PieceLockedEvent
+from solo.runner.events import GameEndedEvent, GameStartedEvent, PieceLockedEvent
 from tetris.model.placement import Placement
 
 

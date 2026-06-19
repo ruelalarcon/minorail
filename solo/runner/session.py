@@ -9,16 +9,16 @@ from bots.session import BotStartupError
 from contracts.observed_snapshot import ObservedSnapshot
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
-from runner.controls import GameControls
-from runner.events import (
+from solo.runner.controls import GameControls
+from solo.runner.events import (
     GameEndedEvent,
     GameStartedEvent,
     PieceLockedEvent,
     RunObserver,
 )
-from runner.local_game import LocalGame
-from runner.metrics import occupied_cells, stack_height
-from runner.visualizer import Visualizer
+from solo.runner.local_game import LocalGame
+from solo.runner.metrics import occupied_cells, stack_height
+from solo.runner.visualizer import SoloVisualizer
 from suggestion.move_selection import moving_piece_for
 from suggestion.service import SuggestionService
 from tetris.game.state import GameState
@@ -40,7 +40,7 @@ class LocalGameSession:
         self,
         bot_path: str,
         settings: Settings,
-        visualizer: Visualizer,
+        visualizer: SoloVisualizer,
         session_id: str = "terminal",
         suggestion_session_id: str | None = None,
         suggestion_service: SuggestionServiceLike | None = None,

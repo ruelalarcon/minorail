@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from runner.controls import GameControls
+from solo.runner.controls import GameControls
 from contracts.suggestion_result import SuggestionResult
 from tetris.game.state import GameState
 from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 
 
-class Visualizer(Protocol):
+class SoloVisualizer(Protocol):
     default_pathfinding: bool
 
     def on_game_started(self, state: GameState) -> None: ...

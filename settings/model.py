@@ -66,6 +66,14 @@ DEFAULT: dict[str, Any] = {
         "visible_rows": 20,
         "queue_size": 5,
     },
+    "battle": {
+        "attack": {
+            "calculator": "generic",
+        },
+        "garbage": {
+            "rules": "generic",
+        },
+    },
 }
 
 
@@ -115,6 +123,16 @@ class VisualizerSettings:
     first_move_delay_ms: int
     visible_rows: int
     queue_size: int
+
+
+@dataclass(frozen=True)
+class BattleAttackSettings:
+    calculator: str
+
+
+@dataclass(frozen=True)
+class BattleGarbageSettings:
+    rules: str
 
 
 @dataclass(frozen=True)
@@ -270,6 +288,20 @@ class Settings:
             ),
             queue_size=_positive_int("visualizer.queue_size", cfg.get("queue_size")),
         )
+
+    def battle_attack(self) -> BattleAttackSettings:
+        cfg = self._section("battle", "attack")
+        calculator = cfg.get("calculator")
+        if not isinstance(calculator, str) or calculator == "":
+            raise ValueError("battle.attack.calculator must be a non-empty string")
+        return BattleAttackSettings(calculator=calculator)
+
+    def battle_garbage(self) -> BattleGarbageSettings:
+        cfg = self._section("battle", "garbage")
+        rules = cfg.get("rules")
+        if not isinstance(rules, str) or rules == "":
+            raise ValueError("battle.garbage.rules must be a non-empty string")
+        return BattleGarbageSettings(rules=rules)
 
     def _section(self, *path: str) -> dict[str, Any]:
         value: object = self._values

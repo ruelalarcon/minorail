@@ -1,47 +1,73 @@
 # Visualizers
 
-Minorail has several ways to observe a local game.
+Minorail separates solo visualizers from battle visualizers. Solo visualizers
+observe one board through the `SoloVisualizer` protocol. Battle visualizers
+observe two boards through `BattleVisualizer`.
 
-## Terminal
+## Solo
+
+Terminal:
 
 ```bash
-python run.py "path/to/sbp-bot" --terminal
+python minorail.py solo play "path/to/sbp-bot" --terminal
 ```
 
-The terminal visualizer is the default. It renders game state in the terminal
-and animates returned paths.
+The terminal visualizer is the solo default. It renders game state in the
+terminal and animates returned paths.
 
-## Web
+Web:
 
 ```bash
-python run.py "path/to/sbp-bot" --web
+python minorail.py solo play "path/to/sbp-bot" --web
+python minorail.py solo play "path/to/sbp-bot" --web --web-host 127.0.0.1 --web-port 8080
 ```
 
-The web visualizer uses NiceGUI and opens a browser based view.
+The web visualizer uses NiceGUI and opens a browser-based view. The default bind
+address comes from `[visualizer.web]`.
 
-Modes:
-
-```bash
-python run.py "path/to/sbp-bot" --web --web-host 127.0.0.1 --web-port 8080
-```
-
-The default bind address comes from `[visualizer.web]`. `--web-host` overrides
-`visualizer.web.host`; `--web-port` overrides `visualizer.web.port`. If no web
-port is set there or on the CLI, Minorail chooses one automatically.
-
-## Headless
+Headless:
 
 ```bash
-python run.py "path/to/sbp-bot" --headless
+python minorail.py solo play "path/to/sbp-bot" --headless
 ```
 
 Headless mode runs without rendering and prints progress logs.
 
-This is useful for batch runs.
+## Battle
+
+Terminal:
+
+```bash
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --terminal
+```
+
+The battle terminal visualizer shows both boards side by side, animates
+suggestion paths when pathfinding is enabled, and displays each player's
+incoming garbage count.
+
+Headless:
+
+```bash
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --headless
+```
+
+Headless battle mode prints periodic lock progress and incoming garbage counts.
+
+Null:
+
+```bash
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --null
+```
+
+Null battle mode produces no visual output. Battle evaluation uses this mode.
+
+There is no battle web visualizer yet. The battle visualizer protocol is
+separate so a future `battle.visualizers.web` can render two-player state
+without forcing battle behavior into the solo API.
 
 ## Visualizer Timing
 
-Timing settings are in `[visualizer]`:
+Solo and battle visualizers use the same `[visualizer]` timing settings:
 
 ```toml
 [visualizer]
@@ -60,14 +86,6 @@ These settings affect rendering only.
 
 ## Board Edits
 
-Visualizers can request board edits through runner game controls.
-
-Supported controls:
-
-* set one cell filled or empty
-* clear the board
-* read the current state
-
-When a board edit changes state, Minorail increments the sequence number and
-clears `last_move`. The next suggestion request may resync the bot if the edit
-changed physical state.
+Visualizers that support edits request them through runner controls rather than
+mutating `GameState.board` directly. Solo currently exposes cell edits and clear
+board controls. Battle visualizers are observers for now.

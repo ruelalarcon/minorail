@@ -33,9 +33,14 @@ api/          external API transports
 sbp/          SBP parsing, serialization, capabilities, and message shape
 bots/         bot subprocess transport and SBP session lifecycle
 suggestion/   session continuity, derived state, and move selection
-runner/       local game sessions, run observers, and visualizer controls
-evaluation/   batch evaluation runner and collector
-visualizers/  terminal, web, headless, and null renderers
+solo/runner/       solo local game sessions, run observers, and visualizer controls
+solo/evaluation/   solo batch evaluation runner and collector
+solo/visualizers/  solo terminal, web, headless, and null renderers
+battle/runner/     two-player battle orchestration
+battle/evaluation/ battle batch evaluation runner and collector
+battle/visualizers/ battle terminal, headless, and null renderers
+battle/attack/     battle attack calculators
+battle/garbage/    battle garbage rules
 ```
 
 Keep protocol details out of Tetris domain modules. Keep gameplay mutation out

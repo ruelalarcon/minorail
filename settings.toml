@@ -20,8 +20,8 @@ suggest_timeout_ms = 10_000  # timeout waiting for a suggestion
 idle_ms = 60_000             # go idle after this long without communication to save resources
 
 [api.websocket]
-host = "127.0.0.1"  # host for python run.py --ws
-port = 8444         # port for python run.py --ws
+host = "127.0.0.1"  # host for python minorail.py solo ws
+port = 8444         # port for python minorail.py solo ws
 
 [logging.bot_info]
 print = ["warning", "log"]  # runtime info topics to print, e.g. ["warning", "status", "search"]
@@ -45,5 +45,11 @@ visible_rows = 20          # how many rows of the board to show (max 40)
 queue_size = 5             # number of next pieces shown in the queue panel
 
 [visualizer.web]
-host = "127.0.0.1"  # host for python run.py --web
+host = "127.0.0.1"  # host for python minorail.py solo play --web
 # port = 8080       # omit for an automatically selected open port
+
+[battle.attack]
+calculator = "generic"  # Minorail generic battle attack defaults
+
+[battle.garbage]
+rules = "generic"  # deterministic garbage cancellation and rise rules

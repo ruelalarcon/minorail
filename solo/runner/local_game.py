@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from runner.controls import CellEdit
+from solo.runner.controls import CellEdit
 from contracts.observed_snapshot import ObservedSnapshot
 from tetris.game.state import AppliedMove, GameState, spawn_location
 from tetris.model.board import Board

@@ -22,7 +22,8 @@ to Minorail's websocket API.
 
 | Feature | What it does |
 | --- | --- |
-| Local Tetris game | Runs the board, active piece, queue, hold, line clears, combo, and back to back state. |
+| Solo local Tetris game | Runs one board, active piece, queue, hold, line clears, combo, and back to back state. |
+| Battle mode | Runs two SBP bots against each other with generic attack and garbage rules. |
 | SBP bot runner | Starts an SBP bot subprocess and exchanges `rules`, `start`, `suggest`, `play`, `new_piece`, `stop`, and `quit` messages. |
 | Terminal visualizer | Shows a local game directly in the terminal. |
 | Web visualizer | Provides a browser based view for watching games and inspecting state. |
@@ -57,37 +58,55 @@ pip install -r requirements.txt
 Run one game with the terminal visualizer:
 
 ```bash
-python run.py "path/to/sbp-bot"
+python minorail.py solo play "path/to/sbp-bot"
 ```
 
 Run with the web visualizer:
 
 ```bash
-python run.py "path/to/sbp-bot" --web
+python minorail.py solo play "path/to/sbp-bot" --web
 ```
 
 Run a headless batch:
 
 ```bash
-python run.py "path/to/sbp-bot" --headless --games 100
+python minorail.py solo play "path/to/sbp-bot" --headless --games 100
 ```
 
 Run a JSON evaluation batch:
 
 ```bash
-python eval.py "path/to/sbp-bot" --games 100 --seed 123 --json-out results.json
+python minorail.py solo eval "path/to/sbp-bot" --games 100 --seed 123 --json-out results.json
 ```
 
 Limit a run by accepted piece locks or wall-clock time:
 
 ```bash
-python eval.py "path/to/sbp-bot" --games 100 --piece-limit 1000 --time-limit-ms 30000
+python minorail.py solo eval "path/to/sbp-bot" --games 100 --piece-limit 1000 --time-limit-ms 30000
+```
+
+Run a two-bot battle:
+
+```bash
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b"
+```
+
+Run multiple battle games while reusing the two bot processes:
+
+```bash
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --games 20
+```
+
+Run battle evaluation:
+
+```bash
+python minorail.py battle eval "path/to/bot-a" "path/to/bot-b" --games 100 --json-out battle-results.json
 ```
 
 Start the websocket API:
 
 ```bash
-python run.py "path/to/sbp-bot" --ws
+python minorail.py solo ws "path/to/sbp-bot"
 ```
 
 ## Settings
@@ -96,7 +115,7 @@ Minorail reads `settings.toml` by default. Use `--settings` to load another
 file:
 
 ```bash
-python run.py "path/to/sbp-bot" --settings custom-settings.toml
+python minorail.py solo play "path/to/sbp-bot" --settings custom-settings.toml
 ```
 
 Settings cover gameplay rules, bot timeouts, queue refill behavior, pathfinding,

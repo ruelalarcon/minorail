@@ -3,7 +3,7 @@ from time import sleep
 from typing import Any, cast
 
 from settings import PathSettings, RunLimits, Settings
-from runner.session import LocalGameSession
+from solo.runner.session import LocalGameSession
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
 from contracts.suggestion_status import SuggestionStatus
@@ -11,7 +11,7 @@ from tetris.model.location import PieceLocation
 from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
 from tetris.model.spin import Spin
-from visualizers.null import NullVisualizer
+from solo.visualizers.null import NullVisualizer
 
 
 class FakeSuggestionService:
