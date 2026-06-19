@@ -49,16 +49,13 @@ Example built-in north-facing cells:
 | `S` | `[[-1, 0], [0, 0], [0, 1], [1, 1]]` |
 | `Z` | `[[-1, 1], [0, 1], [0, 0], [1, 0]]` |
 
-Piece identifiers are not inherently limited to tetrominoes. A fork or
-extension can add pieces with arbitrary non-empty string identifiers, including
-larger or smaller mino pieces, as long as the game client, Minorail instance,
-and bot all use the SBP piece definition standard: identifiers, anchor
-coordinates, relative cells, rotation names, spawn behavior, kicks, and lock
-rules must agree. Programs with a different internal piece model are
-responsible for translating to this standard at the API or SBP boundary.
+Stock Minorail currently supports only these seven built-in tetrominoes. The
+SBP piece definition standard is broader than that, but supporting additional
+piece identifiers would require extending Minorail's piece model, geometry,
+kicks, randomizers, and parsing together.
 
-Websocket callers are responsible for sending snapshots and placements that
-match the piece definitions supported by the Minorail instance they are using.
+Websocket callers are responsible for sending snapshots and placements that use
+the built-in Minorail piece definitions.
 
 ---
 

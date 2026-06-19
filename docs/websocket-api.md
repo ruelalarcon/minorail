@@ -120,13 +120,11 @@ Piece fields use SBP piece strings:
 I O T L J S Z
 ```
 
-Those seven tetromino identifiers are the built-in Minorail pieces. The SBP
-piece definition standard is not limited to those names: a piece identifier is
-a non-empty string such as `"T"`, `"P"`, `"big_T"`, or `"custom:hook"`.
-Minorail forks or extensions can support additional pieces as long as every
-program interacting with them translates its internal representation to the SBP
-piece definition standard: the same identifiers, anchor coordinates, relative
-cells, orientation names, spawn behavior, kicks, and lock rules.
+Those seven tetromino identifiers are the built-in Minorail pieces. Stock
+Minorail currently rejects other piece strings. The SBP piece definition
+standard is broader than that, but supporting additional identifiers would
+require extending Minorail's piece model, geometry, kicks, randomizers, and
+parsing together.
 
 The websocket API takes `active` as a piece string, not as a full location
 object. Minorail spawns it at the configured spawn position.
@@ -137,11 +135,10 @@ piece.
 !> Passing the active piece inside `queue` will desync the chronology Minorail
 uses for session advancement.
 
-!> Websocket clients are responsible for sending piece strings and placements
-in SBP's piece geometry convention. If a client uses a different internal
-coordinate system or rotation origin, it must translate to SBP's system before
-sending requests. The stock Minorail build accepts the built-in tetromino
-strings.
+!> Websocket clients are responsible for sending built-in Minorail piece
+strings and placements in SBP's piece geometry convention. If a client uses a
+different internal coordinate system or rotation origin, it must translate to
+SBP's system before sending requests.
 
 ---
 
