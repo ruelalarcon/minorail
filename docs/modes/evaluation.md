@@ -89,7 +89,7 @@ into a board. Normal 1v1 top-out is represented by `game_ended` with
 ## Battle Defaults
 
 The default attack calculator is `tetrio_s2`. Other built-in attack calculators
-are `tetrio_s1`, `classic_guideline`, and `modern_guideline`.
+are `tetrio_s1`, `ppt`, `classic_guideline`, and `modern_guideline`.
 
 The default garbage rule is `ppt`, which uses the same cancellation and rise
 timing as Minorail's other garbage rules while modeling public Puyo Puyo Tetris

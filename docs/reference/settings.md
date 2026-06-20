@@ -203,7 +203,7 @@ rules = "ppt"
 
 | Field | Values | Behavior |
 | --- | --- | --- |
-| `battle.attack.calculator` | `tetrio_s2`, `tetrio_s1`, `classic_guideline`, `modern_guideline` | Selects an entry from `battle.attack.registry`. |
+| `battle.attack.calculator` | `tetrio_s2`, `tetrio_s1`, `ppt`, `classic_guideline`, `modern_guideline` | Selects an entry from `battle.attack.registry`. |
 | `battle.garbage.rules` | `tetrio`, `ppt` | Selects an entry from `battle.garbage.registry`. |
 
 The default attack calculator is `tetrio_s2`, which follows current
@@ -211,6 +211,10 @@ TETR.IO-style Tetra League attack behavior for line clears, T-spins, combo
 multiplication, repeated back-to-back bonus, B2B surge, and perfect clears.
 `tetrio_s1` provides season 1 style logarithmic B2B chaining. The guideline
 calculators use fixed additive combo tables instead of combo multiplication.
+`ppt` models public Puyo Puyo Tetris community notes for the adjusted attack
+gauge: T-Spin Double, T-Spin Triple, perfect clear, B2B, and combo values. This
+comes from FOUR.lol's Puyo Puyo Tetris notes:
+<https://four.lol/mid-game/puyo-puyo-tetris>.
 
 The `ppt` garbage rules use the same Minorail cancellation and rise timing, but
 model public Puyo Puyo Tetris community notes for messier holes: 30% chance to

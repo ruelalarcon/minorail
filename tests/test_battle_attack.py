@@ -2,6 +2,7 @@ import unittest
 
 from battle.attack.classic_guideline import ClassicGuidelineAttackCalculator
 from battle.attack.modern_guideline import ModernGuidelineAttackCalculator
+from battle.attack.ppt import PptAttackCalculator
 from battle.attack.registry import attack_calculator, register_attack_calculator
 from battle.attack.tetrio_s1 import TetrioS1AttackCalculator
 from battle.attack.tetrio_s2 import TetrioS2AttackCalculator
@@ -23,6 +24,7 @@ class BattleAttackRegistryTests(unittest.TestCase):
         self.assertIs(
             attack_calculator("modern_guideline"), ModernGuidelineAttackCalculator
         )
+        self.assertIs(attack_calculator("ppt"), PptAttackCalculator)
 
         with self.assertRaises(ValueError):
             attack_calculator("generic")
@@ -142,6 +144,43 @@ class GuidelineAttackCalculatorTests(unittest.TestCase):
         )
 
         self.assertEqual(attack, 6)
+
+
+class PptAttackCalculatorTests(unittest.TestCase):
+    def test_t_spin_double_uses_adjusted_ppt_attack(self) -> None:
+        attack = PptAttackCalculator().calculate(
+            _applied(Piece.T, lines=2, spin=Spin.full)
+        )
+
+        self.assertEqual(attack, 3)
+
+    def test_t_spin_triple_matches_tetris_attack(self) -> None:
+        attack = PptAttackCalculator().calculate(
+            _applied(Piece.T, lines=3, spin=Spin.full)
+        )
+
+        self.assertEqual(attack, 4)
+
+    def test_perfect_clear_uses_adjusted_ppt_bonus(self) -> None:
+        attack = PptAttackCalculator().calculate(
+            _applied(Piece.I, lines=4, perfect_clear=True)
+        )
+
+        self.assertEqual(attack, 10)
+
+    def test_b2b_t_spin_double_adds_one(self) -> None:
+        attack = PptAttackCalculator().calculate(
+            _applied(Piece.T, lines=2, spin=Spin.full, back_to_back_after=2)
+        )
+
+        self.assertEqual(attack, 4)
+
+    def test_short_combo_uses_adjusted_ppt_bonus(self) -> None:
+        attack = PptAttackCalculator().calculate(
+            _applied(Piece.I, lines=4, combo_after=5)
+        )
+
+        self.assertEqual(attack, 5)
 
 
 def _applied(

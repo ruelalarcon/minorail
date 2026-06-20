@@ -4,6 +4,7 @@ from typing import Protocol
 
 from battle.attack.classic_guideline import ClassicGuidelineAttackCalculator
 from battle.attack.modern_guideline import ModernGuidelineAttackCalculator
+from battle.attack.ppt import PptAttackCalculator
 from battle.attack.tetrio_s1 import TetrioS1AttackCalculator
 from battle.attack.tetrio_s2 import TetrioS2AttackCalculator
 from tetris.game.state import AppliedMove
@@ -16,6 +17,7 @@ class AttackCalculator(Protocol):
 _ATTACK_CALCULATORS: dict[str, type[AttackCalculator]] = {
     "tetrio_s1": TetrioS1AttackCalculator,
     "tetrio_s2": TetrioS2AttackCalculator,
+    "ppt": PptAttackCalculator,
     "classic_guideline": ClassicGuidelineAttackCalculator,
     "modern_guideline": ModernGuidelineAttackCalculator,
 }

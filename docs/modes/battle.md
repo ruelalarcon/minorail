@@ -62,6 +62,7 @@ Built-in calculators:
 | --- | --- |
 | `tetrio_s2` | Current TETR.IO-style Tetra League attack: multiplier combo, repeated B2B bonus, B2B surge, 5-line perfect clear bonus, and S2 perfect-clear special bonus. |
 | `tetrio_s1` | TETR.IO season 1 style attack: multiplier combo, logarithmic B2B chaining, and 10-line perfect clear bonus. |
+| `ppt` | Puyo Puyo Tetris-style attack gauge based on public community notes: adjusted T-Spin Double, T-Spin Triple, perfect clear, B2B, and combo values. |
 | `classic_guideline` | T-spin/line-clear attack with the classic fixed additive combo table. |
 | `modern_guideline` | T-spin/line-clear attack with the modern fixed additive combo table. |
 
@@ -86,6 +87,9 @@ The `ppt` rule is based on public community reverse-engineering, not an
 official Sega or Tetris Guideline specification. The behavior note comes from
 FOUR.lol's Puyo Puyo Tetris garbage notes, which credit Okey_Dokey for the
 information: <https://four.lol/mid-game/puyo-puyo-tetris>.
+
+The `ppt` attack calculator is based on FOUR.lol's Puyo Puyo Tetris attack
+gauge notes from the same page.
 
 `garbage_applied` events mean garbage was physically inserted into a board.
 
