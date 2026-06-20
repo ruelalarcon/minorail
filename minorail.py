@@ -475,6 +475,7 @@ def _battle_play(args: argparse.Namespace) -> None:
             port=endpoint.port,
         )
     total = 0
+    wins = {"A": 0, "B": 0}
     try:
         for i in range(args.games):
             print(f"[info] battle game={i + 1}/{args.games}", file=sys.stderr)
@@ -504,6 +505,9 @@ def _battle_play(args: argparse.Namespace) -> None:
             )
             stats = session.play_game()
             total += int(stats["total_pieces"])
+            winner = stats["winner"]
+            if winner in wins:
+                wins[winner] += 1
             print(
                 f"[info] battle status={stats['status']} winner={stats['winner']} "
                 f"total_pieces={stats['total_pieces']}",
@@ -515,7 +519,11 @@ def _battle_play(args: argparse.Namespace) -> None:
         service_a.close()
         service_b.close()
     if args.games > 1:
-        print(f"[info] battle total_pieces={total} games={args.games}", file=sys.stderr)
+        print(
+            f"[info] battle total_pieces={total} games={args.games} "
+            f"player_a_wins={wins['A']} player_b_wins={wins['B']}",
+            file=sys.stderr,
+        )
 
 
 def _battle_eval(args: argparse.Namespace) -> None:
