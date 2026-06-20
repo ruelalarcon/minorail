@@ -88,7 +88,7 @@ def _settings() -> Settings:
             "logging": {"bot_info": {"print": ["warning"]}},
             "battle": {
                 "attack": {"calculator": "tetrio_s2"},
-                "garbage": {"rules": "generic"},
+                "garbage": {"rules": "tetrio"},
             },
         }
     )

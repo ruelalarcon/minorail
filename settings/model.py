@@ -71,7 +71,7 @@ DEFAULT: dict[str, Any] = {
             "calculator": "tetrio_s2",
         },
         "garbage": {
-            "rules": "generic",
+            "rules": "ppt",
         },
     },
 }

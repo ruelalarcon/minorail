@@ -52,4 +52,4 @@ host = "127.0.0.1"  # host for python minorail.py solo play --web
 calculator = "modern_guideline"  # default battle attack calculator
 
 [battle.garbage]
-rules = "generic"  # deterministic garbage cancellation and rise rules
+rules = "ppt"  # default ruleset for how garbage spawns and cancels

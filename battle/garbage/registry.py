@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Protocol
 
 from battle.garbage.base import GarbageRules
-from battle.garbage.generic import GenericGarbageRules
+from battle.garbage.ppt import PptGarbageRules
+from battle.garbage.tetrio import TetrioGarbageRules
 
 
 class GarbageRulesType(Protocol):
@@ -11,7 +12,8 @@ class GarbageRulesType(Protocol):
 
 
 _GARBAGE_RULES: dict[str, GarbageRulesType] = {
-    "generic": GenericGarbageRules,
+    "ppt": PptGarbageRules,
+    "tetrio": TetrioGarbageRules,
 }
 
 

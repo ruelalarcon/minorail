@@ -69,9 +69,9 @@ Minorail combo and back-to-back counters start at `1` on the first clear in a
 chain. TETR.IO and guideline attack formulas use the displayed/derived count,
 so these calculators subtract one before applying combo and B2B attack formulas.
 
-## Generic Garbage
+## Garbage Rules
 
-The built-in garbage rules are `generic`:
+The built-in garbage rules are `ppt` and `tetrio`. The default is `ppt`:
 
 | Behavior | Value |
 | --- | --- |
@@ -79,7 +79,13 @@ The built-in garbage rules are `generic`:
 | Passthrough | None |
 | Rise timing | Non-line-clearing locks |
 | Rise cap | 8 lines per lock |
-| Holes | Deterministic from the battle seed |
+| `tetrio` holes | One hole per incoming garbage entry, rerolled between entries |
+| `ppt` holes | Puyo Puyo Tetris-style messier holes: 30% chance to change after each line, 90% chance to change after each incoming garbage entry |
+
+The `ppt` rule is based on public community reverse-engineering, not an
+official Sega or Tetris Guideline specification. The behavior note comes from
+FOUR.lol's Puyo Puyo Tetris garbage notes, which credit Okey_Dokey for the
+information: <https://four.lol/mid-game/puyo-puyo-tetris>.
 
 `garbage_applied` events mean garbage was physically inserted into a board.
 

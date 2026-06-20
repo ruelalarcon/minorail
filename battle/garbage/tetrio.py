@@ -12,22 +12,23 @@ from tetris.game.state import GameState
 
 
 @dataclass(frozen=True)
-class _GarbagePacket:
+class _PendingGarbage:
     lines: int
-    hole: int
 
 
 @dataclass(frozen=True)
 class _GarbageQueue:
-    packets: tuple[_GarbagePacket, ...] = ()
+    entries: tuple[_PendingGarbage, ...] = ()
+    last_hole: int | None = None
 
     @property
     def total(self) -> int:
-        return sum(packet.lines for packet in self.packets)
+        return sum(entry.lines for entry in self.entries)
 
 
-class GenericGarbageRules:
+class TetrioGarbageRules:
     MAX_RISE_PER_LOCK = 8
+    WIDTH = 10
 
     def __init__(self, *, seed: int | None) -> None:
         self._rng = random.Random(seed)
@@ -42,7 +43,9 @@ class GenericGarbageRules:
         current = _queue(queue)
         cancelled = min(max(0, attack), current.total)
         sent = max(0, attack - cancelled)
-        queue_after = _consume_queue(current, cancelled)
+        queue_after = _consume_queue(
+            current, cancelled, reroll_finished_entries=True, rng=self._rng
+        )
         return GarbageExchange(
             cancelled=cancelled,
             sent=sent,
@@ -53,8 +56,8 @@ class GenericGarbageRules:
         current = _queue(queue)
         if attack <= 0:
             return current
-        packet = _GarbagePacket(lines=attack, hole=self._rng.randrange(10))
-        return _GarbageQueue((*current.packets, packet))
+        entry = _PendingGarbage(lines=attack)
+        return _GarbageQueue((*current.entries, entry), current.last_hole)
 
     def should_apply_on_lock(self, *, lines_cleared: int) -> bool:
         return lines_cleared == 0
@@ -69,12 +72,12 @@ class GenericGarbageRules:
                 queue_after=current,
             )
 
-        holes = _holes_to_apply(current, lines)
+        holes, current = _holes_to_apply(current, lines, self._rng)
         topped_out = _raise_garbage(state, holes)
         return GarbageApplication(
             lines=lines,
             topped_out=topped_out,
-            queue_after=_consume_queue(current, lines),
+            queue_after=current,
         )
 
 
@@ -84,31 +87,58 @@ def _queue(value: GarbageQueue) -> _GarbageQueue:
     return value
 
 
-def _consume_queue(queue: _GarbageQueue, lines: int) -> _GarbageQueue:
+def _reroll_hole(rng: random.Random) -> int:
+    return rng.randrange(TetrioGarbageRules.WIDTH)
+
+
+def _consume_queue(
+    queue: _GarbageQueue,
+    lines: int,
+    *,
+    reroll_finished_entries: bool,
+    rng: random.Random,
+) -> _GarbageQueue:
     remaining = max(0, lines)
-    packets: list[_GarbagePacket] = []
-    for packet in queue.packets:
+    entries: list[_PendingGarbage] = []
+    last_hole = queue.last_hole
+    for entry in queue.entries:
         if remaining <= 0:
-            packets.append(packet)
+            entries.append(entry)
             continue
-        if packet.lines <= remaining:
-            remaining -= packet.lines
+        if entry.lines <= remaining:
+            remaining -= entry.lines
+            if reroll_finished_entries:
+                last_hole = _reroll_hole(rng)
             continue
-        packets.append(_GarbagePacket(lines=packet.lines - remaining, hole=packet.hole))
+        entries.append(_PendingGarbage(lines=entry.lines - remaining))
         remaining = 0
-    return _GarbageQueue(tuple(packets))
+    return _GarbageQueue(tuple(entries), last_hole)
 
 
-def _holes_to_apply(queue: _GarbageQueue, lines: int) -> list[int]:
+def _holes_to_apply(
+    queue: _GarbageQueue,
+    lines: int,
+    rng: random.Random,
+) -> tuple[list[int], _GarbageQueue]:
     holes: list[int] = []
+    current = queue
     remaining = max(0, lines)
-    for packet in queue.packets:
+    for entry in queue.entries:
         if remaining <= 0:
             break
-        count = min(packet.lines, remaining)
-        holes.extend([packet.hole] * count)
+        if current.last_hole is None:
+            current = _GarbageQueue(current.entries, _reroll_hole(rng))
+        assert current.last_hole is not None
+        count = min(entry.lines, remaining)
+        holes.extend([current.last_hole] * count)
+        current = _consume_queue(
+            current,
+            count,
+            reroll_finished_entries=entry.lines <= count,
+            rng=rng,
+        )
         remaining -= count
-    return holes
+    return holes, current
 
 
 def _raise_garbage(state: GameState, holes: list[int]) -> bool:

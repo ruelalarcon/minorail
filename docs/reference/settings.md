@@ -198,13 +198,13 @@ CLI value wins.
 calculator = "tetrio_s2"
 
 [battle.garbage]
-rules = "generic"
+rules = "ppt"
 ```
 
 | Field | Values | Behavior |
 | --- | --- | --- |
 | `battle.attack.calculator` | `tetrio_s2`, `tetrio_s1`, `classic_guideline`, `modern_guideline` | Selects an entry from `battle.attack.registry`. |
-| `battle.garbage.rules` | `generic` | Selects an entry from `battle.garbage.registry`. |
+| `battle.garbage.rules` | `tetrio`, `ppt` | Selects an entry from `battle.garbage.registry`. |
 
 The default attack calculator is `tetrio_s2`, which follows current
 TETR.IO-style Tetra League attack behavior for line clears, T-spins, combo
@@ -212,9 +212,15 @@ multiplication, repeated back-to-back bonus, B2B surge, and perfect clears.
 `tetrio_s1` provides season 1 style logarithmic B2B chaining. The guideline
 calculators use fixed additive combo tables instead of combo multiplication.
 
-The generic garbage rules use full cancellation/blocking, no passthrough,
-garbage rise on non-line-clearing locks, a maximum rise of 8 lines per lock,
-and deterministic holes from the battle seed.
+The `ppt` garbage rules use the same Minorail cancellation and rise timing, but
+model public Puyo Puyo Tetris community notes for messier holes: 30% chance to
+change after each line and 90% chance to change after each incoming garbage
+entry. This comes from FOUR.lol's Puyo Puyo Tetris garbage notes, which credit
+Okey_Dokey: <https://four.lol/mid-game/puyo-puyo-tetris>.
+
+The `tetrio` garbage rules use Tetra League style full cancellation/blocking,
+no passthrough, garbage rise on non-line-clearing locks, a maximum rise of 8
+lines per lock, and one hole column per incoming garbage entry.
 
 ---
 
