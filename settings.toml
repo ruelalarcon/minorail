@@ -49,7 +49,15 @@ host = "127.0.0.1"  # host for python minorail.py solo play --web
 # port = 8080       # omit for an automatically selected open port
 
 [battle.attack]
-calculator = "modern_guideline"  # default battle attack calculator
+# modern_guideline = fixed modern guideline combo table
+# classic_guideline = fixed classic guideline combo table
+# tetrio_s2 = TETR.IO season 2-style attack
+# tetrio_s1 = TETR.IO season 1-style attack
+# ppt = Puyo Puyo Tetris-style attack gauge
+calculator = "modern_guideline"
 
 [battle.garbage]
-rules = "ppt"  # default ruleset for how garbage spawns and cancels
+# modern = Tetris Effect: Connected Zone Battle-inspired phased holes
+# ppt = Puyo Puyo Tetris-style messy holes
+# tetrio = Tetra League-style clean holes by attack entry
+rules = "modern"

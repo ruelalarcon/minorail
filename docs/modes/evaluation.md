@@ -59,7 +59,7 @@ Battle output uses schema `minorail.battle.eval.v1`:
   },
   "battle": {
     "attack": "tetrio_s2",
-    "garbage": "ppt"
+    "garbage": "modern"
   },
   "summary": {},
   "games": []
@@ -91,10 +91,11 @@ into a board. Normal 1v1 top-out is represented by `game_ended` with
 The default attack calculator is `tetrio_s2`. Other built-in attack calculators
 are `tetrio_s1`, `ppt`, `classic_guideline`, and `modern_guideline`.
 
-The default garbage rule is `ppt`, which uses the same cancellation and rise
-timing as Minorail's other garbage rules while modeling public Puyo Puyo Tetris
-community notes for messier holes. The `tetrio` rule is also available for
-cleaner Tetra League style garbage.
+The default garbage rule is `modern`, which approximates Tetris Effect:
+Connected Zone Battle garbage phases using lock counts in place of Tetris
+Effect score. The `ppt` rule models public Puyo Puyo Tetris community notes for
+messier holes, and `tetrio` is available for cleaner Tetra League style
+garbage.
 
 ---
 

@@ -198,13 +198,13 @@ CLI value wins.
 calculator = "tetrio_s2"
 
 [battle.garbage]
-rules = "ppt"
+rules = "modern"
 ```
 
 | Field | Values | Behavior |
 | --- | --- | --- |
 | `battle.attack.calculator` | `tetrio_s2`, `tetrio_s1`, `ppt`, `classic_guideline`, `modern_guideline` | Selects an entry from `battle.attack.registry`. |
-| `battle.garbage.rules` | `tetrio`, `ppt` | Selects an entry from `battle.garbage.registry`. |
+| `battle.garbage.rules` | `modern`, `tetrio`, `ppt` | Selects an entry from `battle.garbage.registry`. |
 
 The default attack calculator is `tetrio_s2`, which follows current
 TETR.IO-style Tetra League attack behavior for line clears, T-spins, combo
@@ -225,6 +225,15 @@ Okey_Dokey: <https://four.lol/mid-game/puyo-puyo-tetris>.
 The `tetrio` garbage rules use Tetra League style full cancellation/blocking,
 no passthrough, garbage rise on non-line-clearing locks, a maximum rise of 8
 lines per lock, and one hole column per incoming garbage entry.
+
+The `modern` garbage rules approximate Tetris Effect: Connected Zone Battle.
+TetrisWiki describes Zone Battle garbage as clean random columns at first,
+slightly more random holes after 20,000 points, and very random holes after
+60,000 points: <https://tetris.wiki/Tetris_Effect#Zone_Battle>. Minorail's
+garbage rules do not receive Tetris Effect score or Zone state, so `modern`
+uses per-player lock-count phases instead: clean entry columns before 50 locks,
+slightly messy holes at 50 locks, and very messy holes at 150 locks. This
+per-game phase state resets for each battle game.
 
 ---
 

@@ -72,7 +72,8 @@ so these calculators subtract one before applying combo and B2B attack formulas.
 
 ## Garbage Rules
 
-The built-in garbage rules are `ppt` and `tetrio`. The default is `ppt`:
+The built-in garbage rules are `modern`, `ppt`, and `tetrio`. The default is
+`modern`:
 
 | Behavior | Value |
 | --- | --- |
@@ -82,6 +83,7 @@ The built-in garbage rules are `ppt` and `tetrio`. The default is `ppt`:
 | Rise cap | 8 lines per lock |
 | `tetrio` holes | One hole per incoming garbage entry, rerolled between entries |
 | `ppt` holes | Puyo Puyo Tetris-style messier holes: 30% chance to change after each line, 90% chance to change after each incoming garbage entry |
+| `modern` holes | Tetris Effect: Connected Zone Battle-inspired phases: clean entry columns at game start, slightly messier after about 50 locks, very messy after about 150 locks |
 
 The `ppt` rule is based on public community reverse-engineering, not an
 official Sega or Tetris Guideline specification. The behavior note comes from
@@ -90,6 +92,15 @@ information: <https://four.lol/mid-game/puyo-puyo-tetris>.
 
 The `ppt` attack calculator is based on FOUR.lol's Puyo Puyo Tetris attack
 gauge notes from the same page.
+
+The `modern` rule is based on TetrisWiki's Zone Battle notes for Tetris
+Effect: Connected: garbage hole alignment has three score phases, starting as
+clean random columns, becoming slightly more random at 20,000 points, and very
+random at 60,000 points:
+<https://tetris.wiki/Tetris_Effect#Zone_Battle>. Minorail does not track
+Tetris Effect score or Zone state in garbage rules, so it approximates those
+phase changes with per-player lock counts. The phase state is stored in the
+per-game garbage queue and resets between games.
 
 `garbage_applied` events mean garbage was physically inserted into a board.
 

@@ -1,5 +1,6 @@
 import unittest
 
+from battle.garbage.modern import ModernGarbageRules
 from battle.garbage.ppt import PptGarbageRules
 from battle.garbage.registry import garbage_rules
 from battle.garbage.tetrio import TetrioGarbageRules
@@ -18,6 +19,7 @@ class TetrioGarbageRulesTests(unittest.TestCase):
     def test_registry_resolves_built_in_garbage_rules(self) -> None:
         self.assertIs(garbage_rules("tetrio"), TetrioGarbageRules)
         self.assertIs(garbage_rules("ppt"), PptGarbageRules)
+        self.assertIs(garbage_rules("modern"), ModernGarbageRules)
 
     def test_full_cancellation_blocks_attack_before_sending(self) -> None:
         rules = TetrioGarbageRules(seed=123)
@@ -118,6 +120,60 @@ class PptGarbageRulesTests(unittest.TestCase):
         self.assertEqual(exchange.cancelled, 4)
         self.assertEqual(exchange.sent, 2)
         self.assertEqual(rules.queue_total(exchange.queue_after), 0)
+
+
+class ModernGarbageRulesTests(unittest.TestCase):
+    def test_early_phase_uses_clean_columns_per_entry(self) -> None:
+        rules = ModernGarbageRules(seed=123)
+        state = GameState(
+            board=Board(),
+            active=spawn_location(Piece.I),
+            queue=[Piece.O],
+            hold=None,
+            combo=0,
+            back_to_back=0,
+        )
+        queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
+        queue = rules.enqueue_attack(queue, attack=2)
+
+        applied = rules.apply_queue(state, queue)
+        row_holes = [_hole_at_row(state, y) for y in range(6)]
+
+        self.assertEqual(applied.lines, 6)
+        self.assertEqual(row_holes[:4], [row_holes[0]] * 4)
+        self.assertEqual(row_holes[4:], [row_holes[4]] * 2)
+
+    def test_late_phase_can_change_holes_inside_entry(self) -> None:
+        rules = ModernGarbageRules(seed=0)
+        state = GameState(
+            board=Board(),
+            active=spawn_location(Piece.I),
+            queue=[Piece.O],
+            hold=None,
+            combo=0,
+            back_to_back=0,
+        )
+        queue = rules.empty_queue()
+        for _ in range(150):
+            queue = rules.exchange(attack=0, queue=queue).queue_after
+        queue = rules.enqueue_attack(queue, attack=8)
+
+        applied = rules.apply_queue(state, queue)
+        row_holes = [_hole_at_row(state, y) for y in range(8)]
+
+        self.assertEqual(applied.lines, 8)
+        self.assertNotEqual(row_holes, [row_holes[0]] * 8)
+
+    def test_empty_queue_resets_phase_state_for_new_game(self) -> None:
+        rules = ModernGarbageRules(seed=0)
+        queue = rules.empty_queue()
+        for _ in range(150):
+            queue = rules.exchange(attack=0, queue=queue).queue_after
+
+        reset = rules.empty_queue()
+
+        self.assertEqual(rules.queue_total(reset), 0)
+        self.assertEqual(reset.locks, 0)
 
 
 if __name__ == "__main__":
