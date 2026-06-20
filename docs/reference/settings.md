@@ -18,8 +18,8 @@ randomizer = "seven_bag"
 kickset = "srs"
 rot180 = true
 sonic_drop = "only"
-allspin_b2b = true
-allclear_b2b = true
+allspin_b2b = false
+allclear_b2b = false
 spawn_x = 4
 spawn_y = 19
 ```
@@ -33,8 +33,8 @@ message.
 | `kickset` | `srs`, `srs_plus` | Controls local rotation and pathfinding behavior. |
 | `rot180` | `true`, `false` | Enables 180 degree rotations when the kickset has the transition data. |
 | `sonic_drop` | `only`, `allow` | Controls whether pathfinding can use soft drops, sonic drops, or both. |
-| `allspin_b2b` | `true`, `false` | Lets non `none` spin clears continue back to back. |
-| `allclear_b2b` | `true`, `false` | Lets all clears continue back to back. |
+| `allspin_b2b` | `true`, `false` | Lets non `none` spin clears continue back to back. Default: `false`. |
+| `allclear_b2b` | `true`, `false` | Lets all clears continue back to back. Default: `false`. |
 | `spawn_x` | integer | Active piece spawn x coordinate. |
 | `spawn_y` | integer | Active piece spawn y coordinate. |
 

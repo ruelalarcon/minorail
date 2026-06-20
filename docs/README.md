@@ -1,68 +1,41 @@
 # Minorail
 
-> A local Tetris game runner for bots that implement the Stacker Bot Protocol (SBP).
+> A local Tetris runner, evaluator, and suggestion service for bots that
+> implement the Stacker Bot Protocol (SBP).
 
----
+Minorail owns the local game truth: board, active piece, upcoming queue, hold,
+rules, and sequence number. It starts SBP bot subprocesses, asks for placement
+suggestions, filters unusable placements, optionally pathfinds input steps, and
+then applies selected placements to local state.
 
-In practical terms, Minorail:
+The same core suggestion flow powers:
 
-* owns the board, active piece, queue, hold state, and sequence number
-* starts an SBP bot subprocess
-* sends rules and start snapshots to the bot
-* asks the bot for placement suggestions
-* filters unusable placements
-* can calculate an input path to the selected placement
-* applies the selected placement to local game state
-* can run with a terminal, web, or headless visualizer
-* can expose suggestions through a websocket API
+| Use case | Entry point |
+| --- | --- |
+| Watch one bot play a local board | `solo play` |
+| Run two bots against each other | `battle play` |
+| Produce JSON summaries and events | `solo eval`, `battle eval` |
+| Serve suggestions to an external client | `solo ws` |
 
-?> For protocol-level documentation, message schemas, and bot implementation
-details, use the SBP docs:
-
+?> Minorail documentation covers Minorail behavior around SBP. For exact SBP
+message schemas and bot-side protocol requirements, use the SBP docs:
 https://github.com/ruelalarcon/stacker_bot_protocol
 
-These docs focus on Minorail behavior around SBP: how Minorail starts bots,
-which settings affect the `rules` and `start` messages, how sessions are kept
-in sync, and how websocket callers interact with the suggestion service.
+## Quick Commands
 
-## SBP In Minorail
+```bash
+python minorail.py solo play "path/to/bot"
+python minorail.py solo eval "path/to/bot" --games 100 --json-out solo.json
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b"
+python minorail.py battle eval "path/to/bot-a" "path/to/bot-b" --games 100 --json-out battle.json
+python minorail.py solo ws "path/to/bot"
+```
 
-Minorail uses SBP as the bot process protocol. It starts a bot subprocess,
-waits for registration, validates configured rules against reported
-capabilities, sends `rules` when needed, sends `start` from the current
-snapshot, then asks for suggestions.
+See [Running Minorail](getting-started/running.md) for the full command map.
 
-| Minorail event | SBP interaction |
-| --- | --- |
-| Bot process starts | Minorail waits for `register` |
-| Rules are new or changed | Minorail sends `rules` and waits for `ready` |
-| Session starts or resyncs | Minorail sends `start` |
-| Minorail needs a placement | Minorail sends `suggest` |
-| Snapshot advances as expected | Minorail sends `play` and any `new_piece` messages |
-| Session resets | Minorail sends `stop`, then starts again from a new snapshot |
-| Process closes | Minorail sends `quit` |
+## Core Concepts
 
-Local multi-game runs and evaluation batches use that same session boundary:
-Minorail sends `stop` at the end of each game, sends a fresh `start` for the
-next game, and keeps `quit` for final process cleanup.
-
-!> Minorail docs intentionally do not redefine SBP message schemas. If you are
-writing a bot, read the SBP docs for the exact protocol contract.
-
-## Main Use Cases
-
-Use Minorail when you want to:
-
-* run an SBP bot against a local Tetris game
-* watch bot decisions in a visualizer
-* batch run games from the command line
-* write evaluation JSON for analysis
-* serve an SBP backed suggestion service over websockets
-* test how a bot handles rule settings, hold, queues, piece streams, and resyncs
-
-## What Minorail Owns
-
-The local game is the authority for physical state:
+The runner is authoritative for physical state:
 
 | State | Meaning |
 | --- | --- |
@@ -73,28 +46,28 @@ The local game is the authority for physical state:
 | `can_hold` | Whether hold is legal for the current turn |
 | `seq` | Sequence number for observed state |
 
-The suggestion service tracks derived state needed to keep the bot session
-coherent:
+The suggestion service owns derived continuity:
 
 | State | Meaning |
 | --- | --- |
 | `combo` | Derived combo count |
-| `back_to_back` | Derived back to back count |
+| `back_to_back` | Derived back-to-back count |
 | Previous snapshot | Last physical state seen by the session |
 | Previous suggestion | Placement Minorail expects may be applied next |
 | Piece stream | Generated piece chronology for SBP `piece_stream` |
 | Bot process | Subprocess lifecycle for the session |
 
-The incoming snapshot is always authoritative. If the state no longer matches
-what Minorail expected, Minorail resyncs instead of assuming the bot session is
-still correct.
+Incoming snapshots are always authoritative. When state no longer matches the
+expected transition, Minorail resyncs the bot session from the observed state.
 
-## Where To Start
+## Where To Go
 
-Read these first:
-
-* [Running Minorail](running.md)
-* [Evaluation](evaluation.md)
-* [Settings](settings.md)
-* [WebSocket API](websocket-api.md)
-* [Sessions And Resyncs](sessions-and-resyncs.md)
+| Topic | Page |
+| --- | --- |
+| CLI commands and flags | [Running Minorail](getting-started/running.md) |
+| One-board local runs | [Solo](modes/solo.md) |
+| Two-bot games | [Battle](modes/battle.md) |
+| JSON output | [Evaluation](modes/evaluation.md) |
+| TOML defaults and overrides | [Settings](reference/settings.md) |
+| External suggestion API | [WebSocket API](reference/websocket-api.md) |
+| Package boundaries | [Architecture](internals/architecture.md) |

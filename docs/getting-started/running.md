@@ -40,6 +40,9 @@ python minorail.py battle play BOT_A BOT_B --games N
 python minorail.py battle eval BOT_A BOT_B --games N --json-out results.json
 ```
 
+See [Solo](../modes/solo.md), [Battle](../modes/battle.md), and
+[Evaluation](../modes/evaluation.md) for mode-specific behavior.
+
 ---
 
 ## Run Stats
@@ -106,3 +109,9 @@ python minorail.py solo ws "path/to/sbp-bot" --ws-host 0.0.0.0 --ws-port 9000
 
 The default listener comes from `[api.websocket]`. `--ws-host` overrides
 `api.websocket.host`; `--ws-port` overrides `api.websocket.port`.
+
+## Related Pages
+
+* [Settings](../reference/settings.md)
+* [WebSocket API](../reference/websocket-api.md)
+* [Visualizers](../internals/visualizers.md)

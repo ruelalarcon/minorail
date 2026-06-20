@@ -22,27 +22,10 @@ On Windows PowerShell:
 .\lint.ps1
 ```
 
-## Package Map
+## Architecture
 
-Minorail is organized by responsibility:
-
-```text
-tetris/       Tetris model, rules, kicks, movement, randomizers, state
-contracts/    shared request, result, and snapshot dataclasses
-api/          external API transports
-sbp/          SBP parsing, serialization, capabilities, and message shape
-bots/         bot subprocess transport and SBP session lifecycle
-suggestion/   session continuity, derived state, and move selection
-solo/runner/       solo local game sessions, run observers, and visualizer controls
-solo/evaluation/   solo batch evaluation runner and collector
-battle/runner/     two-player battle orchestration
-battle/evaluation/ battle batch evaluation runner and collector
-battle/attack/     battle attack calculators
-battle/garbage/    battle garbage rules
-visualizers/solo/  solo terminal, web, headless, and null renderers
-visualizers/battle/ battle terminal, headless, and null renderers
-visualizers/shared/ shared visualizer infrastructure
-```
+Start with [Architecture](architecture.md) for the package map, service flows,
+and ownership boundaries.
 
 Keep protocol details out of Tetris domain modules. Keep gameplay mutation out
 of visualizers.
