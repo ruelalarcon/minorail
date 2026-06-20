@@ -100,7 +100,10 @@ class LocalGame:
         self.set_cells(edits)
 
     def is_topped_out(self) -> bool:
-        return any(self.state.board.cols[x] >> 20 != 0 for x in range(10))
+        return any(
+            0 <= x < 10 and 0 <= y < 40 and self.state.board.occupied(x, y)
+            for x, y in self.state.active.cells()
+        )
 
 
 def _validate_cell(x: int, y: int) -> None:
