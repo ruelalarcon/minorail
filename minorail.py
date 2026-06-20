@@ -19,10 +19,11 @@ from suggestion.service import SuggestionService
 from visualizers.battle.headless import HeadlessVisualizer as BattleHeadlessVisualizer
 from visualizers.battle.null import NullVisualizer as BattleNullVisualizer
 from visualizers.battle.terminal import TerminalVisualizer as BattleTerminalVisualizer
+from visualizers.battle.web import WebVisualizer as BattleWebVisualizer
 from visualizers.solo.headless import HeadlessVisualizer as SoloHeadlessVisualizer
 from visualizers.solo.null import NullVisualizer as SoloNullVisualizer
 from visualizers.solo.terminal import TerminalVisualizer as SoloTerminalVisualizer
-from visualizers.solo.web import WebVisualizer
+from visualizers.solo.web import WebVisualizer as SoloWebVisualizer
 
 
 class _HelpFormatter(argparse.RawDescriptionHelpFormatter):
@@ -265,8 +266,14 @@ def _add_battle_play(
     _add_pathfinding(parser)
     display = parser.add_argument_group("visualizer").add_mutually_exclusive_group()
     display.add_argument("--terminal", action="store_true", help="terminal visualizer")
+    display.add_argument("--web", action="store_true", help="browser visualizer")
     display.add_argument("--headless", action="store_true", help="progress only")
     display.add_argument("--null", action="store_true", help="no visual output")
+    web = parser.add_argument_group("web visualizer")
+    web.add_argument("--web-host", metavar="HOST", default=None, help="web host")
+    web.add_argument(
+        "--web-port", metavar="PORT", type=int, default=None, help="web port"
+    )
     parser.set_defaults(func=_battle_play)
 
 
@@ -325,7 +332,7 @@ def _solo_play(args: argparse.Namespace) -> None:
             host=args.web_host,
             port=args.web_port,
         )
-        web_visualizer = WebVisualizer(
+        web_visualizer = SoloWebVisualizer(
             settings.visualizer(),
             host=endpoint.host,
             port=endpoint.port,
@@ -425,6 +432,8 @@ def _battle_play(args: argparse.Namespace) -> None:
         default_pathfinding = BattleHeadlessVisualizer.default_pathfinding
     elif args.null:
         default_pathfinding = BattleNullVisualizer.default_pathfinding
+    elif args.web:
+        default_pathfinding = BattleWebVisualizer.default_pathfinding
     else:
         default_pathfinding = BattleTerminalVisualizer.default_pathfinding
     pathfinding = settings.pathfinding(
@@ -454,6 +463,17 @@ def _battle_play(args: argparse.Namespace) -> None:
         info_print_topics=settings.bot_info_topics(),
         idle_ms=bot_cfg.idle_ms,
     )
+    web_visualizer = None
+    if args.web:
+        endpoint = settings.web_visualizer_endpoint(
+            host=args.web_host,
+            port=args.web_port,
+        )
+        web_visualizer = BattleWebVisualizer(
+            settings.visualizer(),
+            host=endpoint.host,
+            port=endpoint.port,
+        )
     total = 0
     try:
         for i in range(args.games):
@@ -462,6 +482,8 @@ def _battle_play(args: argparse.Namespace) -> None:
                 visualizer = BattleHeadlessVisualizer()
             elif args.null:
                 visualizer = BattleNullVisualizer()
+            elif web_visualizer is not None:
+                visualizer = web_visualizer
             else:
                 visualizer = BattleTerminalVisualizer(settings.visualizer())
             session = BattleSession(

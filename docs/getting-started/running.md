@@ -5,7 +5,7 @@
 | Requirement | Notes |
 | --- | --- |
 | Python | 3.11 or newer |
-| NiceGUI | Needed for `solo play --web` |
+| NiceGUI | Needed for `solo play --web` and `battle play --web` |
 | websockets | Needed for `solo ws` |
 
 Install dependencies:
@@ -27,6 +27,7 @@ pip install -r requirements.txt
 | Run solo evaluation | `python minorail.py solo eval "path/to/sbp-bot" --games 100 --json-out results.json` |
 | Start the websocket API | `python minorail.py solo ws "path/to/sbp-bot"` |
 | Run a terminal battle | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b"` |
+| Run the battle web visualizer | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --web` |
 | Run multiple visible battle games | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --games 20` |
 | Run battle evaluation | `python minorail.py battle eval "path/to/bot-a" "path/to/bot-b" --games 100 --json-out battle.json` |
 
@@ -70,8 +71,8 @@ limit counts total accepted locks across both players.
 ## Pathfinding
 
 Minorail only pathfinds when the selected consumer needs paths. Terminal and
-web solo visualizers request paths by default for animation. Battle terminal
-also requests paths by default. Headless, null, and evaluation runs do not.
+web visualizers request paths by default for animation. Headless, null, and
+evaluation runs do not.
 
 Use `--pathfind` or `--no-pathfind` to override `service.path.pathfinding` and
 the consumer default for one invocation.

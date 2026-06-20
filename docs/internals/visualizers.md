@@ -45,6 +45,17 @@ The battle terminal visualizer shows both boards side by side, animates
 suggestion paths when pathfinding is enabled, and displays each player's
 incoming garbage count.
 
+Web:
+
+```bash
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --web
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --web --web-host 127.0.0.1 --web-port 8080
+```
+
+The battle web visualizer uses the same browser styling as the solo web
+visualizer, renders both boards, and displays each player's hold, queue, combo,
+back-to-back, and incoming garbage state.
+
 Headless:
 
 ```bash
@@ -60,10 +71,6 @@ python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --null
 ```
 
 Null battle mode produces no visual output. Battle evaluation uses this mode.
-
-There is no battle web visualizer yet. The battle visualizer protocol is
-separate so a future `visualizers.battle.web` can render two-player state
-without forcing battle behavior into the solo API.
 
 ## Visualizer Timing
 

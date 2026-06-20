@@ -15,6 +15,7 @@ from tetris.model.rules import Rules
 from tetris.model.spin import Spin
 from visualizers.solo.terminal import TerminalVisualizer
 from visualizers.solo.web import WebVisualizer
+from visualizers.battle.web import WebVisualizer as BattleWebVisualizer
 
 
 class PathlessVisualizerTests(unittest.TestCase):
@@ -55,11 +56,39 @@ class PathlessVisualizerTests(unittest.TestCase):
         self.assertEqual(frame.active_y, 0)
         self.assertEqual(frame.active_rotation, Rotation.North)
 
+    def test_battle_web_pathless_result_renders_selected_placement(self) -> None:
+        visualizer = BattleWebVisualizer(_settings())
+        state = _state()
+        states = {"A": state, "B": _state(Piece.I)}
+        incoming = {"A": 0, "B": 3}
 
-def _state() -> GameState:
+        with redirect_stderr(io.StringIO()):
+            visualizer.animate_suggestion(
+                "A",
+                states,
+                incoming,
+                Piece.T,
+                _pathless_result(),
+                hold_used=False,
+                rules=Rules(),
+            )
+
+        frame = visualizer._current_frame()
+        self.assertIsNotNone(frame)
+        assert frame is not None
+        player = frame.players["A"]
+        self.assertEqual(player.status, "Placement selected")
+        self.assertEqual(player.board.active_x, 4)
+        self.assertEqual(player.board.active_y, 0)
+        self.assertEqual(player.board.active_rotation, Rotation.North)
+        self.assertEqual(frame.players["B"].incoming_garbage, 3)
+        self.assertEqual(frame.players["B"].status, "")
+
+
+def _state(piece: Piece = Piece.T) -> GameState:
     return GameState(
         board=Board(),
-        active=spawn_location(Piece.T),
+        active=spawn_location(piece),
         queue=[Piece.I, Piece.O],
         hold=None,
         combo=0,

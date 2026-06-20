@@ -18,6 +18,7 @@ from visualizers.shared.terminal import (
     LiveTerminalRegion,
     colored,
 )
+from visualizers.shared.status import VisualizerStatus
 
 
 class TerminalVisualizer:
@@ -29,7 +30,7 @@ class TerminalVisualizer:
         self._lock_delay = settings.lock_delay_ms / 1000
         self._first_move_delay = settings.first_move_delay_ms / 1000
         self._first_spawn = True
-        self._status = "Battle"
+        self._status = VisualizerStatus(("A", "B"))
         self._active: dict[str, tuple[Piece, tuple[int, int, Rotation]] | None] = {
             "A": None,
             "B": None,
@@ -39,7 +40,7 @@ class TerminalVisualizer:
     def on_game_started(
         self, states: dict[str, GameState], incoming_garbage: dict[str, int]
     ) -> None:
-        self._status = "Battle started"
+        self._status.reset_players("Battle started")
         self._terminal.start(self._frame_height())
         self._render(states, incoming_garbage)
 
@@ -51,7 +52,7 @@ class TerminalVisualizer:
         piece: Piece,
     ) -> None:
         state = states[player]
-        self._status = f"{player} spawn: {piece.value}"
+        self._status.set_player(player, f"Spawn: {piece.value}")
         self._active[player] = (piece, (state.active.x, state.active.y, Rotation.North))
         self._render(states, incoming_garbage)
         if self._first_spawn:
@@ -70,7 +71,7 @@ class TerminalVisualizer:
     ) -> None:
         state = states[player]
         if hold_used:
-            self._status = f"{player} hold"
+            self._status.set_player(player, "Hold")
             self._active[player] = (
                 moving_piece,
                 (state.active.x, state.active.y, Rotation.North),
@@ -92,7 +93,7 @@ class TerminalVisualizer:
                     state.board,
                     rules.kickset,
                 )
-                self._status = f"{player} move: {step.value}"
+                self._status.set_player(player, f"Move: {step.value}")
                 self._active[player] = (moving_piece, (ax, ay, arot))
                 self._render(states, incoming_garbage)
                 time.sleep(self._move_delay)
@@ -105,11 +106,11 @@ class TerminalVisualizer:
                 state.board,
                 rules.kickset,
             )
-            self._status = f"{player} move: {MoveStep.HardDrop.value}"
+            self._status.set_player(player, f"Move: {MoveStep.HardDrop.value}")
             self._active[player] = (moving_piece, (ax, ay, arot))
         elif result.placement is not None:
             loc = result.placement.location
-            self._status = f"{player}: {result.reason or 'Placement selected'}"
+            self._status.set_player(player, result.reason or "Placement selected")
             self._active[player] = (moving_piece, (loc.x, loc.y, loc.rotation))
 
         self._render(states, incoming_garbage)
@@ -121,7 +122,7 @@ class TerminalVisualizer:
         states: dict[str, GameState],
         incoming_garbage: dict[str, int],
     ) -> None:
-        self._status = f"{player} locked"
+        self._status.set_player(player, "Locked")
         self._active[player] = None
         self._render(states, incoming_garbage)
         time.sleep(self._lock_delay * 0.5)
@@ -133,7 +134,7 @@ class TerminalVisualizer:
         states: dict[str, GameState],
         incoming_garbage: dict[str, int],
     ) -> None:
-        self._status = f"{player} garbage +{lines}"
+        self._status.set_player(player, f"Garbage +{lines}")
         self._render(states, incoming_garbage)
         time.sleep(self._lock_delay * 0.5)
 
@@ -145,16 +146,16 @@ class TerminalVisualizer:
         winner: str | None,
         loser: str | None,
     ) -> None:
-        self._status = f"Ended: {status} winner={winner} loser={loser}"
+        self._status.end_battle(status=status, winner=winner, loser=loser)
         self._render(states, incoming_garbage)
 
     def warning(self, message: str) -> None:
         print(f"[warn] {message}", file=sys.stderr)
-        self._status = f"Warning: {message}"
+        self._status.set_all_players(f"Warning: {message}")
 
     def error(self, message: str) -> None:
         print(f"[error] {message}", file=sys.stderr)
-        self._status = f"Error: {message}"
+        self._status.set_all_players(f"Error: {message}")
 
     def _render(
         self, states: dict[str, GameState], incoming_garbage: dict[str, int]
@@ -165,6 +166,7 @@ class TerminalVisualizer:
                 states["A"],
                 incoming_garbage["A"],
                 self._active.get("A"),
+                self._status.player("A"),
                 self._settings.visible_rows,
                 self._settings.queue_size,
             ),
@@ -173,6 +175,7 @@ class TerminalVisualizer:
                 states["B"],
                 incoming_garbage["B"],
                 self._active.get("B"),
+                self._status.player("B"),
                 self._settings.visible_rows,
                 self._settings.queue_size,
             ),
@@ -182,12 +185,10 @@ class TerminalVisualizer:
             f"{left:<{width + _ansi_extra(left)}}    {right}"
             for left, right in zip(*rendered)
         ]
-        out.append("")
-        out.append(f"Status: {self._status}")
         self._terminal.render(out)
 
     def _frame_height(self) -> int:
-        return self._settings.visible_rows + 11
+        return self._settings.visible_rows + 12
 
 
 def _board_lines(
@@ -195,6 +196,7 @@ def _board_lines(
     state: GameState,
     incoming: int,
     active: tuple[Piece, tuple[int, int, Rotation]] | None,
+    status: str,
     visible_rows: int,
     queue_size: int,
 ) -> list[str]:
@@ -232,6 +234,9 @@ def _board_lines(
             f"Combo: {state.combo}",
             f"Back-to-Back: {state.back_to_back}",
             f"Incoming Garbage: {incoming}",
+            "",
+            "Status:",
+            status,
         ]
     )
     return lines

@@ -15,6 +15,7 @@ game on top-out or configured limits.
 | Task | Command |
 | --- | --- |
 | Terminal battle | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b"` |
+| Browser battle | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --web` |
 | Headless battle | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --headless` |
 | Null visualizer | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --null` |
 | Multiple games | `python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --games 20` |

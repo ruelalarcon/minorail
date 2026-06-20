@@ -20,6 +20,7 @@ from visualizers.shared.terminal import (
     LiveTerminalRegion,
     colored,
 )
+from visualizers.shared.status import VisualizerStatus
 
 
 class TerminalVisualizer:
@@ -31,18 +32,18 @@ class TerminalVisualizer:
         self._lock_delay = settings.lock_delay_ms / 1000
         self._first_move_delay = settings.first_move_delay_ms / 1000
         self._first_spawn = True
-        self._status = ""
+        self._status = VisualizerStatus()
         self._terminal = LiveTerminalRegion()
 
     def set_game_controls(self, controls: GameControls) -> None:
         pass
 
     def on_game_started(self, state: GameState) -> None:
-        self._status = "Game started"
+        self._status.set("Game started")
         self._terminal.start(self._frame_height())
 
     def on_spawn(self, state: GameState, piece: Piece) -> None:
-        self._status = f"Spawn: {piece.value}"
+        self._status.set(f"Spawn: {piece.value}")
         self._render(
             state,
             state.active.piece,
@@ -61,7 +62,7 @@ class TerminalVisualizer:
         rules: Rules,
     ) -> None:
         if hold_used:
-            self._status = "Hold"
+            self._status.set("Hold")
             self._render(
                 state, moving_piece, (state.active.x, state.active.y, Rotation.North)
             )
@@ -82,7 +83,7 @@ class TerminalVisualizer:
                     state.board,
                     rules.kickset,
                 )
-                self._status = f"Move: {step.value}"
+                self._status.set(f"Move: {step.value}")
                 self._render(state, moving_piece, (ax, ay, arot))
                 time.sleep(self._move_delay)
             ax, ay, arot = apply_step(
@@ -94,33 +95,33 @@ class TerminalVisualizer:
                 state.board,
                 rules.kickset,
             )
-            self._status = f"Move: {MoveStep.HardDrop.value}"
+            self._status.set(f"Move: {MoveStep.HardDrop.value}")
             self._render(state, moving_piece, (ax, ay, arot))
         else:
             placement = result.placement
             if placement is not None:
                 loc = placement.location
-                self._status = result.reason or "Placement selected"
+                self._status.set(result.reason or "Placement selected")
                 self._render(state, moving_piece, (loc.x, loc.y, loc.rotation))
 
         time.sleep(self._lock_delay)
 
     def on_piece_locked(self, state: GameState) -> None:
-        self._status = "Locked"
+        self._status.set("Locked")
         self._render(state)
         time.sleep(self._lock_delay * 0.5)
 
     def on_top_out(self, state: GameState) -> None:
-        self._status = "Top out"
+        self._status.set("Top out")
         self._render(state)
 
     def warning(self, message: str) -> None:
         print(f"[warn] {message}", file=sys.stderr)
-        self._status = f"Warning: {message}"
+        self._status.set(f"Warning: {message}")
 
     def error(self, message: str) -> None:
         print(f"[error] {message}", file=sys.stderr)
-        self._status = f"Error: {message}"
+        self._status.set(f"Error: {message}")
 
     def _render(
         self,
@@ -137,7 +138,7 @@ class TerminalVisualizer:
             active_loc,
             self._settings.visible_rows,
             self._settings.queue_size,
-            self._status,
+            self._status.text,
             self._terminal,
         )
 

@@ -91,6 +91,12 @@ Run a two-bot battle:
 python minorail.py battle play "path/to/bot-a" "path/to/bot-b"
 ```
 
+Run a battle in the web visualizer:
+
+```bash
+python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --web
+```
+
 Run multiple battle games while reusing the two bot processes:
 
 ```bash

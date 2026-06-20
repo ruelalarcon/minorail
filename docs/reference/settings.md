@@ -240,8 +240,8 @@ host = "127.0.0.1"
 | `first_move_delay_ms` | Pause before animating the first move. |
 | `visible_rows` | Number of board rows shown by visualizers. |
 | `queue_size` | Number of upcoming pieces shown by visualizers. |
-| `visualizer.web.host` | Default bind host for `minorail.py solo play --web`. CLI `--web-host` overrides `visualizer.web.host` for one invocation. |
-| `visualizer.web.port` | Default bind port for `minorail.py solo play --web`. Omit it to choose an open port automatically. CLI `--web-port` overrides `visualizer.web.port` for one invocation. |
+| `visualizer.web.host` | Default bind host for `minorail.py solo play --web` and `minorail.py battle play --web`. CLI `--web-host` overrides `visualizer.web.host` for one invocation. |
+| `visualizer.web.port` | Default bind port for `minorail.py solo play --web` and `minorail.py battle play --web`. Omit it to choose an open port automatically. CLI `--web-port` overrides `visualizer.web.port` for one invocation. |
 
 These settings affect presentation only. They do not change local rules, SBP
 messages, or websocket responses.
