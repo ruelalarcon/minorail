@@ -11,7 +11,7 @@ from battle.runner.events import (
 from solo.evaluation.collector import _placement
 
 
-class BattleEvaluationCollector:
+class EvaluationCollector:
     def __init__(self, *, include_events: bool = True) -> None:
         self.seed: int | None = None
         self.players: tuple[str, str] = ("A", "B")

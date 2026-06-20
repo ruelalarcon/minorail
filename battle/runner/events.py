@@ -56,7 +56,7 @@ class GameEndedEvent:
     incoming_garbage: dict[str, int]
 
 
-class BattleRunObserver(Protocol):
+class RunObserver(Protocol):
     def on_game_started(self, event: GameStartedEvent) -> None: ...
 
     def on_piece_locked(self, event: PieceLockedEvent) -> None: ...

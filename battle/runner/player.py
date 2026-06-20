@@ -13,7 +13,7 @@ from tetris.randomizer import make_randomizer
 
 
 @dataclass
-class BattlePlayer:
+class Player:
     name: str
     game: LocalGame
     service: SuggestionServiceLike
@@ -31,7 +31,7 @@ class BattlePlayer:
         seed: int | None,
         service: SuggestionServiceLike,
         suggestion_session_id: str,
-    ) -> BattlePlayer:
+    ) -> Player:
         randomizer = make_randomizer(rules.randomizer, seed=seed)
         assert randomizer is not None
         return cls(

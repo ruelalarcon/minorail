@@ -10,17 +10,17 @@ from pathlib import Path
 from typing import Any
 
 from api.websocket import SuggestionWebSocketServer
-from battle.evaluation.batch import run_battle_evaluation
-from battle.runner.session import BattleSession
-from battle.visualizers.headless import HeadlessBattleVisualizer
-from battle.visualizers.null import NullBattleVisualizer
-from battle.visualizers.terminal import TerminalBattleVisualizer
+from battle.evaluation.batch import run_evaluation as run_battle_evaluation
+from battle.runner.session import Session as BattleSession
+from battle.visualizers.headless import HeadlessVisualizer as BattleHeadlessVisualizer
+from battle.visualizers.null import NullVisualizer as BattleNullVisualizer
+from battle.visualizers.terminal import TerminalVisualizer as BattleTerminalVisualizer
 from settings import Settings, seed_for_game
 from solo.evaluation.batch import run_evaluation
 from solo.runner.session import LocalGameSession
-from solo.visualizers.headless import HeadlessVisualizer
-from solo.visualizers.null import NullVisualizer
-from solo.visualizers.terminal import TerminalVisualizer
+from solo.visualizers.headless import HeadlessVisualizer as SoloHeadlessVisualizer
+from solo.visualizers.null import NullVisualizer as SoloNullVisualizer
+from solo.visualizers.terminal import TerminalVisualizer as SoloTerminalVisualizer
 from solo.visualizers.web import WebVisualizer
 from suggestion.service import SuggestionService
 
@@ -332,11 +332,11 @@ def _solo_play(args: argparse.Namespace) -> None:
         for i in range(args.games):
             print(f"[info] solo game={i + 1}/{args.games}", file=sys.stderr)
             if args.headless:
-                visualizer = HeadlessVisualizer()
+                visualizer = SoloHeadlessVisualizer()
             elif web_visualizer is not None:
                 visualizer = web_visualizer
             else:
-                visualizer = TerminalVisualizer(settings.visualizer())
+                visualizer = SoloTerminalVisualizer(settings.visualizer())
             pathfinding = settings.pathfinding(
                 default_pathfinding=visualizer.default_pathfinding,
                 pathfinding=args.pathfinding,
@@ -381,7 +381,7 @@ def _solo_eval(args: argparse.Namespace) -> None:
             time_limit_ms=args.time_limit_ms,
         ),
         pathfinding=settings.pathfinding(
-            default_pathfinding=NullVisualizer.default_pathfinding,
+            default_pathfinding=SoloNullVisualizer.default_pathfinding,
             pathfinding=args.pathfinding,
         ),
         label=args.label,
@@ -419,11 +419,11 @@ def _battle_play(args: argparse.Namespace) -> None:
         raise SystemExit("--games must be at least 1")
     settings = Settings.load(args.settings)
     if args.headless:
-        default_pathfinding = HeadlessBattleVisualizer.default_pathfinding
+        default_pathfinding = BattleHeadlessVisualizer.default_pathfinding
     elif args.null:
-        default_pathfinding = NullBattleVisualizer.default_pathfinding
+        default_pathfinding = BattleNullVisualizer.default_pathfinding
     else:
-        default_pathfinding = TerminalBattleVisualizer.default_pathfinding
+        default_pathfinding = BattleTerminalVisualizer.default_pathfinding
     pathfinding = settings.pathfinding(
         default_pathfinding=default_pathfinding,
         pathfinding=args.pathfinding,
@@ -456,11 +456,11 @@ def _battle_play(args: argparse.Namespace) -> None:
         for i in range(args.games):
             print(f"[info] battle game={i + 1}/{args.games}", file=sys.stderr)
             if args.headless:
-                visualizer = HeadlessBattleVisualizer()
+                visualizer = BattleHeadlessVisualizer()
             elif args.null:
-                visualizer = NullBattleVisualizer()
+                visualizer = BattleNullVisualizer()
             else:
-                visualizer = TerminalBattleVisualizer(settings.visualizer())
+                visualizer = BattleTerminalVisualizer(settings.visualizer())
             session = BattleSession(
                 args.bot_a,
                 args.bot_b,
@@ -510,7 +510,7 @@ def _battle_eval(args: argparse.Namespace) -> None:
             time_limit_ms=args.time_limit_ms,
         ),
         pathfinding=settings.pathfinding(
-            default_pathfinding=NullBattleVisualizer.default_pathfinding,
+            default_pathfinding=BattleNullVisualizer.default_pathfinding,
             pathfinding=args.pathfinding,
         ),
         label=args.label,

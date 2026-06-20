@@ -9,7 +9,7 @@ from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 
 
-class HeadlessBattleVisualizer:
+class HeadlessVisualizer:
     default_pathfinding = False
 
     def __init__(self, progress_every: int = 1000) -> None:

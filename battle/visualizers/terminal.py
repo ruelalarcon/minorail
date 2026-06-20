@@ -14,7 +14,7 @@ from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed
 from tetris.pieces.cells import piece_cells
 
 
-class TerminalBattleVisualizer:
+class TerminalVisualizer:
     default_pathfinding = True
 
     def __init__(self, settings: VisualizerSettings) -> None:

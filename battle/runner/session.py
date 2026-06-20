@@ -9,13 +9,13 @@ from battle.attack.base import AttackCalculator
 from battle.garbage import GARBAGE_RULES
 from battle.garbage.base import GarbageRules
 from battle.runner.events import (
-    BattleRunObserver,
     GameEndedEvent,
     GameStartedEvent,
     GarbageAppliedEvent,
     PieceLockedEvent,
+    RunObserver,
 )
-from battle.runner.player import BattlePlayer
+from battle.runner.player import Player
 from battle.runner.visualizer import BattleVisualizer
 from bots.session import BotStartupError
 from settings import PathSettings, RunLimits, Settings
@@ -26,7 +26,7 @@ from suggestion.service import SuggestionService
 from tetris.model.rules import Rules
 
 
-class BattleSession:
+class Session:
     def __init__(
         self,
         bot_a_path: str,
@@ -44,7 +44,7 @@ class BattleSession:
         random_seed: int | None = None,
         limits: RunLimits | None = None,
         pathfinding: PathSettings | None = None,
-        observers: list[BattleRunObserver] | None = None,
+        observers: list[RunObserver] | None = None,
     ) -> None:
         self._settings = settings
         self._visualizer = visualizer
@@ -75,7 +75,7 @@ class BattleSession:
         )
 
         self._players = [
-            BattlePlayer.start(
+            Player.start(
                 name="A",
                 settings=settings,
                 rules=self._rules,
@@ -83,7 +83,7 @@ class BattleSession:
                 service=self._service_a,
                 suggestion_session_id=suggestion_session_id_a or f"{session_id}:A",
             ),
-            BattlePlayer.start(
+            Player.start(
                 name="B",
                 settings=settings,
                 rules=self._rules,

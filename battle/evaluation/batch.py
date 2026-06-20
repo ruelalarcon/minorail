@@ -3,9 +3,9 @@ from __future__ import annotations
 import time
 from typing import Any, Callable
 
-from battle.evaluation.collector import BattleEvaluationCollector
-from battle.runner.session import BattleSession
-from battle.visualizers.null import NullBattleVisualizer
+from battle.evaluation.collector import EvaluationCollector
+from battle.runner.session import Session
+from battle.visualizers.null import NullVisualizer
 from settings import PathSettings, RunLimits, Settings, seed_for_game
 from solo.evaluation.batch import _limits, _rules
 from suggestion.service import SuggestionService
@@ -13,7 +13,7 @@ from suggestion.service import SuggestionService
 ProgressCallback = Callable[[str], None]
 
 
-def run_battle_evaluation(
+def run_evaluation(
     *,
     bot_a_path: str,
     bot_b_path: str,
@@ -53,16 +53,16 @@ def run_battle_evaluation(
         for game_index in range(games):
             game_number = game_index + 1
             seed = seed_for_game(base_seed, game_index)
-            collector = BattleEvaluationCollector(include_events=include_events)
+            collector = EvaluationCollector(include_events=include_events)
             if progress is not None:
                 progress(f"[info] battle game={game_number}/{games} seed={seed}")
-            session = BattleSession(
+            session = Session(
                 bot_a_path,
                 bot_b_path,
                 bot_a_args=bot_a_args,
                 bot_b_args=bot_b_args,
                 settings=settings,
-                visualizer=NullBattleVisualizer(),
+                visualizer=NullVisualizer(),
                 service_a=service_a,
                 service_b=service_b,
                 suggestion_session_id_a="battle-evaluation:A",

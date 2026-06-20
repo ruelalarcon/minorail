@@ -1,7 +1,7 @@
 import unittest
 
-from battle.runner.session import BattleSession
-from battle.visualizers.null import NullBattleVisualizer
+from battle.runner.session import Session as BattleSession
+from battle.visualizers.null import NullVisualizer
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
 from contracts.suggestion_status import SuggestionStatus
@@ -45,7 +45,7 @@ class BattleSessionTests(unittest.TestCase):
             "fake-a",
             "fake-b",
             settings=_settings(),
-            visualizer=NullBattleVisualizer(),
+            visualizer=NullVisualizer(),
             service_a=service_a,
             service_b=service_b,
             limits=RunLimits(piece_limit=2),

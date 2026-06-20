@@ -6,7 +6,7 @@ from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 
 
-class NullBattleVisualizer:
+class NullVisualizer:
     default_pathfinding = False
 
     def on_game_started(
