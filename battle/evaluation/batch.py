@@ -89,7 +89,7 @@ def run_evaluation(
 
     elapsed = time.time() - started_at
     return {
-        "schema": "minorail.battle.eval.v1",
+        "schema": "minorail.eval.battle.v1",
         "label": label,
         "bots": {
             "A": {"path": bot_a_path, "args": bot_a_args},

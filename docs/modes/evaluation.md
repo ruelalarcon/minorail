@@ -16,11 +16,11 @@ analysis or ML training.
 
 ## Solo Evaluation
 
-Solo output uses schema `minorail.eval.v1`:
+Solo output uses schema `minorail.eval.solo.v1`:
 
 ```json
 {
-  "schema": "minorail.eval.v1",
+  "schema": "minorail.eval.solo.v1",
   "label": "candidate-001",
   "bot": {
     "path": "path/to/sbp-bot",
@@ -48,11 +48,11 @@ combo and back-to-back before/after values, stack height, and occupied cells.
 
 ## Battle Evaluation
 
-Battle output uses schema `minorail.battle.eval.v1`:
+Battle output uses schema `minorail.eval.battle.v1`:
 
 ```json
 {
-  "schema": "minorail.battle.eval.v1",
+  "schema": "minorail.eval.battle.v1",
   "bots": {
     "A": {"path": "path/to/bot-a", "args": []},
     "B": {"path": "path/to/bot-b", "args": []}
