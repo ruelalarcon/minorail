@@ -295,7 +295,7 @@ class WebVisualizer:
                     player_frame = frame.players.get(player)
                     if player_frame is None:
                         continue
-                    boards[player].set_content(board_html(player_frame.board))
+                    boards[player].set_content(_battle_board_html(player_frame))
                     sides[player].set_content(_player_side_html(player_frame))
 
             ui.timer(1 / 30, refresh, active=True)
@@ -369,6 +369,36 @@ def _player_side_html(frame: _PlayerFrame) -> str:
     """
 
 
+def _battle_board_html(frame: _PlayerFrame) -> str:
+    visible_rows = max(1, len(frame.board.cells))
+    incoming_garbage = max(0, frame.incoming_garbage)
+    label = html.escape(f"{incoming_garbage} incoming garbage lines")
+    rows = "".join(
+        f'<div class="{_garbage_cell_class(y, incoming_garbage, visible_rows)}"></div>'
+        for y in reversed(range(visible_rows))
+    )
+    return f"""
+    <div class="minorail-battle-board-with-garbage">
+      <div
+        class="minorail-garbage-meter"
+        aria-label="{label}"
+        title="{label}"
+        style="--visible-rows: {visible_rows};"
+      >
+        {rows}
+      </div>
+      {board_html(frame.board)}
+    </div>
+    """
+
+
+def _garbage_cell_class(row: int, incoming_garbage: int, visible_rows: int) -> str:
+    if row >= incoming_garbage:
+        return "minorail-garbage-cell"
+    layer = min((incoming_garbage - 1 - row) // visible_rows, 6)
+    return f"minorail-garbage-cell minorail-garbage-cell-layer-{layer}"
+
+
 _BATTLE_CSS = """
 .minorail-battle-shell {
   width: min(1600px, calc(100vw - 32px));
@@ -414,6 +444,70 @@ _BATTLE_CSS = """
 .minorail-battle-player .minorail-board-wrap {
   flex: 0 0 auto;
   width: fit-content;
+  overflow: visible;
+}
+.minorail-battle-board-with-garbage {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.minorail-battle-board-with-garbage .minorail-board {
+  border-left-color: transparent;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.minorail-garbage-meter {
+  position: relative;
+  display: grid;
+  grid-template-rows: repeat(var(--visible-rows), minmax(0, 1fr));
+  gap: 1px;
+  flex: 0 0 auto;
+  width: 18px;
+  padding: 5px 4px 5px 5px;
+  border: 1px solid #48515f;
+  border-right: 0;
+  border-radius: 4px 0 0 4px;
+  background: #111720;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  overflow: visible;
+}
+.minorail-garbage-cell {
+  width: 100%;
+  min-width: 0;
+  background: #10151d;
+  border: 0;
+}
+.minorail-garbage-cell-layer-0 {
+  background: #f87171;
+}
+.minorail-garbage-cell-layer-1 {
+  background: #fb923c;
+}
+.minorail-garbage-cell-layer-2 {
+  background: #facc15;
+}
+.minorail-garbage-cell-layer-3 {
+  background: #4ade80;
+}
+.minorail-garbage-cell-layer-4 {
+  background: #60a5fa;
+}
+.minorail-garbage-cell-layer-5 {
+  background: #d946ef;
+}
+.minorail-garbage-cell-layer-6 {
+  background: #e5e7eb;
+}
+.minorail-garbage-cell-layer-0,
+.minorail-garbage-cell-layer-1,
+.minorail-garbage-cell-layer-2,
+.minorail-garbage-cell-layer-3,
+.minorail-garbage-cell-layer-4,
+.minorail-garbage-cell-layer-5,
+.minorail-garbage-cell-layer-6 {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.12);
 }
 .minorail-battle-player .minorail-side {
   flex: 0 1 340px;

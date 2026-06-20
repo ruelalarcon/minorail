@@ -15,6 +15,11 @@ from tetris.model.rules import Rules
 from tetris.model.spin import Spin
 from visualizers.solo.terminal import TerminalVisualizer
 from visualizers.solo.web import WebVisualizer
+from visualizers.battle.web import (
+    _PlayerFrame,
+    _battle_board_html,
+    _garbage_cell_class,
+)
 from visualizers.battle.web import WebVisualizer as BattleWebVisualizer
 
 
@@ -83,6 +88,39 @@ class PathlessVisualizerTests(unittest.TestCase):
         self.assertEqual(player.board.active_rotation, Rotation.North)
         self.assertEqual(frame.players["B"].incoming_garbage, 3)
         self.assertEqual(frame.players["B"].status, "")
+
+    def test_battle_web_garbage_meter_wraps_visible_rows(self) -> None:
+        classes = [_garbage_cell_class(row, 25, 20) for row in reversed(range(20))]
+
+        self.assertEqual(classes.count("minorail-garbage-cell-layer-0"), 0)
+        self.assertEqual(
+            classes.count("minorail-garbage-cell minorail-garbage-cell-layer-0"),
+            15,
+        )
+        self.assertEqual(
+            classes.count("minorail-garbage-cell minorail-garbage-cell-layer-1"),
+            5,
+        )
+
+    def test_battle_web_garbage_meter_html_uses_wrapped_layers(self) -> None:
+        visualizer = BattleWebVisualizer(_settings())
+        state = _state()
+        visualizer._render({"A": state}, {"A": 25})
+        frame = visualizer._current_frame()
+        self.assertIsNotNone(frame)
+        assert frame is not None
+
+        html = _battle_board_html(
+            _PlayerFrame(
+                name="A",
+                board=frame.players["A"].board,
+                incoming_garbage=25,
+                status="",
+            )
+        )
+
+        self.assertEqual(html.count("minorail-garbage-cell-layer-0"), 15)
+        self.assertEqual(html.count("minorail-garbage-cell-layer-1"), 5)
 
 
 def _state(piece: Piece = Piece.T) -> GameState:
