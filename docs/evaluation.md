@@ -124,6 +124,7 @@ holes deterministically from the battle seed. It does not implement passthrough.
 | `randomizer` | `--seed N` | Base seed for local piece streams; overrides `game.randomizer.seed`. |
 | `limits` | `--piece-limit N` | Stops each game after this many accepted locks. |
 | `limits` | `--time-limit-ms MS` | Stops each game after this many milliseconds. |
+| `games` | `--games N` | Number of games to evaluate. |
 | `pathfinding` | `--pathfind`, `--no-pathfind` | Override pathfinding for one invocation. |
 | `output` | `--json-out PATH` | Writes evaluation JSON to a file. Use `-` for stdout. |
 | `output` | `--label TEXT` | Adds an experiment or candidate label to the output. |

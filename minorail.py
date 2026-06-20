@@ -89,7 +89,7 @@ def _add_common(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_seed_limits_path(parser: argparse.ArgumentParser) -> None:
+def _add_seed_limits(parser: argparse.ArgumentParser) -> None:
     randomizer = parser.add_argument_group("randomizer")
     randomizer.add_argument(
         "--seed",
@@ -113,6 +113,14 @@ def _add_seed_limits_path(parser: argparse.ArgumentParser) -> None:
         default=None,
         help="wall-clock time limit in milliseconds; overrides game.limits.time_limit_ms",
     )
+
+
+def _add_games(parser: argparse.ArgumentParser) -> None:
+    games = parser.add_argument_group("games")
+    games.add_argument("--games", metavar="N", type=int, default=1, help="games to run")
+
+
+def _add_pathfinding(parser: argparse.ArgumentParser) -> None:
     path_group = parser.add_argument_group("pathfinding")
     path = path_group.add_mutually_exclusive_group()
     path.add_argument(
@@ -132,8 +140,6 @@ def _add_seed_limits_path(parser: argparse.ArgumentParser) -> None:
 
 
 def _add_eval_output(parser: argparse.ArgumentParser) -> None:
-    games = parser.add_argument_group("games")
-    games.add_argument("--games", metavar="N", type=int, default=1, help="games to run")
     output = parser.add_argument_group("output")
     output.add_argument(
         "--json-out",
@@ -172,9 +178,9 @@ def _add_solo_play(
     _add_common(parser)
     bot = parser.add_argument_group("bot")
     bot.add_argument("--bot-args", metavar="ARGS", default="", help="bot arguments")
-    _add_seed_limits_path(parser)
-    games = parser.add_argument_group("games")
-    games.add_argument("--games", metavar="N", type=int, default=1, help="games to run")
+    _add_seed_limits(parser)
+    _add_games(parser)
+    _add_pathfinding(parser)
     display = parser.add_argument_group("visualizer").add_mutually_exclusive_group()
     display.add_argument("--terminal", action="store_true", help="terminal visualizer")
     display.add_argument("--web", action="store_true", help="browser visualizer")
@@ -200,7 +206,9 @@ def _add_solo_eval(
     _add_common(parser)
     bot = parser.add_argument_group("bot")
     bot.add_argument("--bot-args", metavar="ARGS", default="", help="bot arguments")
-    _add_seed_limits_path(parser)
+    _add_seed_limits(parser)
+    _add_games(parser)
+    _add_pathfinding(parser)
     _add_eval_output(parser)
     parser.set_defaults(func=_solo_eval)
 
@@ -218,14 +226,7 @@ def _add_solo_ws(
     _add_common(parser)
     bot = parser.add_argument_group("bot")
     bot.add_argument("--bot-args", metavar="ARGS", default="", help="bot arguments")
-    path_group = parser.add_argument_group("pathfinding")
-    path = path_group.add_mutually_exclusive_group()
-    path.add_argument(
-        "--pathfind", dest="pathfinding", action="store_true", default=None
-    )
-    path.add_argument(
-        "--no-pathfind", dest="pathfinding", action="store_false", default=None
-    )
+    _add_pathfinding(parser)
     ws = parser.add_argument_group("websocket api")
     ws.add_argument("--ws-host", metavar="HOST", default=None, help="websocket host")
     ws.add_argument(
@@ -259,9 +260,9 @@ def _add_battle_play(
         default="",
         help="extra arguments passed to the player B bot process",
     )
-    _add_seed_limits_path(parser)
-    games = parser.add_argument_group("games")
-    games.add_argument("--games", metavar="N", type=int, default=1, help="games to run")
+    _add_seed_limits(parser)
+    _add_games(parser)
+    _add_pathfinding(parser)
     display = parser.add_argument_group("visualizer").add_mutually_exclusive_group()
     display.add_argument("--terminal", action="store_true", help="terminal visualizer")
     display.add_argument("--headless", action="store_true", help="progress only")
@@ -294,7 +295,9 @@ def _add_battle_eval(
         default="",
         help="extra arguments passed to the player B bot process",
     )
-    _add_seed_limits_path(parser)
+    _add_seed_limits(parser)
+    _add_games(parser)
+    _add_pathfinding(parser)
     _add_eval_output(parser)
     parser.set_defaults(func=_battle_eval)
 
