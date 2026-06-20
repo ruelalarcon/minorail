@@ -4,10 +4,10 @@ import sys
 import time
 from typing import Any
 
-from battle.attack import ATTACK_CALCULATORS
 from battle.attack.base import AttackCalculator
-from battle.garbage import GARBAGE_RULES
+from battle.attack.registry import attack_calculator
 from battle.garbage.base import GarbageRules
+from battle.garbage.registry import garbage_rules as garbage_rules_type
 from battle.runner.events import (
     GameEndedEvent,
     GameStartedEvent,
@@ -95,14 +95,8 @@ class Session:
 
         attack_name = settings.battle_attack().calculator
         garbage_name = settings.battle_garbage().rules
-        try:
-            self._attack: AttackCalculator = ATTACK_CALCULATORS[attack_name]()
-        except KeyError as e:
-            raise ValueError(f"unknown battle.attack.calculator: {attack_name}") from e
-        try:
-            garbage_type = GARBAGE_RULES[garbage_name]
-        except KeyError as e:
-            raise ValueError(f"unknown battle.garbage.rules: {garbage_name}") from e
+        self._attack: AttackCalculator = attack_calculator(attack_name)()
+        garbage_type = garbage_rules_type(garbage_name)
         self._garbage: list[GarbageRules] = [
             garbage_type(seed=settings.base_seed(random_seed)),
             garbage_type(seed=None if random_seed is None else random_seed + 1),

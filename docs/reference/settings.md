@@ -203,8 +203,8 @@ rules = "generic"
 
 | Field | Values | Behavior |
 | --- | --- | --- |
-| `battle.attack.calculator` | `generic` | Selects the battle attack calculator registry entry. |
-| `battle.garbage.rules` | `generic` | Selects the battle garbage rules registry entry. |
+| `battle.attack.calculator` | `generic` | Selects an entry from `battle.attack.registry`. |
+| `battle.garbage.rules` | `generic` | Selects an entry from `battle.garbage.registry`. |
 
 The generic attack calculator is Minorail's built-in default, not a TETR.IO or
 PPT implementation. It sends 0/1/2/4 for single/double/triple/quad, 2/4/6 for
