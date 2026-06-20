@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from battle.garbage.base import GarbageQueue
 from contracts.observed_snapshot import ObservedSnapshot
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
@@ -18,7 +19,7 @@ class Player:
     game: LocalGame
     service: SuggestionServiceLike
     suggestion_session_id: str
-    incoming_garbage: int = 0
+    garbage_queue: GarbageQueue | None = None
     pieces_locked: int = 0
 
     @classmethod

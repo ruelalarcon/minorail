@@ -107,6 +107,8 @@ class Session:
             garbage_type(seed=settings.base_seed(random_seed)),
             garbage_type(seed=None if random_seed is None else random_seed + 1),
         ]
+        for player, garbage_rules in zip(self._players, self._garbage):
+            player.garbage_queue = garbage_rules.empty_queue()
 
     def play_game(self) -> dict[str, Any]:
         bot_cfg = self._settings.bot()
@@ -193,24 +195,28 @@ class Session:
                     winner = opponent.name
                     break
 
-                incoming_before = player.incoming_garbage
+                incoming_before = garbage_rules.queue_total(player.garbage_queue)
                 attack = self._attack.calculate(applied)
                 exchange = garbage_rules.exchange(
                     attack=attack.attack,
-                    incoming=player.incoming_garbage,
+                    queue=player.garbage_queue,
                 )
-                player.incoming_garbage = exchange.incoming_after
-                opponent.incoming_garbage += exchange.sent
+                player.garbage_queue = exchange.queue_after
+                opponent_garbage_rules = self._garbage[1 - player_index]
+                opponent.garbage_queue = opponent_garbage_rules.enqueue_attack(
+                    opponent.garbage_queue,
+                    attack=exchange.sent,
+                )
 
                 garbage_applied = None
                 if garbage_rules.should_apply_on_lock(
                     lines_cleared=applied.lines_cleared
                 ):
-                    garbage_applied = garbage_rules.apply_pending(
+                    garbage_applied = garbage_rules.apply_queue(
                         player.game.state,
-                        player.incoming_garbage,
+                        player.garbage_queue,
                     )
-                    player.incoming_garbage -= garbage_applied.lines
+                    player.garbage_queue = garbage_applied.queue_after
 
                 player.game.refill_queue(refill_at)
                 self._notify_piece_locked(
@@ -228,7 +234,9 @@ class Session:
                         incoming_garbage_before=incoming_before,
                         garbage_cancelled=exchange.cancelled,
                         garbage_sent=exchange.sent,
-                        incoming_garbage_after=player.incoming_garbage,
+                        incoming_garbage_after=garbage_rules.queue_total(
+                            player.garbage_queue
+                        ),
                     )
                 )
                 player.pieces_locked += 1
@@ -241,7 +249,9 @@ class Session:
                         session_id=self._session_id,
                         player=player.name,
                         lines=garbage_applied.lines,
-                        incoming_garbage_after=player.incoming_garbage,
+                        incoming_garbage_after=garbage_rules.queue_total(
+                            player.garbage_queue
+                        ),
                         stack_height=stack_height(player.game.state),
                         occupied_cells=occupied_cells(player.game.state),
                     )
@@ -307,7 +317,10 @@ class Session:
         return {p.name: p.game.state for p in self._players}
 
     def _incoming(self) -> dict[str, int]:
-        return {p.name: p.incoming_garbage for p in self._players}
+        return {
+            player.name: garbage_rules.queue_total(player.garbage_queue)
+            for player, garbage_rules in zip(self._players, self._garbage)
+        }
 
     def _notify_game_started(self) -> None:
         event = GameStartedEvent(
