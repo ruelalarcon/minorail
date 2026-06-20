@@ -1,7 +1,7 @@
 import unittest
 
 from battle.runner.session import Session as BattleSession
-from battle.visualizers.null import NullVisualizer
+from visualizers.battle.null import NullVisualizer
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
 from contracts.suggestion_status import SuggestionStatus

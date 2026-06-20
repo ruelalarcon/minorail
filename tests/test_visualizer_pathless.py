@@ -13,8 +13,8 @@ from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
 from tetris.model.spin import Spin
-from solo.visualizers.terminal import TerminalVisualizer
-from solo.visualizers.web import WebVisualizer
+from visualizers.solo.terminal import TerminalVisualizer
+from visualizers.solo.web import WebVisualizer
 
 
 class PathlessVisualizerTests(unittest.TestCase):

@@ -5,10 +5,10 @@ from typing import Any, Callable
 
 from battle.evaluation.collector import EvaluationCollector
 from battle.runner.session import Session
-from battle.visualizers.null import NullVisualizer
 from settings import PathSettings, RunLimits, Settings, seed_for_game
 from solo.evaluation.batch import _limits, _rules
 from suggestion.service import SuggestionService
+from visualizers.battle.null import NullVisualizer
 
 ProgressCallback = Callable[[str], None]
 

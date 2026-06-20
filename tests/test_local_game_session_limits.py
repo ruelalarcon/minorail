@@ -11,7 +11,7 @@ from tetris.model.location import PieceLocation
 from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
 from tetris.model.spin import Spin
-from solo.visualizers.null import NullVisualizer
+from visualizers.solo.null import NullVisualizer
 
 
 class FakeSuggestionService:

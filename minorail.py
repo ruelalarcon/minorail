@@ -12,17 +12,17 @@ from typing import Any
 from api.websocket import SuggestionWebSocketServer
 from battle.evaluation.batch import run_evaluation as run_battle_evaluation
 from battle.runner.session import Session as BattleSession
-from battle.visualizers.headless import HeadlessVisualizer as BattleHeadlessVisualizer
-from battle.visualizers.null import NullVisualizer as BattleNullVisualizer
-from battle.visualizers.terminal import TerminalVisualizer as BattleTerminalVisualizer
 from settings import Settings, seed_for_game
 from solo.evaluation.batch import run_evaluation
 from solo.runner.session import LocalGameSession
-from solo.visualizers.headless import HeadlessVisualizer as SoloHeadlessVisualizer
-from solo.visualizers.null import NullVisualizer as SoloNullVisualizer
-from solo.visualizers.terminal import TerminalVisualizer as SoloTerminalVisualizer
-from solo.visualizers.web import WebVisualizer
 from suggestion.service import SuggestionService
+from visualizers.battle.headless import HeadlessVisualizer as BattleHeadlessVisualizer
+from visualizers.battle.null import NullVisualizer as BattleNullVisualizer
+from visualizers.battle.terminal import TerminalVisualizer as BattleTerminalVisualizer
+from visualizers.solo.headless import HeadlessVisualizer as SoloHeadlessVisualizer
+from visualizers.solo.null import NullVisualizer as SoloNullVisualizer
+from visualizers.solo.terminal import TerminalVisualizer as SoloTerminalVisualizer
+from visualizers.solo.web import WebVisualizer
 
 
 class _HelpFormatter(argparse.RawDescriptionHelpFormatter):

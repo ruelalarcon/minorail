@@ -8,7 +8,7 @@ from solo.evaluation.collector import EvaluationCollector
 from solo.runner.session import LocalGameSession
 from suggestion.service import SuggestionService
 from tetris.model.rules import Rules
-from solo.visualizers.null import NullVisualizer
+from visualizers.solo.null import NullVisualizer
 
 ProgressCallback = Callable[[str], None]
 

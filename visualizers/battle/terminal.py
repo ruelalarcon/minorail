@@ -5,13 +5,19 @@ import time
 
 from contracts.suggestion_result import SuggestionResult
 from settings import VisualizerSettings
-from solo.visualizers.terminal import EMPTY, FILLED, GHOST, PIECE_COLORS, RESET
 from tetris.game.state import GameState
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
 from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed
 from tetris.pieces.cells import piece_cells
+from visualizers.shared.terminal import (
+    EMPTY,
+    FILLED,
+    GHOST,
+    LiveTerminalRegion,
+    colored,
+)
 
 
 class TerminalVisualizer:
@@ -28,13 +34,13 @@ class TerminalVisualizer:
             "A": None,
             "B": None,
         }
+        self._terminal = LiveTerminalRegion()
 
     def on_game_started(
         self, states: dict[str, GameState], incoming_garbage: dict[str, int]
     ) -> None:
         self._status = "Battle started"
-        sys.stdout.write("\033[2J\033[H")
-        sys.stdout.flush()
+        self._terminal.start(self._frame_height())
         self._render(states, incoming_garbage)
 
     def on_spawn(
@@ -178,9 +184,10 @@ class TerminalVisualizer:
         ]
         out.append("")
         out.append(f"Status: {self._status}")
-        sys.stdout.write("\033[H")
-        sys.stdout.write("\n".join(f"{line}\033[K" for line in out) + "\n")
-        sys.stdout.flush()
+        self._terminal.render(out)
+
+    def _frame_height(self) -> int:
+        return self._settings.visible_rows + 11
 
 
 def _board_lines(
@@ -207,19 +214,19 @@ def _board_lines(
                 grid[gy][gx] = GHOST
         for ax, ay in piece_cells(active_piece, prot, px, py):
             if 0 <= ax < 10 and 0 <= ay < visible_rows:
-                grid[ay][ax] = _colored(FILLED, active_piece)
+                grid[ay][ax] = colored(FILLED, active_piece)
 
     lines = [title, "+" + "--" * 10 + "+"]
     for row in reversed(range(visible_rows)):
         cells = "".join(EMPTY if c == unset else c for c in grid[row])
         lines.append("|" + cells + "|")
     lines.append("+" + "--" * 10 + "+")
-    hold = _colored(state.hold.value, state.hold) if state.hold else " "
-    queue = " ".join(_colored(p.value, p) for p in state.queue[:queue_size])
+    hold = colored(state.hold.value, state.hold) if state.hold else " "
+    queue = " ".join(colored(p.value, p) for p in state.queue[:queue_size])
     active_text = active[0].value if active is not None else state.active.piece.value
     lines.extend(
         [
-            f"Active: {_colored(active_text, Piece(active_text))}",
+            f"Active: {colored(active_text, Piece(active_text))}",
             f"Hold: {hold}",
             f"Queue: {queue}",
             f"Combo: {state.combo}",
@@ -228,10 +235,6 @@ def _board_lines(
         ]
     )
     return lines
-
-
-def _colored(text: str, piece: Piece) -> str:
-    return PIECE_COLORS[piece] + text + RESET
 
 
 def _strip_ansi(value: str) -> str:

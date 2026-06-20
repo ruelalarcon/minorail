@@ -4,32 +4,22 @@ import sys
 import time
 from typing import Optional
 
+from contracts.suggestion_result import SuggestionResult
 from settings import VisualizerSettings
+from solo.runner.controls import GameControls
+from tetris.game.state import GameState
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
-from tetris.pieces.cells import piece_cells
-from solo.runner.controls import GameControls
 from tetris.model.rules import Rules
-from tetris.game.state import GameState
 from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed
-from contracts.suggestion_result import SuggestionResult
-
-RESET = "\033[0m"
-DIM = "\033[2m"
-
-PIECE_COLORS = {
-    Piece.I: "\033[96m",  # cyan
-    Piece.O: "\033[93m",  # yellow
-    Piece.T: "\033[95m",  # magenta
-    Piece.L: "\033[33m",  # orange
-    Piece.J: "\033[94m",  # blue
-    Piece.S: "\033[92m",  # green
-    Piece.Z: "\033[91m",  # red
-}
-
-FILLED = "[]"
-EMPTY = "  "
-GHOST = DIM + ".." + RESET
+from tetris.pieces.cells import piece_cells
+from visualizers.shared.terminal import (
+    EMPTY,
+    FILLED,
+    GHOST,
+    LiveTerminalRegion,
+    colored,
+)
 
 
 class TerminalVisualizer:
@@ -42,14 +32,14 @@ class TerminalVisualizer:
         self._first_move_delay = settings.first_move_delay_ms / 1000
         self._first_spawn = True
         self._status = ""
+        self._terminal = LiveTerminalRegion()
 
     def set_game_controls(self, controls: GameControls) -> None:
         pass
 
     def on_game_started(self, state: GameState) -> None:
         self._status = "Game started"
-        sys.stdout.write("\033[2J\033[H")
-        sys.stdout.flush()
+        self._terminal.start(self._frame_height())
 
     def on_spawn(self, state: GameState, piece: Piece) -> None:
         self._status = f"Spawn: {piece.value}"
@@ -148,11 +138,11 @@ class TerminalVisualizer:
             self._settings.visible_rows,
             self._settings.queue_size,
             self._status,
+            self._terminal,
         )
 
-
-def _colored(text: str, piece: Piece) -> str:
-    return PIECE_COLORS[piece] + text + RESET
+    def _frame_height(self) -> int:
+        return self._settings.visible_rows + 2
 
 
 def _render(
@@ -162,6 +152,7 @@ def _render(
     visible_rows: int,
     queue_size: int,
     status: str,
+    terminal: LiveTerminalRegion,
 ) -> None:
     unset = "\x00"
     grid: list[list[str]] = [[unset for _ in range(10)] for _ in range(visible_rows)]
@@ -179,7 +170,7 @@ def _render(
                 grid[gy][gx] = GHOST
         for ax, ay in piece_cells(active_piece, prot, px, py):
             if 0 <= ax < 10 and 0 <= ay < visible_rows:
-                grid[ay][ax] = _colored(FILLED, active_piece)
+                grid[ay][ax] = colored(FILLED, active_piece)
 
     board_lines: list[str] = ["+" + "--" * 10 + "+"]
     for row in reversed(range(visible_rows)):
@@ -189,7 +180,7 @@ def _render(
 
     if active_piece is not None and active_loc is not None:
         active_x, active_y, active_rotation = active_loc
-        active_str = _colored(active_piece.value, active_piece)
+        active_str = colored(active_piece.value, active_piece)
         active_side = [
             f"Active Piece: {active_str}",
             f"X: {active_x}",
@@ -200,8 +191,8 @@ def _render(
     else:
         active_side = []
 
-    hold_str = _colored(state.hold.value, state.hold) if state.hold else " "
-    next_str = " ".join(_colored(p.value, p) for p in state.queue[:queue_size])
+    hold_str = colored(state.hold.value, state.hold) if state.hold else " "
+    next_str = " ".join(colored(p.value, p) for p in state.queue[:queue_size])
     side: list[str] = active_side + [
         f"Hold: {hold_str}",
         f"Queue: {next_str}",
@@ -217,6 +208,4 @@ def _render(
     for i, row_str in enumerate(board_lines):
         out.append(f"{row_str}  {side[i] if i < len(side) else ''}")
 
-    sys.stdout.write("\033[H")
-    sys.stdout.write("\n".join(f"{line}\033[K" for line in out) + "\n")
-    sys.stdout.flush()
+    terminal.render(out)

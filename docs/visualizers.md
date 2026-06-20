@@ -62,7 +62,7 @@ python minorail.py battle play "path/to/bot-a" "path/to/bot-b" --null
 Null battle mode produces no visual output. Battle evaluation uses this mode.
 
 There is no battle web visualizer yet. The battle visualizer protocol is
-separate so a future `battle.visualizers.web` can render two-player state
+separate so a future `visualizers.battle.web` can render two-player state
 without forcing battle behavior into the solo API.
 
 ## Visualizer Timing
