@@ -4,8 +4,7 @@ import sys
 import time
 from typing import Any
 
-from battle.attack.base import AttackCalculator
-from battle.attack.registry import attack_calculator
+from battle.attack.registry import AttackCalculator, attack_calculator
 from battle.garbage.base import GarbageRules
 from battle.garbage.registry import garbage_rules as garbage_rules_type
 from battle.runner.events import (
@@ -192,7 +191,7 @@ class Session:
                 incoming_before = garbage_rules.queue_total(player.garbage_queue)
                 attack = self._attack.calculate(applied)
                 exchange = garbage_rules.exchange(
-                    attack=attack.attack,
+                    attack=attack,
                     queue=player.garbage_queue,
                 )
                 player.garbage_queue = exchange.queue_after
@@ -223,8 +222,7 @@ class Session:
                         applied=applied,
                         stack_height=stack_height(player.game.state),
                         occupied_cells=occupied_cells(player.game.state),
-                        attack=attack.attack,
-                        attack_breakdown=attack.breakdown,
+                        attack=attack,
                         incoming_garbage_before=incoming_before,
                         garbage_cancelled=exchange.cancelled,
                         garbage_sent=exchange.sent,

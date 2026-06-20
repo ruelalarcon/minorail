@@ -1,10 +1,23 @@
 from __future__ import annotations
 
-from battle.attack.base import AttackCalculator
-from battle.attack.generic import GenericAttackCalculator
+from typing import Protocol
+
+from battle.attack.classic_guideline import ClassicGuidelineAttackCalculator
+from battle.attack.modern_guideline import ModernGuidelineAttackCalculator
+from battle.attack.tetrio_s1 import TetrioS1AttackCalculator
+from battle.attack.tetrio_s2 import TetrioS2AttackCalculator
+from tetris.game.state import AppliedMove
+
+
+class AttackCalculator(Protocol):
+    def calculate(self, applied: AppliedMove) -> int: ...
+
 
 _ATTACK_CALCULATORS: dict[str, type[AttackCalculator]] = {
-    "generic": GenericAttackCalculator,
+    "tetrio_s1": TetrioS1AttackCalculator,
+    "tetrio_s2": TetrioS2AttackCalculator,
+    "classic_guideline": ClassicGuidelineAttackCalculator,
+    "modern_guideline": ModernGuidelineAttackCalculator,
 }
 
 

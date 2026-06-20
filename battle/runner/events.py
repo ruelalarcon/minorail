@@ -25,7 +25,6 @@ class PieceLockedEvent:
     stack_height: int
     occupied_cells: int
     attack: int
-    attack_breakdown: dict[str, int]
     incoming_garbage_before: int
     garbage_cancelled: int
     garbage_sent: int

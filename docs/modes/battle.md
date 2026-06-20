@@ -49,28 +49,29 @@ Multi-game battle runs reuse the same two bot processes across the batch when
 possible. Minorail keeps stable suggestion session ids for player A and player B
 and sends per-player stop-game semantics at each game boundary.
 
-## Generic Attack
+## Attack Calculators
 
-The built-in calculator is `generic`. It is Minorail's deterministic default,
-not a TETR.IO or PPT ruleset.
+The default calculator is `tetrio_s2`. Battle attack calculators convert
+already-produced `AppliedMove` facts into total attack; gameplay state such as
+combo, back-to-back continuation, all-spins, and all-clears is owned by the
+local game rules before the calculator runs.
 
-| Clear | Attack |
+Built-in calculators:
+
+| Name | Behavior |
 | --- | --- |
-| Single | 0 |
-| Double | 1 |
-| Triple | 2 |
-| Quad | 4 |
-| T-spin single | 2 |
-| T-spin double | 4 |
-| T-spin triple | 6 |
-| Perfect clear bonus | 10 |
+| `tetrio_s2` | Current TETR.IO-style Tetra League attack: multiplier combo, repeated B2B bonus, B2B surge, 5-line perfect clear bonus, and S2 perfect-clear special bonus. |
+| `tetrio_s1` | TETR.IO season 1 style attack: multiplier combo, logarithmic B2B chaining, and 10-line perfect clear bonus. |
+| `classic_guideline` | T-spin/line-clear attack with the classic fixed additive combo table. |
+| `modern_guideline` | T-spin/line-clear attack with the modern fixed additive combo table. |
 
-It also adds `1` attack per combo step after the first combo value and a static
-back-to-back bonus of `1` when `back_to_back_after >= 2`.
+Minorail combo and back-to-back counters start at `1` on the first clear in a
+chain. TETR.IO and guideline attack formulas use the displayed/derived count,
+so these calculators subtract one before applying combo and B2B attack formulas.
 
 ## Generic Garbage
 
-The built-in garbage rules are also `generic`:
+The built-in garbage rules are `generic`:
 
 | Behavior | Value |
 | --- | --- |

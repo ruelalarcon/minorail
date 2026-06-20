@@ -23,7 +23,7 @@ to Minorail's websocket API.
 | Feature | What it does |
 | --- | --- |
 | Solo local Tetris game | Runs one board, active piece, queue, hold, line clears, combo, and back to back state. |
-| Battle mode | Runs two SBP bots against each other with generic attack and garbage rules. |
+| Battle mode | Runs two SBP bots against each other with configurable attack calculators and generic garbage rules. |
 | SBP bot runner | Starts an SBP bot subprocess and exchanges `rules`, `start`, `suggest`, `play`, `new_piece`, `stop`, and `quit` messages. |
 | Terminal visualizer | Shows a local game directly in the terminal. |
 | Web visualizer | Provides a browser based view for watching games and inspecting state. |

@@ -195,7 +195,7 @@ CLI value wins.
 
 ```toml
 [battle.attack]
-calculator = "generic"
+calculator = "tetrio_s2"
 
 [battle.garbage]
 rules = "generic"
@@ -203,14 +203,14 @@ rules = "generic"
 
 | Field | Values | Behavior |
 | --- | --- | --- |
-| `battle.attack.calculator` | `generic` | Selects an entry from `battle.attack.registry`. |
+| `battle.attack.calculator` | `tetrio_s2`, `tetrio_s1`, `classic_guideline`, `modern_guideline` | Selects an entry from `battle.attack.registry`. |
 | `battle.garbage.rules` | `generic` | Selects an entry from `battle.garbage.registry`. |
 
-The generic attack calculator is Minorail's built-in default, not a TETR.IO or
-PPT implementation. It sends 0/1/2/4 for single/double/triple/quad, 2/4/6 for
-T-spin single/double/triple, adds a perfect clear bonus of 10, adds an explicit
-combo bonus, and adds a static back-to-back bonus when
-`back_to_back_after >= 2`.
+The default attack calculator is `tetrio_s2`, which follows current
+TETR.IO-style Tetra League attack behavior for line clears, T-spins, combo
+multiplication, repeated back-to-back bonus, B2B surge, and perfect clears.
+`tetrio_s1` provides season 1 style logarithmic B2B chaining. The guideline
+calculators use fixed additive combo tables instead of combo multiplication.
 
 The generic garbage rules use full cancellation/blocking, no passthrough,
 garbage rise on non-line-clearing locks, a maximum rise of 8 lines per lock,

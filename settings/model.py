@@ -68,7 +68,7 @@ DEFAULT: dict[str, Any] = {
     },
     "battle": {
         "attack": {
-            "calculator": "generic",
+            "calculator": "tetrio_s2",
         },
         "garbage": {
             "rules": "generic",

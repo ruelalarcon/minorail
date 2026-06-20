@@ -58,7 +58,7 @@ Battle output uses schema `minorail.battle.eval.v1`:
     "B": {"path": "path/to/bot-b", "args": []}
   },
   "battle": {
-    "attack": "generic",
+    "attack": "tetrio_s2",
     "garbage": "generic"
   },
   "summary": {},
@@ -75,7 +75,6 @@ Battle `piece_locked` events include the same core solo lock facts plus:
 | --- | --- |
 | `player` | Player id, currently `A` or `B`. |
 | `attack` | Total attack produced by the lock. |
-| `attack_breakdown` | Components such as line clear, combo, back-to-back, and perfect clear. |
 | `incoming_garbage_before` | Pending garbage before cancellation. |
 | `garbage_cancelled` | Incoming garbage cancelled by this attack. |
 | `garbage_sent` | Garbage queued for the opponent. |
@@ -87,27 +86,10 @@ into a board. Normal 1v1 top-out is represented by `game_ended` with
 
 ---
 
-## Generic Battle Defaults
+## Battle Defaults
 
-The built-in battle rules are Minorail generic defaults. They are structurally
-useful for local experiments and are not documented as TETR.IO or PPT behavior.
-
-Generic attack:
-
-| Clear | Attack |
-| --- | --- |
-| Single | 0 |
-| Double | 1 |
-| Triple | 2 |
-| Quad | 4 |
-| T-spin single | 2 |
-| T-spin double | 4 |
-| T-spin triple | 6 |
-| Perfect clear bonus | 10 |
-
-The generic calculator also adds an explicit combo bonus of `1` per combo step
-after the first combo value and a static back-to-back bonus of `1` when
-`back_to_back_after >= 2`.
+The default attack calculator is `tetrio_s2`. Other built-in attack calculators
+are `tetrio_s1`, `classic_guideline`, and `modern_guideline`.
 
 Generic garbage uses full cancellation/blocking, applies pending garbage on
 non-line-clearing locks, caps garbage rise at 8 lines per lock, and generates

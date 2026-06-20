@@ -89,7 +89,6 @@ class EvaluationCollector:
                 "stack_height": event.stack_height,
                 "occupied_cells": event.occupied_cells,
                 "attack": event.attack,
-                "attack_breakdown": dict(event.attack_breakdown),
                 "incoming_garbage_before": event.incoming_garbage_before,
                 "garbage_cancelled": event.garbage_cancelled,
                 "garbage_sent": event.garbage_sent,
