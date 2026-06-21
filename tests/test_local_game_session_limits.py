@@ -77,6 +77,7 @@ class LocalGameSessionLimitsTests(unittest.TestCase):
 
         self.assertEqual(stats["status"], "piece_limit")
         self.assertEqual(stats["pieces"], 2)
+        self.assertEqual([r.incoming_garbage for r in service.requests], [[], []])
         self.assertEqual(service.stopped_games, ["terminal"])
         self.assertFalse(service.closed)
 

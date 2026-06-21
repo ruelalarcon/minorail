@@ -5,12 +5,12 @@ rot180 = true              # allow 180-degree rotations (only effective if kicks
 sonic_drop = "only"        # "only" = sonic drop only, "allow" = sonic drop and soft drop
 spin_detection = "t-spins" # "none", "t-spins", "t-spins+", "all", "all+", "all-mini", "all-mini+", "mini-only"
 back_to_back_sources = [
-    "quad",           # four-line clears
-    "t-spin",         # full T-spin clears
-    "t-spin-mini",    # mini T-spin clears
-    # "allspin",      # full non-T spin clears
-    # "allspin-mini", # mini non-T spin clears
-    # "perfect-clear",     # board fully empty
+    "quad",             # four-line clears
+    "t-spin",           # full T-spin clears
+    "t-spin-mini",      # mini T-spin clears
+    # "allspin",        # full non-T spin clears
+    # "allspin-mini",   # mini non-T spin clears
+    # "perfect-clear",  # board fully empty
 ]
 spawn_x = 4   # active piece spawn x coordinate
 spawn_y = 20  # active piece spawn y coordinate

@@ -63,6 +63,7 @@ Optional fields:
 | `can_hold` | true | Whether hold is currently legal. |
 | `last_move` | null | SBP placement or null. |
 | `rules` | server settings | Partial per request rule override. |
+| `incoming_garbage` | null | Null, omitted, or pending garbage chunks as positive integers. |
 | `extensions` | null | Object forwarded to the bot. |
 | `pathfinding` | server settings; true when omitted | Whether Minorail should pathfind the selected placement. |
 | `convert_sonic_drops` | server settings | Whether returned paths rewrite intermediate sonic drops. Only matters when pathfinding is enabled. |
@@ -214,10 +215,25 @@ Example:
 ```json
 {
   "extensions": {
-    "minorail.garbage.v1": {
-      "incoming_garbage": 4
+    "minorail.example.v1": {
+      "value": true
     }
   }
+}
+```
+
+---
+
+## Incoming Garbage
+
+`incoming_garbage` may be omitted, `null`, or an array of positive integers.
+Omitted or `null` means incoming garbage is unknown or not provided. An empty
+array means it is known and currently empty. Non-empty arrays are ordered from
+earliest-resolving garbage chunk to latest-resolving chunk.
+
+```json
+{
+  "incoming_garbage": [4, 2]
 }
 ```
 

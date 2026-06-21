@@ -65,6 +65,8 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
                     "offset": message.piece_stream.offset,
                     "pieces": [p.value for p in message.piece_stream.pieces],
                 }
+            if message.incoming_garbage is not None:
+                obj["incoming_garbage"] = list(message.incoming_garbage)
             if message.extensions is not None:
                 obj["extensions"] = message.extensions
             return obj
@@ -74,6 +76,8 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
             return {"type": "new_piece", "piece": message.piece.value}
         case MsgSuggest():
             obj = {"type": "suggest"}
+            if message.incoming_garbage is not None:
+                obj["incoming_garbage"] = list(message.incoming_garbage)
             if message.extensions is not None:
                 obj["extensions"] = message.extensions
             return obj

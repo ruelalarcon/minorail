@@ -137,6 +137,9 @@ class Session:
                         rules=self._rules,
                         pathfinding=self._pathfinding,
                         timeout_ms=bot_cfg.suggest_timeout_ms,
+                        incoming_garbage=garbage_rules.queue_chunks(
+                            player.garbage_queue
+                        ),
                     )
                 except BotStartupError as e:
                     print(

@@ -9,6 +9,7 @@ from tetris.model.rules import Rules
 class SuggestionRequest:
     snapshot: ObservedSnapshot
     rules: Rules
+    incoming_garbage: list[int] | None = None
     extensions: dict[str, Any] | None = None
     pathfinding: bool = True
     convert_sonic_drops: bool = False

@@ -61,6 +61,7 @@ class FakeBotSession:
         self.resets: list[BotSnapshot] = []
         self.reset_rules: list[Rules] = []
         self.advanced: list[tuple[Placement, list[Piece]]] = []
+        self.suggested_incoming_garbage: list[list[int] | None] = []
         self.suggested_extensions: list[dict[str, Any] | None] = []
         self.stopped = False
         self.closed = False
@@ -70,8 +71,12 @@ class FakeBotSession:
         self.started_rules.append(rules)
 
     def suggest(
-        self, timeout_ms: int, extensions: dict[str, Any] | None = None
+        self,
+        timeout_ms: int,
+        incoming_garbage: list[int] | None = None,
+        extensions: dict[str, Any] | None = None,
     ) -> list[Placement]:
+        self.suggested_incoming_garbage.append(incoming_garbage)
         self.suggested_extensions.append(extensions)
         if not self.suggestions:
             return []
@@ -166,7 +171,7 @@ class ServiceTests(unittest.TestCase):
     def test_extensions_are_forwarded_to_start_and_suggest(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
         session = SuggestionContinuity(lambda: fake)
-        extensions = {"minorail.garbage.v1": {"incoming_garbage": 4}}
+        extensions = {"minorail.example.v1": {"value": True}}
 
         session.suggest(
             SuggestionRequest(
@@ -179,6 +184,23 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(fake.started[0].extensions, extensions)
         self.assertIsNot(fake.started[0].extensions, extensions)
         self.assertEqual(fake.suggested_extensions, [extensions])
+
+    def test_incoming_garbage_is_forwarded_to_start_and_suggest(self) -> None:
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
+        session = SuggestionContinuity(lambda: fake)
+        incoming_garbage = [4, 2]
+
+        session.suggest(
+            SuggestionRequest(
+                snapshot=snapshot(),
+                rules=Rules(),
+                incoming_garbage=incoming_garbage,
+            )
+        )
+
+        self.assertEqual(fake.started[0].incoming_garbage, incoming_garbage)
+        self.assertIsNot(fake.started[0].incoming_garbage, incoming_garbage)
+        self.assertEqual(fake.suggested_incoming_garbage, [incoming_garbage])
 
     def test_expected_transition_advances_bot_with_new_piece(self) -> None:
         first = placement(Piece.O, 4, 0)

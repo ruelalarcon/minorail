@@ -7,7 +7,7 @@ from tetris.game.state import GameState
 
 
 # GarbageQueue is the rules-owned structured state waiting to rise on a board.
-# incoming_garbage is only the public integer view reported to UI/events/API.
+# incoming_garbage totals/chunks are public integer views reported externally.
 GarbageQueue = Any
 
 
@@ -29,6 +29,8 @@ class GarbageRules(Protocol):
     def empty_queue(self) -> GarbageQueue: ...
 
     def queue_total(self, queue: GarbageQueue) -> int: ...
+
+    def queue_chunks(self, queue: GarbageQueue) -> list[int]: ...
 
     def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange: ...
 

@@ -30,7 +30,10 @@ class BotSessionLike(Protocol):
     def start_from(self, snapshot: BotSnapshot, rules: Rules) -> None: ...
 
     def suggest(
-        self, timeout_ms: int, extensions: dict[str, Any] | None = None
+        self,
+        timeout_ms: int,
+        incoming_garbage: list[int] | None = None,
+        extensions: dict[str, Any] | None = None,
     ) -> list[Placement]: ...
 
     def advance_with(
@@ -107,7 +110,11 @@ class SuggestionContinuity:
         transition = self._sync_to_request(request)
         self._apply_bot_action(transition, request)
 
-        moves = self.bot_session.suggest(request.timeout_ms, request.extensions)
+        moves = self.bot_session.suggest(
+            request.timeout_ms,
+            request.incoming_garbage,
+            request.extensions,
+        )
         chosen = pick_move(moves, request.snapshot)
         if chosen is None:
             self.latest_observed = request.snapshot.copy()
@@ -205,7 +212,7 @@ class SuggestionContinuity:
     def _apply_bot_action(
         self, transition: SessionTransition, request: SuggestionRequest
     ) -> None:
-        bot_snapshot = self._to_bot_snapshot(request.snapshot, request.extensions)
+        bot_snapshot = self._to_bot_snapshot(request)
         if self._bot_needs_start:
             self.bot_session.start_from(bot_snapshot, request.rules)
             self._bot_game_active = True
@@ -238,9 +245,8 @@ class SuggestionContinuity:
         self.previous_suggestion = None
         self.rules = None
 
-    def _to_bot_snapshot(
-        self, snapshot: ObservedSnapshot, extensions: dict[str, Any] | None = None
-    ) -> BotSnapshot:
+    def _to_bot_snapshot(self, request: SuggestionRequest) -> BotSnapshot:
+        snapshot = request.snapshot
         return BotSnapshot(
             board=snapshot.board.copy(),
             active=snapshot.active.piece,
@@ -249,7 +255,14 @@ class SuggestionContinuity:
             combo=self.derived_state.combo,
             back_to_back=self.derived_state.back_to_back,
             piece_stream=self.piece_stream.snapshot(),
-            extensions=None if extensions is None else dict(extensions),
+            incoming_garbage=(
+                None
+                if request.incoming_garbage is None
+                else list(request.incoming_garbage)
+            ),
+            extensions=(
+                None if request.extensions is None else dict(request.extensions)
+            ),
         )
 
     def _validate(self, snapshot: ObservedSnapshot) -> Optional[str]:

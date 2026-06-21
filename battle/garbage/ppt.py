@@ -48,6 +48,9 @@ class PptGarbageRules:
     def queue_total(self, queue: GarbageQueue) -> int:
         return _queue(queue).total
 
+    def queue_chunks(self, queue: GarbageQueue) -> list[int]:
+        return [entry.lines for entry in _queue(queue).entries]
+
     def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange:
         current = _queue(queue)
         cancelled = min(max(0, attack), current.total)

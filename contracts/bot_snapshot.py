@@ -17,4 +17,5 @@ class BotSnapshot:
     combo: int
     back_to_back: int
     piece_stream: Optional[PieceStreamSnapshot] = None
+    incoming_garbage: list[int] | None = None
     extensions: dict[str, Any] | None = None

@@ -6,10 +6,17 @@ from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
 from contracts.suggestion_status import SuggestionStatus
 from settings import RunLimits, Settings
+from tetris.attack.registry import attack_calculator, register_attack_calculator
+from tetris.game.state import AppliedMove
 from tetris.model.location import PieceLocation
 from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
 from tetris.model.spin import Spin
+
+
+class FixedAttackCalculator:
+    def calculate(self, applied: AppliedMove) -> int:
+        return 2
 
 
 class FakeSuggestionService:
@@ -61,8 +68,28 @@ class BattleSessionTests(unittest.TestCase):
         self.assertFalse(service_a.closed)
         self.assertFalse(service_b.closed)
 
+    def test_incoming_garbage_chunks_are_sent_to_battle_bot(self) -> None:
+        _register_fixed_attack_calculator()
+        service_a = FakeSuggestionService()
+        service_b = FakeSuggestionService()
+        session = BattleSession(
+            "fake-a",
+            "fake-b",
+            settings=_settings(attack_calculator="test_fixed_attack"),
+            visualizer=NullVisualizer(),
+            service_a=service_a,
+            service_b=service_b,
+            limits=RunLimits(piece_limit=2),
+            random_seed=0,
+        )
 
-def _settings() -> Settings:
+        session.play_game()
+
+        self.assertEqual(service_a.requests[0].incoming_garbage, [])
+        self.assertEqual(service_b.requests[0].incoming_garbage, [2])
+
+
+def _settings(*, attack_calculator: str = "tetrio_s2") -> Settings:
     return Settings.from_values(
         {
             "protocol": {
@@ -81,7 +108,7 @@ def _settings() -> Settings:
             "service": {"path": {"convert_sonic_drops": False}},
             "bot": {"suggest_timeout_ms": 10_000, "idle_ms": 60_000},
             "game": {
-                "attack": {"calculator": "tetrio_s2"},
+                "attack": {"calculator": attack_calculator},
                 "randomizer": {"seed": 0},
                 "queue": {"initial": 5, "refill_threshold": 5},
                 "limits": {"piece_limit": None, "time_limit_ms": None},
@@ -92,6 +119,13 @@ def _settings() -> Settings:
             },
         }
     )
+
+
+def _register_fixed_attack_calculator() -> None:
+    try:
+        attack_calculator("test_fixed_attack")
+    except ValueError:
+        register_attack_calculator("test_fixed_attack", FixedAttackCalculator)
 
 
 if __name__ == "__main__":

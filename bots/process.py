@@ -75,8 +75,12 @@ class BotProcess:
     def send_new_piece(self, piece: Piece) -> None:
         self._send(to_jsonable(MsgNewPiece(piece)))
 
-    def send_suggest(self, extensions: dict[str, Any] | None = None) -> None:
-        self._send(to_jsonable(MsgSuggest(extensions)))
+    def send_suggest(
+        self,
+        incoming_garbage: list[int] | None = None,
+        extensions: dict[str, Any] | None = None,
+    ) -> None:
+        self._send(to_jsonable(MsgSuggest(incoming_garbage, extensions)))
 
     def send_stop(self) -> None:
         self._send(to_jsonable(MsgStop()))

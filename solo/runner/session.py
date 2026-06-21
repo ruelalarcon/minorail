@@ -149,6 +149,7 @@ class LocalGameSession:
                         SuggestionRequest(
                             snapshot=self.snapshot(),
                             rules=self._rules,
+                            incoming_garbage=[],
                             pathfinding=self._pathfinding.pathfinding,
                             convert_sonic_drops=(self._pathfinding.convert_sonic_drops),
                             session_id=self._suggestion_session_id,

@@ -62,6 +62,24 @@ class TetrioGarbageRulesTests(unittest.TestCase):
         )
         queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
         queue = rules.enqueue_attack(queue, attack=2)
+        self.assertEqual(rules.queue_chunks(queue), [4, 2])
+
+    def test_tetrio_cancels_from_oldest_garbage_chunk(self) -> None:
+        rules = TetrioGarbageRules(seed=123)
+        queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
+        queue = rules.enqueue_attack(queue, attack=2)
+
+        exchange = rules.exchange(attack=5, queue=queue)
+
+        self.assertEqual(rules.queue_chunks(exchange.queue_after), [1])
+
+    def test_tetrio_applies_from_oldest_garbage_chunk(self) -> None:
+        rules = TetrioGarbageRules(seed=123)
+        state = GameState(
+            Board(), spawn_location(Piece.T), [Piece.I, Piece.O], None, 0, 0
+        )
+        queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
+        queue = rules.enqueue_attack(queue, attack=2)
 
         applied = rules.apply_queue(state, queue)
         row_holes = [_hole_at_row(state, y) for y in range(6)]

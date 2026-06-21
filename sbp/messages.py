@@ -108,6 +108,7 @@ class MsgStart:
     combo: int
     back_to_back: int
     piece_stream: Optional["PieceStreamSnapshot"] = None
+    incoming_garbage: list[int] | None = None
     extensions: dict[str, Any] | None = None
 
 
@@ -123,6 +124,7 @@ class MsgNewPiece:
 
 @dataclass
 class MsgSuggest:
+    incoming_garbage: list[int] | None = None
     extensions: dict[str, Any] | None = None
 
 

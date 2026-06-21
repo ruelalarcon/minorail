@@ -55,11 +55,13 @@ class Player:
         rules: Rules,
         pathfinding: PathSettings,
         timeout_ms: int,
+        incoming_garbage: list[int] | None = None,
     ) -> SuggestionResult:
         return self.service.suggest(
             SuggestionRequest(
                 snapshot=self.snapshot(),
                 rules=rules,
+                incoming_garbage=incoming_garbage,
                 pathfinding=pathfinding.pathfinding,
                 convert_sonic_drops=pathfinding.convert_sonic_drops,
                 session_id=self.suggestion_session_id,

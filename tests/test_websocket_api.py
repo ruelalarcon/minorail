@@ -61,7 +61,7 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.snapshot.active.y, 18)
 
     def test_request_accepts_extensions_object(self) -> None:
-        extensions = {"minorail.garbage.v1": {"incoming_garbage": 4}}
+        extensions = {"minorail.example.v1": {"value": True}}
         request = request_from_json(
             {
                 "type": "suggest",
@@ -76,6 +76,21 @@ class WebSocketApiTests(unittest.TestCase):
 
         self.assertEqual(request.extensions, extensions)
         self.assertIsNot(request.extensions, extensions)
+
+    def test_request_accepts_incoming_garbage(self) -> None:
+        request = request_from_json(
+            {
+                "type": "suggest",
+                "seq": 7,
+                "board": {"cols": [0] * 10},
+                "active": "T",
+                "queue": ["I", "O"],
+                "incoming_garbage": [4, 2],
+            },
+            base_rules=Rules(),
+        )
+
+        self.assertEqual(request.incoming_garbage, [4, 2])
 
     def test_request_uses_pathfinding_field(self) -> None:
         request = request_from_json(
@@ -102,7 +117,7 @@ class WebSocketApiTests(unittest.TestCase):
                     "board": {"cols": [0] * 10},
                     "active": "T",
                     "queue": ["I", "O"],
-                    "extensions": ["minorail.garbage.v1"],
+                    "extensions": ["minorail.example.v1"],
                 },
                 base_rules=Rules(),
             )

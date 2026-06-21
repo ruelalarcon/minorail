@@ -71,6 +71,7 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 combo=_counter(obj.get("combo", 0)),
                 back_to_back=_counter(obj.get("back_to_back", 0)),
                 piece_stream=piece_stream,
+                incoming_garbage=_incoming_garbage(obj.get("incoming_garbage")),
                 extensions=_extensions(obj.get("extensions")),
             )
         case "play":
@@ -78,7 +79,10 @@ def parse(line: str) -> Optional[FrontendMessage]:
         case "new_piece":
             return MsgNewPiece(piece=Piece(obj["piece"]))
         case "suggest":
-            return MsgSuggest(extensions=_extensions(obj.get("extensions")))
+            return MsgSuggest(
+                incoming_garbage=_incoming_garbage(obj.get("incoming_garbage")),
+                extensions=_extensions(obj.get("extensions")),
+            )
         case "stop":
             return MsgStop()
         case "quit":
@@ -91,3 +95,16 @@ def _extensions(value: object) -> Optional[dict[str, object]]:
     if isinstance(value, dict):
         return dict(value)
     return None
+
+
+def _incoming_garbage(value: object) -> list[int] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        return None
+    chunks: list[int] = []
+    for item in value:
+        if isinstance(item, bool) or not isinstance(item, int) or item <= 0:
+            return None
+        chunks.append(item)
+    return chunks

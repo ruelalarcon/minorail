@@ -161,6 +161,7 @@ def request_from_json(
     return SuggestionRequest(
         snapshot=snapshot,
         rules=rules,
+        incoming_garbage=_incoming_garbage(obj.get("incoming_garbage")),
         extensions=_extensions(obj.get("extensions")),
         pathfinding=_bool(
             obj.get("pathfinding", default_pathfinding),
@@ -368,6 +369,24 @@ def _extensions(value: object) -> dict[str, Any] | None:
     if not isinstance(value, dict):
         raise WebSocketApiError("invalid_request", "extensions must be an object")
     return dict(value)
+
+
+def _incoming_garbage(value: object) -> list[int] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        raise WebSocketApiError(
+            "invalid_request", "incoming_garbage must be null or a list"
+        )
+    chunks: list[int] = []
+    for i, item in enumerate(value):
+        if isinstance(item, bool) or not isinstance(item, int) or item <= 0:
+            raise WebSocketApiError(
+                "invalid_request",
+                f"incoming_garbage[{i}] must be a positive integer",
+            )
+        chunks.append(item)
+    return chunks
 
 
 def _int(value: object, field: str) -> int:

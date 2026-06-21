@@ -69,32 +69,62 @@ class SbpParserTests(unittest.TestCase):
                     "hold": None,
                     "combo": 0,
                     "back_to_back": 0,
-                    "extensions": {"minorail.garbage.v1": {"incoming_garbage": 4}},
+                    "extensions": {"minorail.example.v1": {"value": True}},
                 }
             )
         )
 
         self.assertIsInstance(msg, MsgStart)
         assert isinstance(msg, MsgStart)
-        self.assertEqual(
-            msg.extensions, {"minorail.garbage.v1": {"incoming_garbage": 4}}
+        self.assertEqual(msg.extensions, {"minorail.example.v1": {"value": True}})
+
+    def test_start_accepts_incoming_garbage(self) -> None:
+        msg = parse(
+            json.dumps(
+                {
+                    "type": "start",
+                    "board": empty_board(),
+                    "active": "T",
+                    "queue": ["I", "O"],
+                    "hold": None,
+                    "combo": 0,
+                    "back_to_back": 0,
+                    "incoming_garbage": [4, 2],
+                }
+            )
         )
+
+        self.assertIsInstance(msg, MsgStart)
+        assert isinstance(msg, MsgStart)
+        self.assertEqual(msg.incoming_garbage, [4, 2])
 
     def test_suggest_preserves_extensions_object(self) -> None:
         msg = parse(
             json.dumps(
                 {
                     "type": "suggest",
-                    "extensions": {"minorail.garbage.v1": {"incoming_garbage": 4}},
+                    "extensions": {"minorail.example.v1": {"value": True}},
                 }
             )
         )
 
         self.assertIsInstance(msg, MsgSuggest)
         assert isinstance(msg, MsgSuggest)
-        self.assertEqual(
-            msg.extensions, {"minorail.garbage.v1": {"incoming_garbage": 4}}
+        self.assertEqual(msg.extensions, {"minorail.example.v1": {"value": True}})
+
+    def test_suggest_accepts_incoming_garbage(self) -> None:
+        msg = parse(
+            json.dumps(
+                {
+                    "type": "suggest",
+                    "incoming_garbage": [4, 2],
+                }
+            )
         )
+
+        self.assertIsInstance(msg, MsgSuggest)
+        assert isinstance(msg, MsgSuggest)
+        self.assertEqual(msg.incoming_garbage, [4, 2])
 
     def test_process_writes_extensions_on_start_and_suggest(self) -> None:
         sent: list[dict[str, Any]] = []
@@ -105,7 +135,8 @@ class SbpParserTests(unittest.TestCase):
         process = BotProcess.__new__(BotProcess)
         process._send = capture
 
-        extensions = {"minorail.garbage.v1": {"incoming_garbage": 4}}
+        incoming_garbage = [4, 2]
+        extensions = {"minorail.example.v1": {"value": True}}
         process.send_start(
             MsgStart(
                 board=Board(),
@@ -114,13 +145,22 @@ class SbpParserTests(unittest.TestCase):
                 hold=None,
                 combo=0,
                 back_to_back=0,
+                incoming_garbage=incoming_garbage,
                 extensions=extensions,
             )
         )
-        process.send_suggest(extensions)
+        process.send_suggest(incoming_garbage, extensions)
 
+        self.assertEqual(sent[0]["incoming_garbage"], incoming_garbage)
         self.assertEqual(sent[0]["extensions"], extensions)
-        self.assertEqual(sent[1], {"type": "suggest", "extensions": extensions})
+        self.assertEqual(
+            sent[1],
+            {
+                "type": "suggest",
+                "incoming_garbage": incoming_garbage,
+                "extensions": extensions,
+            },
+        )
 
     def test_bot_session_reset_reuses_process_with_stop_start(self) -> None:
         class FakeProcess:
