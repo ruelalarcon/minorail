@@ -258,6 +258,10 @@ CSS = """
   margin: 16px auto;
   gap: 12px;
 }
+.minorail-solo-shell {
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+}
 .minorail-topbar {
   align-items: baseline;
   justify-content: space-between;
@@ -500,6 +504,9 @@ CSS = """
 .minorail-large-stats {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+.minorail-single-stat {
+  grid-template-columns: minmax(0, 1fr);
+}
 .minorail-stats div {
   min-width: 0;
   background: #0d1015;
@@ -530,6 +537,9 @@ CSS = """
   .minorail-shell {
     width: min(100vw - 20px, 440px);
     margin: 10px auto;
+  }
+  .minorail-solo-shell {
+    width: min(100vw - 20px, 440px);
   }
   .minorail-topbar {
     align-items: flex-start;

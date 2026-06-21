@@ -323,7 +323,7 @@ class WebVisualizer:
             ui.add_css(CSS)
             ui.add_body_html(BOARD_SCRIPT)
             ui.query("body").classes("minorail-body")
-            with ui.column().classes("minorail-shell"):
+            with ui.column().classes("minorail-shell minorail-solo-shell"):
                 with ui.row().classes("minorail-topbar"):
                     ui.label("minorail").classes("minorail-title")
                     ui.label("solo web visualizer").classes("minorail-subtitle")
@@ -455,7 +455,7 @@ def _side_html(frame: _RenderFrame) -> str:
       </dl>
     </section>
     <section class="minorail-panel">
-      <dl class="minorail-stats minorail-large-stats">
+      <dl class="minorail-stats minorail-single-stat">
         <div><dt>Total Attack</dt><dd>{frame.total_attack}</dd></div>
       </dl>
     </section>
