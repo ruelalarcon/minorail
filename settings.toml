@@ -1,9 +1,9 @@
 [protocol.rules]
 randomizer = "seven_bag"   # "seven_bag" or "pure_random"
-kickset = "srs"            # kick table: "srs", "srs_plus"
+kickset = "srs"            # "srs", "srs_plus"
 rot180 = true              # allow 180-degree rotations (only effective if kickset supports it)
 sonic_drop = "only"        # "only" = sonic drop only, "allow" = sonic drop and soft drop
-spin_detection = "t-spins" # spin detection mode; default detects T-spins only
+spin_detection = "t-spins" # "none", "t-spins", "t-spins+", "all", "all+", "all-mini", "all-mini+", "mini-only"
 back_to_back_sources = [
     "quad",           # four-line clears
     "t-spin",         # full T-spin clears
@@ -41,12 +41,7 @@ refill_threshold = 5  # when queue length drops below this, add pieces until it 
 # seed = 0  # integer base seed for reproducible local piece streams
 
 [game.attack]
-# modern_guideline = fixed modern guideline combo table
-# classic_guideline = fixed classic guideline combo table
-# tetrio_s2 = TETR.IO season 2-style attack
-# tetrio_s1 = TETR.IO season 1-style attack
-# ppt = Puyo Puyo Tetris-style attack gauge
-calculator = "modern_guideline"
+calculator = "modern_guideline" # "modern_guideline", "classic_guideline", "tetrio_s2", "tetrio_s1", "ppt"
 
 [game.limits]
 # piece_limit = 1000      # stop after this many accepted piece locks
@@ -63,16 +58,5 @@ queue_size = 5             # number of next pieces shown in the queue panel
 host = "127.0.0.1"  # host for python minorail.py solo play --web
 # port = 8080       # omit for an automatically selected open port
 
-[battle.attack]
-# modern_guideline = fixed modern guideline combo table
-# classic_guideline = fixed classic guideline combo table
-# tetrio_s2 = TETR.IO season 2-style attack
-# tetrio_s1 = TETR.IO season 1-style attack
-# ppt = Puyo Puyo Tetris-style attack gauge
-calculator = "modern_guideline"
-
 [battle.garbage]
-# modern = Tetris Effect: Connected Zone Battle-inspired phased holes
-# ppt = Puyo Puyo Tetris-style messy holes
-# tetrio = Tetra League-style clean holes by attack entry
-rules = "modern"
+rules = "modern" # "modern", "ppt", "tetrio"
