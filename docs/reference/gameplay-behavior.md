@@ -155,8 +155,7 @@ then updates combo and back to back state.
 | Normal line clear | Incremented. | Reset to 0. |
 | Four line clear | Incremented. | Incremented. |
 | T-spin or T-spin mini clear | Incremented. | Incremented. |
-| Spin clear with `allspin_b2b` | Incremented. | Incremented. |
-| All clear with `allclear_b2b` | Incremented. | Incremented. |
+| Clear with a source in `back_to_back_sources` | Incremented. | Incremented. |
 
 ---
 
@@ -170,11 +169,13 @@ Placements carry a spin value:
 | `mini` | Mini spin. |
 | `full` | Full spin. |
 
-Minorail uses T-spin and T-spin mini clears for back to back handling by
-default. When `allspin_b2b = true`, spin clears from other pieces also
-contribute.
+Minorail uses `spin_detection` to classify lock spins and `back_to_back_sources` to
+decide which clear classes maintain back to back. By default, quads, T-spins,
+and T-spin minis maintain back to back. Non-T spins and perfect-clears can be added
+with `allspin`, `allspin-mini`, and `perfect-clear` source atoms.
 
-?> For pieces other than T, Minorail detects spins using immobility.
+`allspin` and `allspin-mini` exclude T pieces. T-piece spins use `t-spin` and
+`t-spin-mini`.
 
 ---
 

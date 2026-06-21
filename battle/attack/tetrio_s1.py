@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 
 from battle.attack.common import (
-    normalized_b2b,
+    normalized_back_to_back,
     normalized_combo,
     t_spin_only_line_clear_attack,
 )
@@ -15,12 +15,12 @@ class TetrioS1AttackCalculator:
 
     def calculate(self, applied: AppliedMove) -> int:
         # Minorail counters are one-based from the first clear. TETR.IO combo
-        # and B2B attack formulas use displayed/derived counts, so subtract one.
+        # and back-to-back attack formulas use displayed/derived counts, so subtract one.
         combo = normalized_combo(applied)
-        b2b = normalized_b2b(applied)
+        back_to_back = normalized_back_to_back(applied)
 
         line_clear = t_spin_only_line_clear_attack(applied)
-        back_to_back = _b2b_chaining_bonus(b2b)
+        back_to_back = _back_to_back_chaining_bonus(back_to_back)
         subtotal = line_clear + back_to_back
         multiplied = _multiplier_combo_attack(subtotal, combo)
         line_attack = _attack_round(multiplied)
@@ -41,11 +41,11 @@ def _multiplier_combo_attack(attack: float, combo: int) -> float:
     return attack
 
 
-def _b2b_chaining_bonus(b2b: int) -> float:
-    if b2b <= 0:
+def _back_to_back_chaining_bonus(back_to_back: int) -> float:
+    if back_to_back <= 0:
         return 0
-    raw = 1 + math.log1p(b2b * 0.8)
+    raw = 1 + math.log1p(back_to_back * 0.8)
     bonus = math.floor(raw)
-    if b2b != 1:
+    if back_to_back != 1:
         bonus += (raw % 1) / 3
     return bonus

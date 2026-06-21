@@ -44,8 +44,8 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 kickset=obj.get("kickset"),
                 rot180=obj.get("rot180"),
                 sonic_drop=obj.get("sonic_drop"),
-                allspin_b2b=obj.get("allspin_b2b"),
-                allclear_b2b=obj.get("allclear_b2b"),
+                spin_detection=obj.get("spin_detection"),
+                back_to_back_sources=obj.get("back_to_back_sources"),
                 spawn_x=obj.get("spawn_x"),
                 spawn_y=obj.get("spawn_y"),
             )

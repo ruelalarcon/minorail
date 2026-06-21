@@ -315,8 +315,8 @@ def _rules(value: object, base_rules: Rules) -> Rules:
         "kickset",
         "rot180",
         "sonic_drop",
-        "allspin_b2b",
-        "allclear_b2b",
+        "spin_detection",
+        "back_to_back_sources",
         "spawn_x",
         "spawn_y",
     }
@@ -334,13 +334,32 @@ def _rules(value: object, base_rules: Rules) -> Rules:
                     "invalid_request", f"rules.{field} must be a string"
                 )
             updates[field] = value[field]
-    for field in ("rot180", "allspin_b2b", "allclear_b2b"):
+    if "spin_detection" in value:
+        if not isinstance(value["spin_detection"], str):
+            raise WebSocketApiError(
+                "invalid_request", "rules.spin_detection must be a string"
+            )
+        updates["spin_detection"] = value["spin_detection"]
+    if "back_to_back_sources" in value:
+        sources = value["back_to_back_sources"]
+        if not isinstance(sources, list) or not all(
+            isinstance(item, str) for item in sources
+        ):
+            raise WebSocketApiError(
+                "invalid_request",
+                "rules.back_to_back_sources must be a list of strings",
+            )
+        updates["back_to_back_sources"] = sources
+    for field in ("rot180",):
         if field in value:
             updates[field] = _bool(value[field], f"rules.{field}")
     for field in ("spawn_x", "spawn_y"):
         if field in value:
             updates[field] = _int(value[field], f"rules.{field}")
-    return replace(base_rules, **updates)
+    try:
+        return replace(base_rules, **updates)
+    except ValueError as e:
+        raise WebSocketApiError("invalid_request", str(e)) from e
 
 
 def _extensions(value: object) -> dict[str, Any] | None:

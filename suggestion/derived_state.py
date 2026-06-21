@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from tetris.model.spin import Spin
 from tetris.model.rules import Rules
 from tetris.game.state import GameState
+from tetris.game.back_to_back import is_back_to_back_clear
 from contracts.observed_snapshot import ObservedSnapshot
 
 
@@ -61,6 +61,12 @@ class DerivedState:
             return
 
         # Without a reliable previous board, only conservative metadata is safe.
-        if snapshot.last_move.spin != Spin.none and rules.allspin_b2b:
+        if is_back_to_back_clear(
+            snapshot.last_move.location.piece,
+            snapshot.last_move.spin,
+            1,
+            False,
+            rules,
+        ):
             self.back_to_back = 0
         self.combo = 0

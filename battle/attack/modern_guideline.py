@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from battle.attack.common import (
     fixed_combo_bonus,
-    normalized_b2b,
+    normalized_back_to_back,
     normalized_combo,
     t_spin_only_line_clear_attack,
 )
@@ -16,13 +16,15 @@ class ModernGuidelineAttackCalculator:
 
     def calculate(self, applied: AppliedMove) -> int:
         # Minorail counters are one-based from the first clear. Guideline-style
-        # combo and B2B formulas use displayed/derived counts, so subtract one.
+        # combo and back-to-back formulas use displayed/derived counts, so subtract one.
         combo = normalized_combo(applied)
-        b2b = normalized_b2b(applied)
+        back_to_back = normalized_back_to_back(applied)
 
         line_clear = t_spin_only_line_clear_attack(applied)
         back_to_back = (
-            self.BACK_TO_BACK_BONUS if applied.lines_cleared > 0 and b2b > 0 else 0
+            self.BACK_TO_BACK_BONUS
+            if applied.lines_cleared > 0 and back_to_back > 0
+            else 0
         )
         combo_bonus = fixed_combo_bonus(self.COMBO_TABLE, combo)
         perfect_clear = self.PERFECT_CLEAR_BONUS if applied.perfect_clear else 0

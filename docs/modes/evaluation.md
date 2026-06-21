@@ -39,7 +39,7 @@ Solo output uses schema `minorail.eval.solo.v1`:
 
 Per-game summaries include generic run rollups: status, pieces, elapsed time,
 pps, lines cleared, line-clear placements, combo steps, max combo,
-back-to-back steps, max back-to-back, perfect clears, and holds.
+back-to-back steps, max back-to-back, perfect-clears, and holds.
 
 Each solo `piece_locked` event records placement, hold use, line clear facts,
 combo and back-to-back before/after values, stack height, and occupied cells.

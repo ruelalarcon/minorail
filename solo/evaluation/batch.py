@@ -102,8 +102,10 @@ def _rules(settings: Settings) -> dict[str, Any]:
         "kickset": rules.kickset,
         "rot180": rules.rot180,
         "sonic_drop": rules.sonic_drop,
-        "allspin_b2b": rules.allspin_b2b,
-        "allclear_b2b": rules.allclear_b2b,
+        "spin_detection": rules.spin_detection.value,
+        "back_to_back_sources": sorted(
+            source.value for source in rules.back_to_back_sources
+        ),
         "spawn_x": rules.spawn_x,
         "spawn_y": rules.spawn_y,
     }

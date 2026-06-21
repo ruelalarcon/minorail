@@ -32,11 +32,11 @@ def normalized_combo(applied: AppliedMove) -> int:
     return max(0, applied.combo_after - 1)
 
 
-def normalized_b2b(applied: AppliedMove) -> int:
+def normalized_back_to_back(applied: AppliedMove) -> int:
     return max(0, applied.back_to_back_after - 1)
 
 
-def normalized_b2b_before(applied: AppliedMove) -> int:
+def normalized_back_to_back_before(applied: AppliedMove) -> int:
     return max(0, applied.back_to_back_before - 1)
 
 

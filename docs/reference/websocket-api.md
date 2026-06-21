@@ -163,8 +163,8 @@ A request can include partial rule overrides:
 | `kickset` | string |
 | `rot180` | boolean |
 | `sonic_drop` | string |
-| `allspin_b2b` | boolean |
-| `allclear_b2b` | boolean |
+| `spin_detection` | string |
+| `back_to_back_sources` | array of strings |
 | `spawn_x` | integer |
 | `spawn_y` | integer |
 

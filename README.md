@@ -33,7 +33,7 @@ to Minorail's websocket API.
 | Resync handling | Treats incoming snapshots as authoritative and resets or advances the bot session as needed. |
 | Piece stream tracking | Keeps generated piece chronology aligned for bots that support SBP `piece_stream`. |
 | Path output | Finds input paths to selected placements and can convert sonic drops to soft drops. |
-| Rule settings | Supports randomizer, kickset, 180s, sonic drop mode, all spin back to back, all clear back to back, and spawn position settings. |
+| Rule settings | Supports randomizer, kickset, 180s, sonic drop mode, all spin back to back, perfect-clear back to back, and spawn position settings. |
 
 ## Documentation
 

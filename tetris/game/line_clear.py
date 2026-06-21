@@ -6,6 +6,7 @@ from tetris.model.board import Board
 from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 from tetris.model.spin import Spin
+from tetris.game.back_to_back import is_back_to_back_clear
 
 
 @dataclass(frozen=True)
@@ -37,15 +38,18 @@ class LineClear:
             )
 
         board.remove_lines(cleared)
-        all_clear = board.is_empty()
-        hard = (
-            cleared.bit_count() == 4
-            or (spin != Spin.none and (piece == Piece.T or rules.allspin_b2b))
-            or (rules.allclear_b2b and all_clear)
+        perfect_clear = board.is_empty()
+        lines_cleared = cleared.bit_count()
+        hard = is_back_to_back_clear(
+            piece,
+            spin,
+            lines_cleared,
+            perfect_clear,
+            rules,
         )
         return LineClearResult(
-            lines_cleared=cleared.bit_count(),
-            perfect_clear=all_clear,
+            lines_cleared=lines_cleared,
+            perfect_clear=perfect_clear,
             combo=combo + 1,
             back_to_back=back_to_back + 1 if hard else 0,
         )

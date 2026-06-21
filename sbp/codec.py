@@ -25,8 +25,8 @@ def rules_message(rules: Rules) -> MsgRules:
         kickset=rules.kickset,
         rot180=rules.rot180,
         sonic_drop=rules.sonic_drop,
-        allspin_b2b=rules.allspin_b2b,
-        allclear_b2b=rules.allclear_b2b,
+        spin_detection=rules.spin_detection,
+        back_to_back_sources=rules.back_to_back_sources,
         spawn_x=rules.spawn_x,
         spawn_y=rules.spawn_y,
     )
@@ -42,8 +42,10 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
                     "kickset": message.kickset,
                     "rot180": message.rot180,
                     "sonic_drop": message.sonic_drop,
-                    "allspin_b2b": message.allspin_b2b,
-                    "allclear_b2b": message.allclear_b2b,
+                    "spin_detection": _enum_value(message.spin_detection),
+                    "back_to_back_sources": _back_to_back_sources(
+                        message.back_to_back_sources
+                    ),
                     "spawn_x": message.spawn_x,
                     "spawn_y": message.spawn_y,
                 }
@@ -92,3 +94,13 @@ def board_to_sbp(board: Board) -> list[list[str | None]]:
 
 def _without_none(obj: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in obj.items() if value is not None}
+
+
+def _enum_value(value: Any) -> Any:
+    return value.value if hasattr(value, "value") else value
+
+
+def _back_to_back_sources(value: Any) -> Any:
+    if value is None:
+        return None
+    return sorted(_enum_value(item) for item in value)

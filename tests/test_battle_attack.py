@@ -53,21 +53,25 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
 
         self.assertEqual(attack, 5)
 
-    def test_minorail_back_to_back_after_1_has_no_repeated_b2b_bonus(self) -> None:
+    def test_minorail_back_to_back_after_1_has_no_repeated_back_to_back_bonus(
+        self,
+    ) -> None:
         attack = TetrioS2AttackCalculator().calculate(
             _applied(Piece.I, lines=4, back_to_back_after=1)
         )
 
         self.assertEqual(attack, 4)
 
-    def test_minorail_back_to_back_after_2_has_repeated_b2b_bonus(self) -> None:
+    def test_minorail_back_to_back_after_2_has_repeated_back_to_back_bonus(
+        self,
+    ) -> None:
         attack = TetrioS2AttackCalculator().calculate(
             _applied(Piece.I, lines=4, back_to_back_after=2)
         )
 
         self.assertEqual(attack, 5)
 
-    def test_high_combo_b2b_tetris_uses_normalized_counters(self) -> None:
+    def test_high_combo_back_to_back_tetris_uses_normalized_counters(self) -> None:
         attack = TetrioS2AttackCalculator().calculate(
             _applied(Piece.I, lines=4, combo_after=16, back_to_back_after=2)
         )
@@ -87,7 +91,9 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
 
         self.assertEqual(attack, 11)
 
-    def test_b2b_surge_uses_normalized_b2b_before_counter(self) -> None:
+    def test_back_to_back_surge_uses_normalized_back_to_back_before_counter(
+        self,
+    ) -> None:
         attack = TetrioS2AttackCalculator().calculate(
             _applied(
                 Piece.I,
@@ -122,7 +128,7 @@ class TetrioS1AttackCalculatorTests(unittest.TestCase):
 
         self.assertEqual(attack, 15)
 
-    def test_b2b_chaining_uses_normalized_b2b(self) -> None:
+    def test_back_to_back_chaining_uses_normalized_back_to_back(self) -> None:
         attack = TetrioS1AttackCalculator().calculate(
             _applied(Piece.I, lines=4, back_to_back_after=4)
         )
@@ -168,7 +174,7 @@ class PptAttackCalculatorTests(unittest.TestCase):
 
         self.assertEqual(attack, 10)
 
-    def test_b2b_t_spin_double_adds_one(self) -> None:
+    def test_back_to_back_t_spin_double_adds_one(self) -> None:
         attack = PptAttackCalculator().calculate(
             _applied(Piece.T, lines=2, spin=Spin.full, back_to_back_after=2)
         )

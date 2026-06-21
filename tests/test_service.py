@@ -6,12 +6,14 @@ from contextlib import redirect_stderr
 from typing import Any
 from unittest.mock import patch
 
+from tetris.model.back_to_back_source import BackToBackSource
 from tetris.model.board import Board
 from tetris.model.location import PieceLocation
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
 from tetris.model.spin import Spin
+from tetris.model.spin_detection import SpinDetection
 from tetris.model.rules import Rules
 from tetris.game.state import GameState, spawn_location
 from tetris.movegen.pathfinder import MoveStep
@@ -503,6 +505,44 @@ class ServiceTests(unittest.TestCase):
         error = capabilities.validate_rules(Rules(rot180=True))
 
         self.assertEqual(error, "bot does not support rot180")
+
+    def test_capabilities_reject_unsupported_spin_detection(self) -> None:
+        capabilities = BotCapabilities.from_sbp(
+            {
+                "rot180": True,
+                "spin_detection": ["none", "t-spins"],
+            }
+        )
+
+        error = capabilities.validate_rules(
+            Rules(spin_detection=SpinDetection.all_mini_plus)
+        )
+
+        self.assertEqual(
+            error,
+            "bot does not support spin_detection 'all-mini+'; supported: none, t-spins",
+        )
+
+    def test_capabilities_reject_unsupported_back_to_back_sources(self) -> None:
+        capabilities = BotCapabilities.from_sbp(
+            {
+                "rot180": True,
+                "back_to_back_sources": ["quad", "t-spin"],
+            }
+        )
+
+        error = capabilities.validate_rules(
+            Rules(
+                back_to_back_sources=frozenset(
+                    {BackToBackSource.quad, BackToBackSource.t_spin_mini}
+                )
+            )
+        )
+
+        self.assertEqual(
+            error,
+            "bot does not support back_to_back_sources 't-spin-mini'; supported: quad, t-spin",
+        )
 
 
 if __name__ == "__main__":

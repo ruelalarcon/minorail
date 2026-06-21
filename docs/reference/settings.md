@@ -18,8 +18,8 @@ randomizer = "seven_bag"
 kickset = "srs"
 rot180 = true
 sonic_drop = "only"
-allspin_b2b = false
-allclear_b2b = false
+spin_detection = "t-spins"
+back_to_back_sources = ["quad", "t-spin", "t-spin-mini"]
 spawn_x = 4
 spawn_y = 19
 ```
@@ -33,17 +33,18 @@ message.
 | `kickset` | `srs`, `srs_plus` | Controls local rotation and pathfinding behavior. |
 | `rot180` | `true`, `false` | Enables 180 degree rotations when the kickset has the transition data. |
 | `sonic_drop` | `only`, `allow` | Controls whether pathfinding can use soft drops, sonic drops, or both. |
-| `allspin_b2b` | `true`, `false` | Lets non `none` spin clears continue back to back. Default: `false`. |
-| `allclear_b2b` | `true`, `false` | Lets all clears continue back to back. Default: `false`. |
+| `spin_detection` | `none`, `t-spins`, `t-spins+`, `all`, `all+`, `all-mini`, `all-mini+`, `mini-only` | Controls local spin classification behavior. |
+| `back_to_back_sources` | list of source atoms | Controls which clear classes maintain back to back. Default: `quad`, `t-spin`, `t-spin-mini`. |
 | `spawn_x` | integer | Active piece spawn x coordinate. |
 | `spawn_y` | integer | Active piece spawn y coordinate. |
 
 !> Startup fails if the bot reports capabilities that do not support configured
-rules such as the randomizer, kickset, `rot180`, sonic drop mode, or custom
-spawn position.
+rules such as the randomizer, kickset, `rot180`, sonic drop mode,
+`spin_detection`, `back_to_back_sources`, or custom spawn position.
 
-?> Minorail handles spins for pieces other than T through immobility based spin
-detection.
+`back_to_back_sources` atoms are `quad`, `t-spin`, `t-spin-mini`, `allspin`,
+`allspin-mini`, and `perfect-clear`. `allspin` and `allspin-mini` apply only to
+non-T pieces; T-piece spins use `t-spin` and `t-spin-mini`.
 
 Default spawn:
 
@@ -208,11 +209,11 @@ rules = "modern"
 
 The default attack calculator is `tetrio_s2`, which follows current
 TETR.IO-style Tetra League attack behavior for line clears, T-spins, combo
-multiplication, repeated back-to-back bonus, B2B surge, and perfect clears.
-`tetrio_s1` provides season 1 style logarithmic B2B chaining. The guideline
+multiplication, repeated back-to-back bonus, back-to-back surge, and perfect-clears.
+`tetrio_s1` provides season 1 style logarithmic back-to-back chaining. The guideline
 calculators use fixed additive combo tables instead of combo multiplication.
 `ppt` models public Puyo Puyo Tetris community notes for the adjusted attack
-gauge: T-Spin Double, T-Spin Triple, perfect clear, B2B, and combo values. This
+gauge: T-Spin Double, T-Spin Triple, perfect-clear, back-to-back, and combo values. This
 comes from FOUR.lol's Puyo Puyo Tetris notes:
 <https://four.lol/mid-game/puyo-puyo-tetris>.
 

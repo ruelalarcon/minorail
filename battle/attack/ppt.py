@@ -4,7 +4,7 @@ from battle.attack.common import (
     BASE_LINE_CLEAR_ATTACK,
     T_SPIN_MINI_ATTACK,
     fixed_combo_bonus,
-    normalized_b2b,
+    normalized_back_to_back,
     normalized_combo,
 )
 from tetris.game.state import AppliedMove
@@ -16,7 +16,7 @@ class PptAttackCalculator:
     """Puyo Puyo Tetris-style attack based on public community notes.
 
     FOUR.lol documents the adjusted PPT Tetris-vs-Puyo attack gauge: T-Spin
-    Double 3, T-Spin Triple 4, Perfect Clear 6, B2B +1, and a weakened combo
+    Double 3, T-Spin Triple 4, perfect-clear 6, back-to-back +1, and a weakened combo
     table. This is not an official Sega/Tetris Guideline specification.
     """
 
@@ -31,11 +31,13 @@ class PptAttackCalculator:
 
     def calculate(self, applied: AppliedMove) -> int:
         combo = normalized_combo(applied)
-        b2b = normalized_b2b(applied)
+        back_to_back = normalized_back_to_back(applied)
 
         line_clear = self._line_clear_attack(applied)
         back_to_back = (
-            self.BACK_TO_BACK_BONUS if applied.lines_cleared > 0 and b2b > 0 else 0
+            self.BACK_TO_BACK_BONUS
+            if applied.lines_cleared > 0 and back_to_back > 0
+            else 0
         )
         combo_bonus = fixed_combo_bonus(self.COMBO_TABLE, combo)
         perfect_clear = self.PERFECT_CLEAR_BONUS if applied.perfect_clear else 0
