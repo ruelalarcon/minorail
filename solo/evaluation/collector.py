@@ -24,6 +24,9 @@ class EvaluationCollector:
             "max_back_to_back": 0,
             "perfect_clears": 0,
             "holds": 0,
+            "attack": 0,
+            "max_attack": 0,
+            "attack_placements": 0,
         }
 
     def on_game_started(self, event: GameStartedEvent) -> None:
@@ -50,6 +53,10 @@ class EvaluationCollector:
             self._summary["perfect_clears"] += 1
         if event.hold_used:
             self._summary["holds"] += 1
+        self._summary["attack"] += event.attack
+        self._summary["max_attack"] = max(self._summary["max_attack"], event.attack)
+        if event.attack > 0:
+            self._summary["attack_placements"] += 1
 
         self._append_event(
             {
@@ -65,6 +72,7 @@ class EvaluationCollector:
                 "back_to_back_after": applied.back_to_back_after,
                 "stack_height": event.stack_height,
                 "occupied_cells": event.occupied_cells,
+                "attack": event.attack,
             }
         )
 

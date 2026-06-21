@@ -97,7 +97,7 @@ def run_evaluation(
         },
         "rules": _rules(settings),
         "battle": {
-            "attack": settings.battle_attack().calculator,
+            "attack": settings.attack().calculator,
             "garbage": settings.battle_garbage().rules,
         },
         "limits": _limits(limits),
@@ -132,7 +132,8 @@ def _batch_summary(games: list[dict[str, Any]]) -> dict[str, Any]:
         "average_pps": (
             total_pieces / (total_elapsed_ms / 1000) if total_elapsed_ms > 0 else 0.0
         ),
-        "attack_sent": _sum_player_metric(summaries, "attack_sent"),
+        "attack": _sum_player_metric(summaries, "attack"),
+        "garbage_sent": _sum_player_metric(summaries, "garbage_sent"),
         "garbage_cancelled": _sum_player_metric(summaries, "garbage_cancelled"),
         "garbage_applied": _sum_player_metric(summaries, "garbage_applied"),
     }

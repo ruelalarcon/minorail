@@ -1,1 +1,0 @@
-"""Battle attack calculators."""

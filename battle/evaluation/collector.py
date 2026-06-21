@@ -31,7 +31,8 @@ class EvaluationCollector:
             "max_back_to_back": {"A": 0, "B": 0},
             "perfect_clears": {"A": 0, "B": 0},
             "holds": {"A": 0, "B": 0},
-            "attack_sent": {"A": 0, "B": 0},
+            "attack": {"A": 0, "B": 0},
+            "garbage_sent": {"A": 0, "B": 0},
             "garbage_cancelled": {"A": 0, "B": 0},
             "garbage_applied": {"A": 0, "B": 0},
             "max_incoming_garbage": {"A": 0, "B": 0},
@@ -66,7 +67,8 @@ class EvaluationCollector:
             self._summary["perfect_clears"][player] += 1
         if event.hold_used:
             self._summary["holds"][player] += 1
-        self._summary["attack_sent"][player] += event.garbage_sent
+        self._summary["attack"][player] += event.attack
+        self._summary["garbage_sent"][player] += event.garbage_sent
         self._summary["garbage_cancelled"][player] += event.garbage_cancelled
         self._summary["max_incoming_garbage"][player] = max(
             self._summary["max_incoming_garbage"][player],

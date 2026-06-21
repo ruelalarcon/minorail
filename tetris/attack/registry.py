@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from battle.attack.classic_guideline import ClassicGuidelineAttackCalculator
-from battle.attack.modern_guideline import ModernGuidelineAttackCalculator
-from battle.attack.ppt import PptAttackCalculator
-from battle.attack.tetrio_s1 import TetrioS1AttackCalculator
-from battle.attack.tetrio_s2 import TetrioS2AttackCalculator
+from tetris.attack.classic_guideline import ClassicGuidelineAttackCalculator
+from tetris.attack.modern_guideline import ModernGuidelineAttackCalculator
+from tetris.attack.ppt import PptAttackCalculator
+from tetris.attack.tetrio_s1 import TetrioS1AttackCalculator
+from tetris.attack.tetrio_s2 import TetrioS2AttackCalculator
 from tetris.game.state import AppliedMove
 
 
@@ -33,4 +33,4 @@ def attack_calculator(name: str) -> type[AttackCalculator]:
     try:
         return _ATTACK_CALCULATORS[name]
     except KeyError as exc:
-        raise ValueError(f"Unknown battle attack calculator: {name!r}") from exc
+        raise ValueError(f"Unknown attack calculator: {name!r}") from exc

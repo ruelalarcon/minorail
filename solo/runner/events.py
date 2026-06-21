@@ -22,6 +22,7 @@ class PieceLockedEvent:
     applied: AppliedMove
     stack_height: int
     occupied_cells: int
+    attack: int
 
 
 @dataclass(frozen=True)

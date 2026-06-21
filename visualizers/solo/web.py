@@ -36,6 +36,7 @@ class _RenderFrame:
     status: str
     paused: bool
     editable: bool
+    total_attack: int
 
     @property
     def active_x(self) -> Optional[int]:
@@ -70,6 +71,7 @@ class WebVisualizer:
         self._lock = threading.Lock()
         self._frame: Optional[_RenderFrame] = None
         self._status = VisualizerStatus()
+        self._total_attack = 0
         self._client_connected = threading.Event()
         self._server_started = False
         self._pause_requested = False
@@ -89,6 +91,7 @@ class WebVisualizer:
         self._controls = controls
 
     def on_game_started(self, state: GameState) -> None:
+        self._total_attack = 0
         self._first_spawn = True
         self._ensure_server_started()
         self._render(state, status="Waiting for browser")
@@ -173,7 +176,8 @@ class WebVisualizer:
 
         time.sleep(self._lock_delay)
 
-    def on_piece_locked(self, state: GameState) -> None:
+    def on_piece_locked(self, state: GameState, *, total_attack: int) -> None:
+        self._total_attack = total_attack
         self._render(state, status="Locked")
         time.sleep(self._lock_delay * 0.5)
         self._wait_while_paused(state)
@@ -215,6 +219,7 @@ class WebVisualizer:
             status=self._status.text,
             paused=self._paused,
             editable=self._editable,
+            total_attack=self._total_attack,
         )
         with self._lock:
             self._frame = frame
@@ -229,6 +234,7 @@ class WebVisualizer:
                 status=self._status.text,
                 paused=self._paused,
                 editable=self._editable,
+                total_attack=self._frame.total_attack,
             )
 
     def _toggle_pause(self) -> bool:
@@ -446,6 +452,11 @@ def _side_html(frame: _RenderFrame) -> str:
       <dl class="minorail-stats minorail-large-stats">
         <div><dt>Combo</dt><dd>{board.combo}</dd></div>
         <div><dt>Back-to-Back</dt><dd>{board.back_to_back}</dd></div>
+      </dl>
+    </section>
+    <section class="minorail-panel">
+      <dl class="minorail-stats minorail-large-stats">
+        <div><dt>Total Attack</dt><dd>{frame.total_attack}</dd></div>
       </dl>
     </section>
     <section class="minorail-panel minorail-status">

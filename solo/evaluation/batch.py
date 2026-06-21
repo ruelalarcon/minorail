@@ -88,6 +88,7 @@ def run_evaluation(
             "args": bot_args,
         },
         "rules": _rules(settings),
+        "attack": settings.attack().calculator,
         "limits": _limits(limits),
         "summary": _batch_summary(game_results),
         "elapsed_ms": round(elapsed * 1000),
@@ -156,4 +157,7 @@ def _batch_summary(games: list[dict[str, Any]]) -> dict[str, Any]:
         ),
         "perfect_clears": sum(summary["perfect_clears"] for summary in summaries),
         "holds": sum(summary["holds"] for summary in summaries),
+        "attack": sum(summary["attack"] for summary in summaries),
+        "max_attack": max((summary["max_attack"] for summary in summaries), default=0),
+        "attack_placements": sum(summary["attack_placements"] for summary in summaries),
     }

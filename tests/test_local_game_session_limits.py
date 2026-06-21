@@ -2,16 +2,31 @@ import unittest
 from time import sleep
 from typing import Any, cast
 
-from settings import PathSettings, RunLimits, Settings
-from solo.runner.session import LocalGameSession
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
 from contracts.suggestion_status import SuggestionStatus
+from settings import PathSettings, RunLimits, Settings
+from solo.runner.session import LocalGameSession
+from tetris.attack.registry import attack_calculator, register_attack_calculator
+from tetris.game.state import AppliedMove, GameState
 from tetris.model.location import PieceLocation
 from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
 from tetris.model.spin import Spin
 from visualizers.solo.null import NullVisualizer
+
+
+class FixedAttackCalculator:
+    def calculate(self, applied: AppliedMove) -> int:
+        return 2
+
+
+class CaptureTotalAttackVisualizer(NullVisualizer):
+    def __init__(self) -> None:
+        self.total_attacks: list[int] = []
+
+    def on_piece_locked(self, state: GameState, *, total_attack: int) -> None:
+        self.total_attacks.append(total_attack)
 
 
 class FakeSuggestionService:
@@ -99,6 +114,22 @@ class LocalGameSessionLimitsTests(unittest.TestCase):
         self.assertFalse(service.requests[0].pathfinding)
         self.assertFalse(service.requests[0].convert_sonic_drops)
 
+    def test_visualizer_receives_cumulative_total_attack(self) -> None:
+        _register_fixed_attack_calculator()
+        service = FakeSuggestionService()
+        visualizer = CaptureTotalAttackVisualizer()
+        session = LocalGameSession(
+            "fake-bot",
+            settings=_settings(attack_calculator="test_fixed_attack"),
+            visualizer=visualizer,
+            limits=RunLimits(piece_limit=2),
+            suggestion_service=service,
+        )
+
+        session.play_game()
+
+        self.assertEqual(visualizer.total_attacks, [2, 4])
+
     def test_owned_service_is_closed_after_game(self) -> None:
         service = FakeSuggestionService()
         session = LocalGameSession(
@@ -115,7 +146,7 @@ class LocalGameSessionLimitsTests(unittest.TestCase):
         self.assertTrue(service.closed)
 
 
-def _settings() -> Settings:
+def _settings(*, attack_calculator: str = "tetrio_s2") -> Settings:
     return Settings.from_values(
         {
             "protocol": {
@@ -134,6 +165,7 @@ def _settings() -> Settings:
             "service": {"path": {"convert_sonic_drops": False}},
             "bot": {"suggest_timeout_ms": 10_000, "idle_ms": 60_000},
             "game": {
+                "attack": {"calculator": attack_calculator},
                 "randomizer": {"seed": 0},
                 "queue": {"initial": 5, "refill_threshold": 5},
                 "limits": {"piece_limit": None, "time_limit_ms": None},
@@ -141,6 +173,13 @@ def _settings() -> Settings:
             "logging": {"bot_info": {"print": ["warning"]}},
         }
     )
+
+
+def _register_fixed_attack_calculator() -> None:
+    try:
+        attack_calculator("test_fixed_attack")
+    except ValueError:
+        register_attack_calculator("test_fixed_attack", FixedAttackCalculator)
 
 
 if __name__ == "__main__":

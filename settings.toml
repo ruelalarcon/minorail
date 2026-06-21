@@ -40,6 +40,14 @@ refill_threshold = 5  # when queue length drops below this, add pieces until it 
 [game.randomizer]
 # seed = 0  # integer base seed for reproducible local piece streams
 
+[game.attack]
+# modern_guideline = fixed modern guideline combo table
+# classic_guideline = fixed classic guideline combo table
+# tetrio_s2 = TETR.IO season 2-style attack
+# tetrio_s1 = TETR.IO season 1-style attack
+# ppt = Puyo Puyo Tetris-style attack gauge
+calculator = "modern_guideline"
+
 [game.limits]
 # piece_limit = 1000      # stop after this many accepted piece locks
 # time_limit_ms = 30_000  # stop after this many milliseconds

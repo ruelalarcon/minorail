@@ -29,7 +29,7 @@ class NullVisualizer:
     ) -> None:
         pass
 
-    def on_piece_locked(self, state: GameState) -> None:
+    def on_piece_locked(self, state: GameState, *, total_attack: int) -> None:
         pass
 
     def on_top_out(self, state: GameState) -> None:

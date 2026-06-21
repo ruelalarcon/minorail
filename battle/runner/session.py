@@ -4,7 +4,6 @@ import sys
 import time
 from typing import Any
 
-from battle.attack.registry import AttackCalculator, attack_calculator
 from battle.garbage.base import GarbageRules
 from battle.garbage.registry import garbage_rules as garbage_rules_type
 from battle.runner.events import (
@@ -22,6 +21,7 @@ from solo.runner.metrics import occupied_cells, stack_height
 from solo.runner.session import SuggestionServiceLike
 from suggestion.move_selection import moving_piece_for
 from suggestion.service import SuggestionService
+from tetris.attack.registry import AttackCalculator, attack_calculator
 from tetris.model.rules import Rules
 
 
@@ -92,7 +92,7 @@ class Session:
             ),
         ]
 
-        attack_name = settings.battle_attack().calculator
+        attack_name = settings.attack().calculator
         garbage_name = settings.battle_garbage().rules
         self._attack: AttackCalculator = attack_calculator(attack_name)()
         garbage_type = garbage_rules_type(garbage_name)

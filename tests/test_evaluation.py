@@ -36,6 +36,7 @@ class EvaluationCollectorTests(unittest.TestCase):
                 ),
                 stack_height=17,
                 occupied_cells=86,
+                attack=3,
             )
         )
         collector.on_game_ended(
@@ -59,9 +60,13 @@ class EvaluationCollectorTests(unittest.TestCase):
         self.assertEqual(result["summary"]["combo_steps"], 1)
         self.assertEqual(result["summary"]["back_to_back_steps"], 1)
         self.assertEqual(result["summary"]["holds"], 1)
+        self.assertEqual(result["summary"]["attack"], 3)
+        self.assertEqual(result["summary"]["max_attack"], 3)
+        self.assertEqual(result["summary"]["attack_placements"], 1)
         self.assertEqual(result["events"][0]["type"], "piece_locked")
         self.assertEqual(result["events"][0]["combo_before"], 2)
         self.assertEqual(result["events"][0]["combo_after"], 3)
+        self.assertEqual(result["events"][0]["attack"], 3)
         self.assertEqual(result["events"][1]["type"], "game_ended")
 
 

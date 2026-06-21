@@ -34,14 +34,15 @@ battle.runner.session.Session
   -> Player A LocalGame
   -> Player B LocalGame
   -> SuggestionService sessions
-  -> attack calculator
+  -> tetris.attack calculator
   -> garbage rules
   -> battle visualizer
 ```
 
 Battle reuses solo `LocalGame` for each board, but battle orchestration owns
-player turns, attack calculation, pending garbage, garbage insertion, and
-winner/loser state.
+player turns, attack exchange, pending garbage, garbage insertion, and
+winner/loser state. Raw attack calculation is shared with solo through
+`tetris.attack`.
 
 ## Process Reuse
 
@@ -51,8 +52,8 @@ and sends per-player stop-game semantics at each game boundary.
 
 ## Attack Calculators
 
-The default calculator is `tetrio_s2`. Battle attack calculators convert
-already-produced `AppliedMove` facts into total attack; gameplay state such as
+The default calculator is `tetrio_s2`. Attack calculators convert
+already-produced `AppliedMove` facts into attack; gameplay state such as
 combo, back-to-back continuation, all-spins, and perfect-clears is owned by the
 local game rules before the calculator runs.
 
@@ -112,5 +113,5 @@ the piece limit counts total accepted locks across both players.
 ## Related Pages
 
 * [Evaluation](evaluation.md)
-* [Settings](../reference/settings.md#battle-settings)
+* [Settings](../reference/settings.md#attack-and-battle-settings)
 * [Visualizers](../internals/visualizers.md)

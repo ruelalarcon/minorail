@@ -192,10 +192,10 @@ CLI value wins.
 
 ---
 
-## Battle Settings
+## Attack And Battle Settings
 
 ```toml
-[battle.attack]
+[game.attack]
 calculator = "tetrio_s2"
 
 [battle.garbage]
@@ -204,7 +204,7 @@ rules = "modern"
 
 | Field | Values | Behavior |
 | --- | --- | --- |
-| `battle.attack.calculator` | `tetrio_s2`, `tetrio_s1`, `ppt`, `classic_guideline`, `modern_guideline` | Selects an entry from `battle.attack.registry`. |
+| `game.attack.calculator` | `tetrio_s2`, `tetrio_s1`, `ppt`, `classic_guideline`, `modern_guideline` | Selects an entry from `tetris.attack.registry`. |
 | `battle.garbage.rules` | `modern`, `tetrio`, `ppt` | Selects an entry from `battle.garbage.registry`. |
 
 The default attack calculator is `tetrio_s2`, which follows current

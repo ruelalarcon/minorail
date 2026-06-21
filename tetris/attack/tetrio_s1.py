@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 
-from battle.attack.common import (
+from tetris.attack.common import (
     normalized_back_to_back,
     normalized_combo,
     t_spin_only_line_clear_attack,

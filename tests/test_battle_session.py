@@ -81,13 +81,13 @@ def _settings() -> Settings:
             "service": {"path": {"convert_sonic_drops": False}},
             "bot": {"suggest_timeout_ms": 10_000, "idle_ms": 60_000},
             "game": {
+                "attack": {"calculator": "tetrio_s2"},
                 "randomizer": {"seed": 0},
                 "queue": {"initial": 5, "refill_threshold": 5},
                 "limits": {"piece_limit": None, "time_limit_ms": None},
             },
             "logging": {"bot_info": {"print": ["warning"]}},
             "battle": {
-                "attack": {"calculator": "tetrio_s2"},
                 "garbage": {"rules": "tetrio"},
             },
         }

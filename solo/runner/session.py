@@ -21,6 +21,7 @@ from solo.runner.metrics import occupied_cells, stack_height
 from solo.runner.visualizer import SoloVisualizer
 from suggestion.move_selection import moving_piece_for
 from suggestion.service import SuggestionService
+from tetris.attack.registry import AttackCalculator, attack_calculator
 from tetris.game.state import GameState
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
@@ -73,6 +74,8 @@ class LocalGameSession:
         )
 
         self._rules = Rules.from_values(self._settings.rules_values())
+        attack_name = settings.attack().calculator
+        self._attack: AttackCalculator = attack_calculator(attack_name)()
         rand = make_randomizer(
             self._rules.randomizer,
             seed=self._settings.base_seed(random_seed),
@@ -123,6 +126,7 @@ class LocalGameSession:
         refill_at = self._settings.game_queue().refill_threshold
 
         pieces_placed = 0
+        total_attack = 0
         start_time = time.time()
         interrupted = False
         status = "unknown"
@@ -186,6 +190,8 @@ class LocalGameSession:
                     status = "apply_move_rejected"
                     break
 
+                attack = self._attack.calculate(applied)
+                total_attack += attack
                 self._game.refill_queue(refill_at)
                 self._notify_piece_locked(
                     PieceLockedEvent(
@@ -196,10 +202,14 @@ class LocalGameSession:
                         applied=applied,
                         stack_height=stack_height(self.state),
                         occupied_cells=occupied_cells(self.state),
+                        attack=attack,
                     )
                 )
                 pieces_placed += 1
-                self._visualizer.on_piece_locked(self.state)
+                self._visualizer.on_piece_locked(
+                    self.state,
+                    total_attack=total_attack,
+                )
 
                 if self._game.is_topped_out():
                     self._visualizer.on_top_out(self.state)

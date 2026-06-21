@@ -38,6 +38,9 @@ DEFAULT: dict[str, Any] = {
         },
     },
     "game": {
+        "attack": {
+            "calculator": "tetrio_s2",
+        },
         "randomizer": {
             "seed": None,
         },
@@ -67,9 +70,6 @@ DEFAULT: dict[str, Any] = {
         "queue_size": 5,
     },
     "battle": {
-        "attack": {
-            "calculator": "tetrio_s2",
-        },
         "garbage": {
             "rules": "modern",
         },
@@ -126,7 +126,7 @@ class VisualizerSettings:
 
 
 @dataclass(frozen=True)
-class BattleAttackSettings:
+class AttackSettings:
     calculator: str
 
 
@@ -289,12 +289,12 @@ class Settings:
             queue_size=_positive_int("visualizer.queue_size", cfg.get("queue_size")),
         )
 
-    def battle_attack(self) -> BattleAttackSettings:
-        cfg = self._section("battle", "attack")
+    def attack(self) -> AttackSettings:
+        cfg = self._section("game", "attack")
         calculator = cfg.get("calculator")
         if not isinstance(calculator, str) or calculator == "":
-            raise ValueError("battle.attack.calculator must be a non-empty string")
-        return BattleAttackSettings(calculator=calculator)
+            raise ValueError("game.attack.calculator must be a non-empty string")
+        return AttackSettings(calculator=calculator)
 
     def battle_garbage(self) -> BattleGarbageSettings:
         cfg = self._section("battle", "garbage")

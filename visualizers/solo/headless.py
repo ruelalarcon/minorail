@@ -38,7 +38,7 @@ class HeadlessVisualizer:
     ) -> None:
         pass
 
-    def on_piece_locked(self, state: GameState) -> None:
+    def on_piece_locked(self, state: GameState, *, total_attack: int) -> None:
         self._pieces += 1
         if self._progress_every <= 0 or self._pieces % self._progress_every != 0:
             return

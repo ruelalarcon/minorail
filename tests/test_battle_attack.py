@@ -1,11 +1,11 @@
 import unittest
 
-from battle.attack.classic_guideline import ClassicGuidelineAttackCalculator
-from battle.attack.modern_guideline import ModernGuidelineAttackCalculator
-from battle.attack.ppt import PptAttackCalculator
-from battle.attack.registry import attack_calculator, register_attack_calculator
-from battle.attack.tetrio_s1 import TetrioS1AttackCalculator
-from battle.attack.tetrio_s2 import TetrioS2AttackCalculator
+from tetris.attack.classic_guideline import ClassicGuidelineAttackCalculator
+from tetris.attack.modern_guideline import ModernGuidelineAttackCalculator
+from tetris.attack.ppt import PptAttackCalculator
+from tetris.attack.registry import attack_calculator, register_attack_calculator
+from tetris.attack.tetrio_s1 import TetrioS1AttackCalculator
+from tetris.attack.tetrio_s2 import TetrioS2AttackCalculator
 from tetris.game.state import AppliedMove
 from tetris.model.location import PieceLocation
 from tetris.model.piece import Piece

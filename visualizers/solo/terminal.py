@@ -34,11 +34,13 @@ class TerminalVisualizer:
         self._first_spawn = True
         self._status = VisualizerStatus()
         self._terminal = LiveTerminalRegion()
+        self._total_attack = 0
 
     def set_game_controls(self, controls: GameControls) -> None:
         pass
 
     def on_game_started(self, state: GameState) -> None:
+        self._total_attack = 0
         self._status.set("Game started")
         self._terminal.start(self._frame_height())
 
@@ -106,7 +108,8 @@ class TerminalVisualizer:
 
         time.sleep(self._lock_delay)
 
-    def on_piece_locked(self, state: GameState) -> None:
+    def on_piece_locked(self, state: GameState, *, total_attack: int) -> None:
+        self._total_attack = total_attack
         self._status.set("Locked")
         self._render(state)
         time.sleep(self._lock_delay * 0.5)
@@ -139,6 +142,7 @@ class TerminalVisualizer:
             self._settings.visible_rows,
             self._settings.queue_size,
             self._status.text,
+            self._total_attack,
             self._terminal,
         )
 
@@ -153,6 +157,7 @@ def _render(
     visible_rows: int,
     queue_size: int,
     status: str,
+    total_attack: int,
     terminal: LiveTerminalRegion,
 ) -> None:
     unset = "\x00"
@@ -200,6 +205,8 @@ def _render(
         "",
         f"Combo: {state.combo}",
         f"Back-to-Back: {state.back_to_back}",
+        "",
+        f"Total Attack: {total_attack}",
         "",
         "Status:",
         status,

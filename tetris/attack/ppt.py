@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from battle.attack.common import (
+from tetris.attack.common import (
     BASE_LINE_CLEAR_ATTACK,
     T_SPIN_MINI_ATTACK,
     fixed_combo_bonus,

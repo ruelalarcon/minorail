@@ -12,8 +12,9 @@ api/          external API transports
 sbp/          SBP parsing, serialization, capabilities, and message shape
 suggestion/   session continuity, derived state, and move selection
 bots/         bot subprocess transport and SBP session lifecycle
+tetris/attack/ attack calculators derived from locked moves
 solo/         one-board runner and evaluation
-battle/       two-board runner, evaluation, attack, and garbage
+battle/       two-board runner, evaluation, and garbage exchange/application
 visualizers/  solo and battle renderers plus shared visualizer infrastructure
 frostetra/    Rust SBP bot that can be launched by Minorail
 tetrio_client/ TETR.IO integration client and patching notes
@@ -67,7 +68,7 @@ battle.runner.session.Session
   -> battle.runner.player.Player
   -> solo.runner.local_game.LocalGame
   -> suggestion.service.SuggestionService
-  -> battle.attack.AttackCalculator
+  -> tetris.attack.AttackCalculator
   -> battle.garbage.GarbageRules
   -> battle visualizer/evaluation observer
 ```

@@ -39,10 +39,12 @@ Solo output uses schema `minorail.eval.solo.v1`:
 
 Per-game summaries include generic run rollups: status, pieces, elapsed time,
 pps, lines cleared, line-clear placements, combo steps, max combo,
-back-to-back steps, max back-to-back, perfect-clears, and holds.
+back-to-back steps, max back-to-back, perfect-clears, holds, attack,
+max attack, and attack-producing placements.
 
 Each solo `piece_locked` event records placement, hold use, line clear facts,
-combo and back-to-back before/after values, stack height, and occupied cells.
+combo and back-to-back before/after values, stack height, occupied cells,
+and attack.
 
 ---
 
@@ -74,7 +76,7 @@ Battle `piece_locked` events include the same core solo lock facts plus:
 | Field | Meaning |
 | --- | --- |
 | `player` | Player id, currently `A` or `B`. |
-| `attack` | Total attack produced by the lock. |
+| `attack` | Attack produced by the lock. |
 | `incoming_garbage_before` | Pending garbage before cancellation. |
 | `garbage_cancelled` | Incoming garbage cancelled by this attack. |
 | `garbage_sent` | Garbage queued for the opponent. |
