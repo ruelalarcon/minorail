@@ -24,13 +24,13 @@ class _GarbagePhase:
 
 @dataclass(frozen=True)
 class _GarbageQueue:
-    entries: tuple[_PendingGarbage, ...] = ()
+    chunks: tuple[_PendingGarbage, ...] = ()
     last_hole: int | None = None
     locks: int = 0
 
     @property
     def total(self) -> int:
-        return sum(entry.lines for entry in self.entries)
+        return sum(chunk.lines for chunk in self.chunks)
 
 
 class ModernGarbageRules:
@@ -71,7 +71,7 @@ class ModernGarbageRules:
         return _queue(queue).total
 
     def queue_chunks(self, queue: GarbageQueue) -> list[int]:
-        return [entry.lines for entry in _queue(queue).entries]
+        return [chunk.lines for chunk in _queue(queue).chunks]
 
     def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange:
         current = _queue(queue)
@@ -88,9 +88,9 @@ class ModernGarbageRules:
         current = _queue(queue)
         if attack <= 0:
             return current
-        entry = _PendingGarbage(lines=attack)
+        chunk = _PendingGarbage(lines=attack)
         return _GarbageQueue(
-            (*current.entries, entry), current.last_hole, current.locks
+            (*current.chunks, chunk), current.last_hole, current.locks
         )
 
     def should_apply_on_lock(self, *, lines_cleared: int) -> bool:
@@ -130,7 +130,7 @@ def _phase_for_locks(locks: int) -> _GarbagePhase:
 
 
 def _increment_locks(queue: _GarbageQueue) -> _GarbageQueue:
-    return _GarbageQueue(queue.entries, queue.last_hole, queue.locks + 1)
+    return _GarbageQueue(queue.chunks, queue.last_hole, queue.locks + 1)
 
 
 def _reroll_hole(rng: random.Random, width: int, current: int | None = None) -> int:
@@ -156,17 +156,17 @@ def _maybe_reroll_hole(
 
 def _consume_queue(queue: _GarbageQueue, lines: int) -> _GarbageQueue:
     remaining = max(0, lines)
-    entries: list[_PendingGarbage] = []
-    for entry in queue.entries:
+    chunks: list[_PendingGarbage] = []
+    for chunk in queue.chunks:
         if remaining <= 0:
-            entries.append(entry)
+            chunks.append(chunk)
             continue
-        if entry.lines <= remaining:
-            remaining -= entry.lines
+        if chunk.lines <= remaining:
+            remaining -= chunk.lines
             continue
-        entries.append(_PendingGarbage(lines=entry.lines - remaining))
+        chunks.append(_PendingGarbage(lines=chunk.lines - remaining))
         remaining = 0
-    return _GarbageQueue(tuple(entries), queue.last_hole, queue.locks)
+    return _GarbageQueue(tuple(chunks), queue.last_hole, queue.locks)
 
 
 def _holes_to_apply(
@@ -177,16 +177,16 @@ def _holes_to_apply(
 ) -> tuple[list[int], _GarbageQueue]:
     phase = _phase_for_locks(queue.locks)
     holes: list[int] = []
-    entries: list[_PendingGarbage] = []
+    chunks: list[_PendingGarbage] = []
     remaining = max(0, lines)
     last_hole = queue.last_hole
-    for entry in queue.entries:
+    for chunk in queue.chunks:
         if remaining <= 0:
-            entries.append(entry)
+            chunks.append(chunk)
             continue
         if last_hole is None:
             last_hole = _reroll_hole(rng, width)
-        applied_lines = min(entry.lines, remaining)
+        applied_lines = min(chunk.lines, remaining)
         for _ in range(applied_lines):
             holes.append(last_hole)
             last_hole = _maybe_reroll_hole(
@@ -196,13 +196,13 @@ def _holes_to_apply(
                 chance=phase.line_hole_change_chance,
             )
         remaining -= applied_lines
-        if applied_lines == entry.lines:
+        if applied_lines == chunk.lines:
             # A completed attack chunk starts the next chunk in another random
             # clean column, matching the observed "random clean columns" start.
             last_hole = _reroll_hole(rng, width, last_hole)
             continue
-        entries.append(_PendingGarbage(lines=entry.lines - applied_lines))
-    return holes, _GarbageQueue(tuple(entries), last_hole, queue.locks)
+        chunks.append(_PendingGarbage(lines=chunk.lines - applied_lines))
+    return holes, _GarbageQueue(tuple(chunks), last_hole, queue.locks)
 
 
 def _raise_garbage(state: GameState, holes: list[int]) -> bool:

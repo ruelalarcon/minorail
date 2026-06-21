@@ -18,12 +18,12 @@ class _PendingGarbage:
 
 @dataclass(frozen=True)
 class _GarbageQueue:
-    entries: tuple[_PendingGarbage, ...] = ()
+    chunks: tuple[_PendingGarbage, ...] = ()
     last_hole: int | None = None
 
     @property
     def total(self) -> int:
-        return sum(entry.lines for entry in self.entries)
+        return sum(chunk.lines for chunk in self.chunks)
 
 
 class TetrioGarbageRules:
@@ -40,14 +40,14 @@ class TetrioGarbageRules:
         return _queue(queue).total
 
     def queue_chunks(self, queue: GarbageQueue) -> list[int]:
-        return [entry.lines for entry in _queue(queue).entries]
+        return [chunk.lines for chunk in _queue(queue).chunks]
 
     def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange:
         current = _queue(queue)
         cancelled = min(max(0, attack), current.total)
         sent = max(0, attack - cancelled)
         queue_after = _consume_queue(
-            current, cancelled, reroll_finished_entries=True, rng=self._rng
+            current, cancelled, reroll_finished_chunks=True, rng=self._rng
         )
         return GarbageExchange(
             cancelled=cancelled,
@@ -59,8 +59,8 @@ class TetrioGarbageRules:
         current = _queue(queue)
         if attack <= 0:
             return current
-        entry = _PendingGarbage(lines=attack)
-        return _GarbageQueue((*current.entries, entry), current.last_hole)
+        chunk = _PendingGarbage(lines=attack)
+        return _GarbageQueue((*current.chunks, chunk), current.last_hole)
 
     def should_apply_on_lock(self, *, lines_cleared: int) -> bool:
         return lines_cleared == 0
@@ -100,24 +100,24 @@ def _consume_queue(
     queue: _GarbageQueue,
     lines: int,
     *,
-    reroll_finished_entries: bool,
+    reroll_finished_chunks: bool,
     rng: random.Random,
 ) -> _GarbageQueue:
     remaining = max(0, lines)
-    entries: list[_PendingGarbage] = []
+    chunks: list[_PendingGarbage] = []
     last_hole = queue.last_hole
-    for entry in queue.entries:
+    for chunk in queue.chunks:
         if remaining <= 0:
-            entries.append(entry)
+            chunks.append(chunk)
             continue
-        if entry.lines <= remaining:
-            remaining -= entry.lines
-            if reroll_finished_entries:
+        if chunk.lines <= remaining:
+            remaining -= chunk.lines
+            if reroll_finished_chunks:
                 last_hole = _reroll_hole(rng)
             continue
-        entries.append(_PendingGarbage(lines=entry.lines - remaining))
+        chunks.append(_PendingGarbage(lines=chunk.lines - remaining))
         remaining = 0
-    return _GarbageQueue(tuple(entries), last_hole)
+    return _GarbageQueue(tuple(chunks), last_hole)
 
 
 def _holes_to_apply(
@@ -129,18 +129,18 @@ def _holes_to_apply(
     holes: list[int] = []
     current = queue
     remaining = max(0, lines)
-    for entry in queue.entries:
+    for chunk in queue.chunks:
         if remaining <= 0:
             break
         if current.last_hole is None or current.last_hole >= width:
-            current = _GarbageQueue(current.entries, _reroll_hole(rng, width))
+            current = _GarbageQueue(current.chunks, _reroll_hole(rng, width))
         assert current.last_hole is not None
-        count = min(entry.lines, remaining)
+        count = min(chunk.lines, remaining)
         holes.extend([current.last_hole] * count)
         current = _consume_queue(
             current,
             count,
-            reroll_finished_entries=entry.lines <= count,
+            reroll_finished_chunks=chunk.lines <= count,
             rng=rng,
         )
         remaining -= count

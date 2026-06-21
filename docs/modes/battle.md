@@ -82,9 +82,9 @@ The built-in garbage rules are `modern`, `ppt`, and `tetrio`. The default is
 | Passthrough | None |
 | Rise timing | Non-line-clearing locks |
 | Rise cap | 8 lines per lock |
-| `tetrio` holes | One hole per incoming garbage entry, rerolled between entries |
-| `ppt` holes | Puyo Puyo Tetris-style messier holes: 30% chance to change after each line, 90% chance to change after each incoming garbage entry |
-| `modern` holes | Tetris Effect: Connected Zone Battle-inspired phases: clean entry columns at game start, slightly messier after about 50 locks, very messy after about 150 locks |
+| `tetrio` holes | One hole per incoming garbage chunk, rerolled between chunks |
+| `ppt` holes | Puyo Puyo Tetris-style messier holes: 30% chance to change after each line, 90% chance to change after each incoming garbage chunk |
+| `modern` holes | Tetris Effect: Connected Zone Battle-inspired phases: clean chunk columns at game start, slightly messier after about 50 locks, very messy after about 150 locks |
 
 The `ppt` rule is based on public community reverse-engineering, not an
 official Sega or Tetris Guideline specification. The behavior note comes from

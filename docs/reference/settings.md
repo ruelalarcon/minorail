@@ -229,19 +229,19 @@ comes from FOUR.lol's Puyo Puyo Tetris notes:
 The `ppt` garbage rules use the same Minorail cancellation and rise timing, but
 model public Puyo Puyo Tetris community notes for messier holes: 30% chance to
 change after each line and 90% chance to change after each incoming garbage
-entry. This comes from FOUR.lol's Puyo Puyo Tetris garbage notes, which credit
+chunk. This comes from FOUR.lol's Puyo Puyo Tetris garbage notes, which credit
 Okey_Dokey: <https://four.lol/mid-game/puyo-puyo-tetris>.
 
 The `tetrio` garbage rules use Tetra League style full cancellation/blocking,
 no passthrough, garbage rise on non-line-clearing locks, a maximum rise of 8
-lines per lock, and one hole column per incoming garbage entry.
+lines per lock, and one hole column per incoming garbage chunk.
 
 The `modern` garbage rules approximate Tetris Effect: Connected Zone Battle.
 TetrisWiki describes Zone Battle garbage as clean random columns at first,
 slightly more random holes after 20,000 points, and very random holes after
 60,000 points: <https://tetris.wiki/Tetris_Effect#Zone_Battle>. Minorail's
 garbage rules do not receive Tetris Effect score or Zone state, so `modern`
-uses per-player lock-count phases instead: clean entry columns before 50 locks,
+uses per-player lock-count phases instead: clean chunk columns before 50 locks,
 slightly messy holes at 50 locks, and very messy holes at 150 locks. This
 per-game phase state resets for each battle game.
 

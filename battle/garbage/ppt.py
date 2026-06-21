@@ -18,12 +18,12 @@ class _PendingGarbage:
 
 @dataclass(frozen=True)
 class _GarbageQueue:
-    entries: tuple[_PendingGarbage, ...] = ()
+    chunks: tuple[_PendingGarbage, ...] = ()
     last_hole: int | None = None
 
     @property
     def total(self) -> int:
-        return sum(entry.lines for entry in self.entries)
+        return sum(chunk.lines for chunk in self.chunks)
 
 
 class PptGarbageRules:
@@ -36,7 +36,7 @@ class PptGarbageRules:
 
     MAX_RISE_PER_LOCK = 8
     DEFAULT_WIDTH = 10
-    ENTRY_HOLE_CHANGE_CHANCE = 0.9
+    CHUNK_HOLE_CHANGE_CHANCE = 0.9
     LINE_HOLE_CHANGE_CHANCE = 0.3
 
     def __init__(self, *, seed: int | None) -> None:
@@ -49,14 +49,14 @@ class PptGarbageRules:
         return _queue(queue).total
 
     def queue_chunks(self, queue: GarbageQueue) -> list[int]:
-        return [entry.lines for entry in _queue(queue).entries]
+        return [chunk.lines for chunk in _queue(queue).chunks]
 
     def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange:
         current = _queue(queue)
         cancelled = min(max(0, attack), current.total)
         sent = max(0, attack - cancelled)
         queue_after = _consume_queue(
-            current, cancelled, reroll_finished_entries=True, rng=self._rng
+            current, cancelled, reroll_finished_chunks=True, rng=self._rng
         )
         return GarbageExchange(
             cancelled=cancelled,
@@ -68,8 +68,8 @@ class PptGarbageRules:
         current = _queue(queue)
         if attack <= 0:
             return current
-        entry = _PendingGarbage(lines=attack)
-        return _GarbageQueue((*current.entries, entry), current.last_hole)
+        chunk = _PendingGarbage(lines=attack)
+        return _GarbageQueue((*current.chunks, chunk), current.last_hole)
 
     def should_apply_on_lock(self, *, lines_cleared: int) -> bool:
         return lines_cleared == 0
@@ -129,28 +129,28 @@ def _consume_queue(
     queue: _GarbageQueue,
     lines: int,
     *,
-    reroll_finished_entries: bool,
+    reroll_finished_chunks: bool,
     rng: random.Random,
 ) -> _GarbageQueue:
     remaining = max(0, lines)
-    entries: list[_PendingGarbage] = []
+    chunks: list[_PendingGarbage] = []
     last_hole = queue.last_hole
-    for entry in queue.entries:
+    for chunk in queue.chunks:
         if remaining <= 0:
-            entries.append(entry)
+            chunks.append(chunk)
             continue
-        if entry.lines <= remaining:
-            remaining -= entry.lines
-            if reroll_finished_entries and last_hole is not None:
+        if chunk.lines <= remaining:
+            remaining -= chunk.lines
+            if reroll_finished_chunks and last_hole is not None:
                 last_hole = _maybe_reroll_hole(
                     rng,
                     last_hole,
-                    chance=PptGarbageRules.ENTRY_HOLE_CHANGE_CHANCE,
+                    chance=PptGarbageRules.CHUNK_HOLE_CHANGE_CHANCE,
                 )
             continue
-        entries.append(_PendingGarbage(lines=entry.lines - remaining))
+        chunks.append(_PendingGarbage(lines=chunk.lines - remaining))
         remaining = 0
-    return _GarbageQueue(tuple(entries), last_hole)
+    return _GarbageQueue(tuple(chunks), last_hole)
 
 
 def _holes_to_apply(
@@ -160,16 +160,16 @@ def _holes_to_apply(
     rng: random.Random,
 ) -> tuple[list[int], _GarbageQueue]:
     holes: list[int] = []
-    entries: list[_PendingGarbage] = []
+    chunks: list[_PendingGarbage] = []
     remaining = max(0, lines)
     last_hole = queue.last_hole
-    for entry in queue.entries:
+    for chunk in queue.chunks:
         if remaining <= 0:
-            entries.append(entry)
+            chunks.append(chunk)
             continue
         if last_hole is None or last_hole >= width:
             last_hole = _reroll_hole(rng, width=width)
-        applied_lines = min(entry.lines, remaining)
+        applied_lines = min(chunk.lines, remaining)
         for _ in range(applied_lines):
             holes.append(last_hole)
             last_hole = _maybe_reroll_hole(
@@ -179,16 +179,16 @@ def _holes_to_apply(
                 width=width,
             )
         remaining -= applied_lines
-        if applied_lines == entry.lines:
+        if applied_lines == chunk.lines:
             last_hole = _maybe_reroll_hole(
                 rng,
                 last_hole,
-                chance=PptGarbageRules.ENTRY_HOLE_CHANGE_CHANCE,
+                chance=PptGarbageRules.CHUNK_HOLE_CHANGE_CHANCE,
                 width=width,
             )
             continue
-        entries.append(_PendingGarbage(lines=entry.lines - applied_lines))
-    return holes, _GarbageQueue(tuple(entries), last_hole)
+        chunks.append(_PendingGarbage(lines=chunk.lines - applied_lines))
+    return holes, _GarbageQueue(tuple(chunks), last_hole)
 
 
 def _raise_garbage(state: GameState, holes: list[int]) -> bool:

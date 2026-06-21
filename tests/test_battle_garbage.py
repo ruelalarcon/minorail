@@ -50,7 +50,7 @@ class TetrioGarbageRulesTests(unittest.TestCase):
         self.assertEqual(rules.queue_total(applied.queue_after), 4)
         self.assertEqual(sum(col.bit_count() for col in state.board.cols), 8 * 9)
 
-    def test_each_attack_entry_uses_one_hole_column(self) -> None:
+    def test_each_attack_chunk_uses_one_hole_column(self) -> None:
         rules = TetrioGarbageRules(seed=123)
         state = GameState(
             board=Board(),
@@ -89,7 +89,7 @@ class TetrioGarbageRulesTests(unittest.TestCase):
         self.assertEqual(row_holes[:4], [row_holes[0]] * 4)
         self.assertEqual(row_holes[4:], [row_holes[4]] * 2)
 
-    def test_partial_entry_keeps_same_hole_for_later_rise(self) -> None:
+    def test_partial_chunk_keeps_same_hole_for_later_rise(self) -> None:
         rules = TetrioGarbageRules(seed=123)
         state = GameState(
             board=Board(),
@@ -111,7 +111,7 @@ class TetrioGarbageRulesTests(unittest.TestCase):
 
 
 class PptGarbageRulesTests(unittest.TestCase):
-    def test_entry_can_change_holes_while_rising(self) -> None:
+    def test_chunk_can_change_holes_while_rising(self) -> None:
         rules = PptGarbageRules(seed=0)
         state = GameState(
             board=Board(),
@@ -141,7 +141,7 @@ class PptGarbageRulesTests(unittest.TestCase):
 
 
 class ModernGarbageRulesTests(unittest.TestCase):
-    def test_early_phase_uses_clean_columns_per_entry(self) -> None:
+    def test_early_phase_uses_clean_columns_per_chunk(self) -> None:
         rules = ModernGarbageRules(seed=123)
         state = GameState(
             board=Board(),
@@ -161,7 +161,7 @@ class ModernGarbageRulesTests(unittest.TestCase):
         self.assertEqual(row_holes[:4], [row_holes[0]] * 4)
         self.assertEqual(row_holes[4:], [row_holes[4]] * 2)
 
-    def test_late_phase_can_change_holes_inside_entry(self) -> None:
+    def test_late_phase_can_change_holes_inside_chunk(self) -> None:
         rules = ModernGarbageRules(seed=0)
         state = GameState(
             board=Board(),
