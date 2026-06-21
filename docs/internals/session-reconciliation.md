@@ -1,14 +1,15 @@
-# Sessions And Resyncs
+# Session Reconciliation
 
 Minorail sessions preserve bot continuity across suggestion requests.
 
 ?> Use sessions when you want the bot to keep its internal state between
 suggestions. Use separate `session_id` values for independent games.
 
-This matters because an SBP bot session has internal state. If Minorail can
-prove that the new snapshot is the expected result of the last selected
-placement, it advances the bot with `play` and `new_piece`. If not, it resets
-the bot from the authoritative snapshot.
+This matters because an SBP bot session has internal state. Minorail classifies
+each authoritative snapshot transition, then reconciles the bot session with
+the least disruptive valid SBP operations. If continuity can be preserved, it
+sends operations such as `play`, `new_piece`, or `board`. If continuity cannot
+be preserved, it resets the bot from the authoritative snapshot.
 
 ---
 
@@ -39,8 +40,8 @@ Minorail treats every incoming snapshot as authoritative.
 | `seq` | Sequence number for the observed state. |
 | `last_move` | Optional previous placement. |
 
-Minorail does not require the caller to be perfectly synchronized. Desync is a
-normal case.
+Minorail does not require the caller to be perfectly synchronized. Mismatches
+are normal and are handled through reconciliation.
 
 ---
 
@@ -50,35 +51,42 @@ normal case.
 | --- | --- | --- |
 | `synced` | First request, or incoming physical state matches the session. | Start or keep. |
 | `advanced` | Incoming state matches the expected result of the previous selected placement. | Send `play` and any `new_piece` messages. |
-| `resynced` | Incoming state does not match the previous physical state or expected advance. | Reset from the incoming snapshot. |
+| `reconciled` | Incoming state did not exactly match, but Minorail preserved bot session continuity. | Send `board`, or send `play` plus `board`. |
+| `reset` | Incoming state required a bot session restart from the authoritative snapshot. | Send `stop` plus `start`, or restart a closed bot process from snapshot. |
 | `invalid` | Request validation failed. | Do not contact the bot. |
 | `no_suggestion` | Bot returned no usable placement before timeout. | Keep session state, but return no placement. |
 
-!> `resynced` is not an error. It means Minorail repaired the bot session
-before asking for the next move.
+!> `reconciled` and `reset` are not bot errors. They mean Minorail accepted the
+incoming authoritative snapshot and brought the bot session back in line before
+asking for the next move.
 
 ---
 
-## Resync Types
+## Reconciliation Reasons
 
-Minorail logs resync details to stderr:
+Minorail logs reconciliation details to stderr:
 
 ```text
-[info] minorail resync: type=board_changed_after_expected_advance seq=1 bot_action=reset piece_stream_action=append
+[info] reconciliation: reason=board_changed_after_expected_advance seq=1 action=advance_then_board piece_stream=append
 ```
 
-| Type | What changed | Piece stream behavior |
+| Reason | What changed | Piece stream behavior |
 | --- | --- | --- |
 | `board_changed_same_piece_stream` | The board changed, but active and queue chronology still match. | Keep alignment. |
 | `board_changed_after_expected_advance` | Piece chronology is explainable as an expected advance, but the board does not match exactly. | Append newly observed pieces. |
-| `piece_stream_changed_unexpectedly` | Active and queue are not explainable from the previous snapshot. | Resync from observed pieces and mark offset unknown. |
+| `piece_stream_changed_unexpectedly` | Active and queue are not explainable from the previous snapshot. | Realign from observed pieces and mark offset unknown. |
 | `rules_changed` | The effective rules changed for an existing session. | Preserve the physical transition's stream behavior. |
 
-If rules change at the same time as a physical desync, the logged type is
-`rules_changed`. The `piece_stream_action` still describes how Minorail handled
+If rules change at the same time as a physical mismatch, the logged reason is
+`rules_changed`. The `piece_stream` value still describes how Minorail handled
 the observed piece chronology.
 
-Board edits through a visualizer commonly produce a board-only resync.
+Board edits through a visualizer commonly produce board-only reconciliation.
+Battle garbage rise commonly produces
+`board_changed_after_expected_advance`: Minorail first confirms the lock with
+`play` and any `new_piece` messages, then sends `board` for the authoritative
+post-garbage physical board when the bot supports it. Bots without `board`
+support still use the reset fallback.
 
 ---
 
@@ -94,6 +102,11 @@ When the retained stream exceeds `protocol.start.piece_stream_limit`, Minorail
 trims older pieces and adjusts the offset when it can.
 
 Set `piece_stream_limit = 0` to omit piece stream data entirely.
+
+Piece stream realignment means Minorail preserves the current observed
+`[active] + queue` order but stops asserting an absolute generated-piece offset.
+SBP `piece_stream.offset` becomes `null` until later continuity can be inferred
+from fresh observations.
 
 ---
 

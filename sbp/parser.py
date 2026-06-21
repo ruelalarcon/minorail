@@ -8,6 +8,7 @@ from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from contracts.piece_stream_snapshot import PieceStreamSnapshot
 from sbp.messages import (
+    MsgBoard,
     MsgNewPiece,
     MsgPlay,
     MsgQuit,
@@ -18,7 +19,14 @@ from sbp.messages import (
 )
 
 FrontendMessage = (
-    MsgRules | MsgStart | MsgPlay | MsgNewPiece | MsgSuggest | MsgStop | MsgQuit
+    MsgRules
+    | MsgStart
+    | MsgBoard
+    | MsgPlay
+    | MsgNewPiece
+    | MsgSuggest
+    | MsgStop
+    | MsgQuit
 )
 
 
@@ -74,6 +82,8 @@ def parse(line: str) -> Optional[FrontendMessage]:
                 incoming_garbage=_incoming_garbage(obj.get("incoming_garbage")),
                 extensions=_extensions(obj.get("extensions")),
             )
+        case "board":
+            return MsgBoard(board=Board.from_sbp(obj.get("board", [])))
         case "play":
             return MsgPlay(move=Placement.from_sbp(obj["move"]))
         case "new_piece":

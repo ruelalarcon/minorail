@@ -4,6 +4,7 @@ from enum import Enum
 class SuggestionStatus(Enum):
     Synced = "synced"
     Advanced = "advanced"
-    Resynced = "resynced"
+    Reconciled = "reconciled"
+    Reset = "reset"
     Invalid = "invalid"
     NoSuggestion = "no_suggestion"

@@ -14,10 +14,10 @@ from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 from tetris.game.state import spawn_location
 from sbp.parser import parse
-from sbp.messages import MsgRules, MsgStart, MsgSuggest
+from sbp.messages import BotCapabilities, MsgBoard, MsgRules, MsgStart, MsgSuggest
 
 
-def empty_board() -> list[list[None]]:
+def empty_board() -> list[list[str | None]]:
     return [[None] * 10 for _ in range(40)]
 
 
@@ -98,6 +98,15 @@ class SbpParserTests(unittest.TestCase):
         assert isinstance(msg, MsgStart)
         self.assertEqual(msg.incoming_garbage, [4, 2])
 
+    def test_board_message_round_trips_authoritative_board(self) -> None:
+        rows = empty_board()
+        rows[0][3] = "G"
+        msg = parse(json.dumps({"type": "board", "board": rows}))
+
+        self.assertIsInstance(msg, MsgBoard)
+        assert isinstance(msg, MsgBoard)
+        self.assertEqual(msg.board.cols, [0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+
     def test_suggest_preserves_extensions_object(self) -> None:
         msg = parse(
             json.dumps(
@@ -161,6 +170,25 @@ class SbpParserTests(unittest.TestCase):
                 "extensions": extensions,
             },
         )
+
+    def test_process_writes_board_message(self) -> None:
+        sent: list[dict[str, Any]] = []
+
+        def capture(obj: dict[str, Any]) -> None:
+            sent.append(obj)
+
+        process = BotProcess.__new__(BotProcess)
+        process._send = capture
+
+        process.send_board(Board(cols=[1, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+
+        self.assertEqual(sent[0]["type"], "board")
+        self.assertEqual(sent[0]["board"][0][0], "G")
+        self.assertIsNone(sent[0]["board"][0][1])
+
+    def test_capabilities_parse_board_default_false(self) -> None:
+        self.assertFalse(BotCapabilities.from_sbp({}).board)
+        self.assertTrue(BotCapabilities.from_sbp({"board": True}).board)
 
     def test_bot_session_reset_reuses_process_with_stop_start(self) -> None:
         class FakeProcess:

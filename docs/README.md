@@ -58,7 +58,7 @@ The suggestion service owns derived continuity:
 | Bot process | Subprocess lifecycle for the session |
 
 Incoming snapshots are always authoritative. When state no longer matches the
-expected transition, Minorail resyncs the bot session from the observed state.
+expected transition, Minorail reconciles the bot session to the observed state.
 
 ## Where To Go
 

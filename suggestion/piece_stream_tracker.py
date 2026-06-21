@@ -19,7 +19,7 @@ class PieceStreamTracker:
         self._stream.pieces.extend(pieces)
         self._trim_to_limit()
 
-    def resync(self, queue: list[Piece]) -> None:
+    def realign(self, queue: list[Piece]) -> None:
         self._stream = PieceStreamSnapshot(offset=None, pieces=list(queue))
         self._trim_to_limit()
 

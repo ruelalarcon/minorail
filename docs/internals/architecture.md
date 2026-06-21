@@ -45,7 +45,7 @@ Derived truth belongs to `suggestion/`:
 | Piece stream alignment | `suggestion.piece_stream_tracker` |
 | Bot session continuity | `bots.session` through `SuggestionService` |
 
-Incoming snapshots remain authoritative. The suggestion layer repairs bot
+Incoming snapshots remain authoritative. The suggestion layer reconciles bot
 continuity around snapshots; it does not override observed game state.
 
 ## Solo Flow

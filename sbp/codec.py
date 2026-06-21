@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from sbp.messages import (
+    MsgBoard,
     MsgNewPiece,
     MsgPlay,
     MsgQuit,
@@ -15,7 +16,14 @@ from tetris.model.board import Board
 from tetris.model.rules import Rules
 
 OutboundMessage = (
-    MsgRules | MsgStart | MsgPlay | MsgNewPiece | MsgSuggest | MsgStop | MsgQuit
+    MsgRules
+    | MsgStart
+    | MsgBoard
+    | MsgPlay
+    | MsgNewPiece
+    | MsgSuggest
+    | MsgStop
+    | MsgQuit
 )
 
 
@@ -70,6 +78,8 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
             if message.extensions is not None:
                 obj["extensions"] = message.extensions
             return obj
+        case MsgBoard():
+            return {"type": "board", "board": board_to_sbp(message.board)}
         case MsgPlay():
             return {"type": "play", "move": message.move.to_sbp()}
         case MsgNewPiece():

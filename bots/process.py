@@ -9,8 +9,10 @@ from typing import Any, Callable, Optional
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
+from tetris.model.board import Board
 from sbp.codec import rules_message, to_jsonable
 from sbp.messages import (
+    MsgBoard,
     MsgNewPiece,
     MsgPlay,
     MsgQuit,
@@ -68,6 +70,9 @@ class BotProcess:
 
     def send_start(self, msg: MsgStart) -> None:
         self._send(to_jsonable(msg))
+
+    def send_board(self, board: Board) -> None:
+        self._send(to_jsonable(MsgBoard(board)))
 
     def send_play(self, placement: Placement) -> None:
         self._send(to_jsonable(MsgPlay(placement)))

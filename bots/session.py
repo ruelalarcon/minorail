@@ -91,6 +91,21 @@ class BotSession:
         for piece in new_pieces or []:
             self._bot.send_new_piece(piece)
 
+    def supports_board_update(self) -> bool:
+        return self._capabilities.board
+
+    def update_board(self, snapshot: BotSnapshot, rules: Rules) -> bool:
+        if self._bot is None or not self._bot.is_alive():
+            self.reset_from(snapshot, rules)
+            return False
+        if self._rules != rules or not self._capabilities.board:
+            self.reset_from(snapshot, rules)
+            return False
+        self._validate_rules(rules)
+        self._clear_suggestion()
+        self._bot.send_board(snapshot.board.copy())
+        return True
+
     def reset_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
         self._ensure_process()
         self._validate_rules(rules)

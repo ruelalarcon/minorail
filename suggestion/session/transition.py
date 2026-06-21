@@ -13,21 +13,25 @@ from tetris.game.state import GameState
 from suggestion.derived_state import DerivedState
 
 
-class BotAction(Enum):
-    Start = "start"
-    Keep = "keep"
-    Advance = "advance"
-    Reset = "reset"
+class TransitionType(Enum):
+    Initial = "initial"
+    Unchanged = "unchanged"
+    ExpectedAdvance = "expected_advance"
+    BoardOnlyCorrection = "board_only_correction"
+    SamePiecesChanged = "same_pieces_changed"
+    ExpectedAdvanceWithBoardCorrection = "expected_advance_with_board_correction"
+    ExpectedAdvanceChanged = "expected_advance_changed"
+    UnexpectedPieces = "unexpected_pieces"
 
 
 class PieceStreamAction(Enum):
     Initialize = "initialize"
     Keep = "keep"
     Append = "append"
-    Resync = "resync"
+    Realign = "realign"
 
 
-class ResyncType(Enum):
+class ReconciliationReason(Enum):
     BoardChangedSamePieceStream = "board_changed_same_piece_stream"
     BoardChangedAfterExpectedAdvance = "board_changed_after_expected_advance"
     PieceStreamChangedUnexpectedly = "piece_stream_changed_unexpectedly"
@@ -43,11 +47,11 @@ class ExpectedAdvance:
 
 @dataclass
 class SessionTransition:
+    transition_type: TransitionType
     status: SuggestionStatus
-    bot_action: BotAction
     piece_stream_action: PieceStreamAction
     expected: Optional[ExpectedAdvance] = None
-    resync_type: Optional[ResyncType] = None
+    reconciliation_reason: Optional[ReconciliationReason] = None
 
 
 def classify_transition(
@@ -59,15 +63,15 @@ def classify_transition(
 ) -> SessionTransition:
     if shadow_observed is None:
         return SessionTransition(
+            transition_type=TransitionType.Initial,
             status=SuggestionStatus.Synced,
-            bot_action=BotAction.Start,
             piece_stream_action=PieceStreamAction.Initialize,
         )
 
     if incoming.physically_equals(shadow_observed):
         return SessionTransition(
+            transition_type=TransitionType.Unchanged,
             status=SuggestionStatus.Synced,
-            bot_action=BotAction.Keep,
             piece_stream_action=PieceStreamAction.Keep,
         )
 
@@ -76,34 +80,51 @@ def classify_transition(
     )
     if expected is not None and incoming.physically_equals(expected.snapshot):
         return SessionTransition(
+            transition_type=TransitionType.ExpectedAdvance,
             status=SuggestionStatus.Advanced,
-            bot_action=BotAction.Advance,
             piece_stream_action=PieceStreamAction.Append,
             expected=expected,
+        )
+
+    if same_state_except_board(incoming, shadow_observed):
+        return SessionTransition(
+            transition_type=TransitionType.BoardOnlyCorrection,
+            status=SuggestionStatus.Reconciled,
+            piece_stream_action=PieceStreamAction.Keep,
+            reconciliation_reason=ReconciliationReason.BoardChangedSamePieceStream,
         )
 
     if observed_pieces(incoming) == observed_pieces(shadow_observed):
         return SessionTransition(
-            status=SuggestionStatus.Resynced,
-            bot_action=BotAction.Reset,
+            transition_type=TransitionType.SamePiecesChanged,
+            status=SuggestionStatus.Reset,
             piece_stream_action=PieceStreamAction.Keep,
-            resync_type=ResyncType.BoardChangedSamePieceStream,
+            reconciliation_reason=ReconciliationReason.BoardChangedSamePieceStream,
+        )
+
+    if expected is not None and same_state_except_board(incoming, expected.snapshot):
+        return SessionTransition(
+            transition_type=TransitionType.ExpectedAdvanceWithBoardCorrection,
+            status=SuggestionStatus.Reconciled,
+            piece_stream_action=PieceStreamAction.Append,
+            expected=expected,
+            reconciliation_reason=ReconciliationReason.BoardChangedAfterExpectedAdvance,
         )
 
     if expected is not None:
         return SessionTransition(
-            status=SuggestionStatus.Resynced,
-            bot_action=BotAction.Reset,
+            transition_type=TransitionType.ExpectedAdvanceChanged,
+            status=SuggestionStatus.Reset,
             piece_stream_action=PieceStreamAction.Append,
             expected=expected,
-            resync_type=ResyncType.BoardChangedAfterExpectedAdvance,
+            reconciliation_reason=ReconciliationReason.BoardChangedAfterExpectedAdvance,
         )
 
     return SessionTransition(
-        status=SuggestionStatus.Resynced,
-        bot_action=BotAction.Reset,
-        piece_stream_action=PieceStreamAction.Resync,
-        resync_type=ResyncType.PieceStreamChangedUnexpectedly,
+        transition_type=TransitionType.UnexpectedPieces,
+        status=SuggestionStatus.Reset,
+        piece_stream_action=PieceStreamAction.Realign,
+        reconciliation_reason=ReconciliationReason.PieceStreamChangedUnexpectedly,
     )
 
 
@@ -143,6 +164,18 @@ def expected_piece_advance(
 
 def observed_pieces(snapshot: ObservedSnapshot) -> list[Piece]:
     return [snapshot.active.piece, *snapshot.queue]
+
+
+def same_state_except_board(
+    incoming: ObservedSnapshot, shadow_observed: ObservedSnapshot
+) -> bool:
+    return (
+        incoming.board.cols != shadow_observed.board.cols
+        and incoming.active == shadow_observed.active
+        and incoming.queue == shadow_observed.queue
+        and incoming.hold == shadow_observed.hold
+        and incoming.can_hold == shadow_observed.can_hold
+    )
 
 
 def _is_prefix(prefix: list[Piece], values: list[Piece]) -> bool:

@@ -54,7 +54,7 @@ class DerivedState:
         self.combo = state.combo
         self.back_to_back = state.back_to_back
 
-    def repair_or_reset(self, snapshot: ObservedSnapshot, rules: Rules) -> None:
+    def reconcile_from(self, snapshot: ObservedSnapshot, rules: Rules) -> None:
         if snapshot.last_move is None:
             self.combo = 0
             self.back_to_back = 0

@@ -54,10 +54,14 @@ def snapshot(
 
 
 class FakeBotSession:
-    def __init__(self, suggestions: list[list[Placement]]) -> None:
+    def __init__(
+        self, suggestions: list[list[Placement]], supports_board: bool = False
+    ) -> None:
         self.suggestions = suggestions
+        self._supports_board = supports_board
         self.started: list[BotSnapshot] = []
         self.started_rules: list[Rules] = []
+        self.board_updates: list[Board] = []
         self.resets: list[BotSnapshot] = []
         self.reset_rules: list[Rules] = []
         self.advanced: list[tuple[Placement, list[Piece]]] = []
@@ -86,6 +90,16 @@ class FakeBotSession:
         self, placement: Placement, new_pieces: list[Piece] | None = None
     ) -> None:
         self.advanced.append((placement, list(new_pieces or [])))
+
+    def supports_board_update(self) -> bool:
+        return self._supports_board
+
+    def update_board(self, snapshot: BotSnapshot, rules: Rules) -> bool:
+        if not self._supports_board:
+            self.reset_from(snapshot, rules)
+            return False
+        self.board_updates.append(snapshot.board.copy())
+        return True
 
     def reset_from(self, snapshot: BotSnapshot, rules: Rules) -> None:
         self.resets.append(snapshot)
@@ -273,14 +287,16 @@ class ServiceTests(unittest.TestCase):
                 SuggestionRequest(snapshot=snapshot(seq=1), rules=new_rules)
             )
 
-        self.assertEqual(result.status, SuggestionStatus.Resynced)
-        self.assertIn("type=rules_changed", stderr.getvalue())
+        self.assertEqual(result.status, SuggestionStatus.Reset)
+        self.assertIn("reason=rules_changed", stderr.getvalue())
         self.assertEqual(len(fake.started), 1)
         self.assertEqual(len(fake.resets), 1)
         self.assertEqual(fake.reset_rules, [new_rules])
         self.assertEqual(fake.advanced, [])
 
-    def test_rules_change_preserves_unexpected_piece_stream_resync(self) -> None:
+    def test_rules_change_preserves_unexpected_piece_stream_reconciliation(
+        self,
+    ) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.T, 4, 0)]])
         session = SuggestionContinuity(lambda: fake)
         old_rules = Rules(rot180=True)
@@ -296,9 +312,10 @@ class ServiceTests(unittest.TestCase):
                 SuggestionRequest(snapshot=changed, rules=new_rules)
             )
 
-        self.assertEqual(result.status, SuggestionStatus.Resynced)
+        self.assertEqual(result.status, SuggestionStatus.Reset)
         self.assertIn(
-            "type=rules_changed seq=1 bot_action=reset piece_stream_action=resync",
+            "[info] reconciliation: reason=rules_changed seq=1 action=reset "
+            "piece_stream=realign",
             stderr.getvalue(),
         )
         self.assertEqual(len(fake.resets), 1)
@@ -309,9 +326,70 @@ class ServiceTests(unittest.TestCase):
         self.assertIsNone(stream.offset)
         self.assertEqual(stream.pieces, [Piece.T, Piece.L, Piece.J, Piece.S, Piece.Z])
 
-    def test_board_desync_resets_bot_without_losing_piece_stream_offset(self) -> None:
+    def test_board_only_desync_updates_supported_bot_without_reset(self) -> None:
         fake = FakeBotSession(
-            [[placement(Piece.O, 4, 0)], [placement(Piece.I, 0, 2, Rotation.East)]]
+            [[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]],
+            supports_board=True,
+        )
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        changed_board = Board(cols=[1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = session.suggest(
+                SuggestionRequest(snapshot=snapshot(changed_board, seq=1), rules=rules)
+            )
+
+        self.assertEqual(result.status, SuggestionStatus.Reconciled)
+        self.assertIn(
+            "[info] reconciliation: reason=board_changed_same_piece_stream seq=1 "
+            "action=board piece_stream=keep",
+            stderr.getvalue(),
+        )
+        self.assertEqual([board.cols for board in fake.board_updates], [[1] + [0] * 9])
+        self.assertEqual(fake.resets, [])
+        self.assertEqual(fake.advanced, [])
+        stream = session.piece_stream.snapshot()
+        self.assertIsNotNone(stream)
+        assert stream is not None
+        self.assertEqual(stream.offset, 0)
+        self.assertEqual(stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J])
+
+    def test_board_only_desync_falls_back_to_reset_without_capability(self) -> None:
+        fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]])
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        changed_board = Board(cols=[1, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = session.suggest(
+                SuggestionRequest(snapshot=snapshot(changed_board, seq=1), rules=rules)
+            )
+
+        self.assertEqual(result.status, SuggestionStatus.Reset)
+        self.assertIn(
+            "[info] reconciliation: reason=board_changed_same_piece_stream seq=1 "
+            "action=reset piece_stream=keep",
+            stderr.getvalue(),
+        )
+        self.assertEqual(len(fake.resets), 1)
+        self.assertEqual(fake.board_updates, [])
+        stream = fake.resets[0].piece_stream
+        self.assertIsNotNone(stream)
+        assert stream is not None
+        self.assertEqual(stream.offset, 0)
+        self.assertEqual(stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J])
+
+    def test_expected_advance_with_board_correction_advances_and_updates_supported_bot(
+        self,
+    ) -> None:
+        fake = FakeBotSession(
+            [[placement(Piece.O, 4, 0)], [placement(Piece.I, 0, 2, Rotation.East)]],
+            supports_board=True,
         )
         session = SuggestionContinuity(lambda: fake)
         rules = Rules()
@@ -324,20 +402,50 @@ class ServiceTests(unittest.TestCase):
         with redirect_stderr(stderr):
             result = session.suggest(SuggestionRequest(snapshot=changed, rules=rules))
 
-        self.assertEqual(result.status, SuggestionStatus.Resynced)
+        self.assertEqual(result.status, SuggestionStatus.Reconciled)
         self.assertIn(
-            "[info] minorail resync: type=board_changed_after_expected_advance seq=1 "
-            "bot_action=reset piece_stream_action=append",
+            "[info] reconciliation: "
+            "reason=board_changed_after_expected_advance seq=1 "
+            "action=advance_then_board piece_stream=append",
             stderr.getvalue(),
         )
-        self.assertEqual(len(fake.resets), 1)
-        stream = fake.resets[0].piece_stream
+        self.assertEqual(fake.advanced, [(placement(Piece.O, 4, 0), [Piece.S])])
+        self.assertEqual([board.cols for board in fake.board_updates], [[0] * 10])
+        self.assertEqual(fake.resets, [])
+        stream = session.piece_stream.snapshot()
         self.assertIsNotNone(stream)
         assert stream is not None
         self.assertEqual(stream.offset, 0)
         self.assertEqual(
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )
+
+    def test_expected_advance_with_board_correction_falls_back_to_reset_without_capability(
+        self,
+    ) -> None:
+        first = placement(Piece.O, 4, 0)
+        fake = FakeBotSession([[first], [placement(Piece.I, 0, 2, Rotation.East)]])
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        changed = snapshot(
+            active=Piece.I, queue=[Piece.T, Piece.L, Piece.J, Piece.S], seq=1
+        )
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            result = session.suggest(SuggestionRequest(snapshot=changed, rules=rules))
+
+        self.assertEqual(result.status, SuggestionStatus.Reset)
+        self.assertIn(
+            "[info] reconciliation: "
+            "reason=board_changed_after_expected_advance seq=1 "
+            "action=reset piece_stream=append",
+            stderr.getvalue(),
+        )
+        self.assertEqual(fake.advanced, [])
+        self.assertEqual(fake.board_updates, [])
+        self.assertEqual(len(fake.resets), 1)
 
     def test_unexpected_piece_chronology_resets_piece_stream_offset(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.T, 4, 0)]])
@@ -350,7 +458,7 @@ class ServiceTests(unittest.TestCase):
         )
         result = session.suggest(SuggestionRequest(snapshot=changed, rules=rules))
 
-        self.assertEqual(result.status, SuggestionStatus.Resynced)
+        self.assertEqual(result.status, SuggestionStatus.Reset)
         self.assertEqual(len(fake.resets), 1)
         stream = fake.resets[0].piece_stream
         self.assertIsNotNone(stream)
@@ -494,11 +602,13 @@ class ServiceTests(unittest.TestCase):
                 "sonic_drop": ["only", "allow"],
                 "piece_stream": True,
                 "spawn_position": True,
+                "board": True,
             }
         )
 
         self.assertIsNone(capabilities.validate_rules(Rules()))
         self.assertTrue(capabilities.piece_stream)
+        self.assertTrue(capabilities.board)
 
     def test_capabilities_reject_custom_spawn_without_support(self) -> None:
         capabilities = BotCapabilities.from_sbp(

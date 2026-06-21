@@ -15,6 +15,6 @@
 
 * Internals
   * [Architecture](internals/architecture.md)
-  * [Sessions And Resyncs](internals/sessions-and-resyncs.md)
+  * [Session Reconciliation](internals/session-reconciliation.md)
   * [Visualizers](internals/visualizers.md)
   * [Development And Extension](internals/development-and-extension.md)

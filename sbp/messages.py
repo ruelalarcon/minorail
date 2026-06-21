@@ -24,6 +24,7 @@ class BotCapabilities:
     back_to_back_sources: Optional[list[str]] = None
     piece_stream: bool = False
     spawn_position: bool = False
+    board: bool = False
 
     @staticmethod
     def from_sbp(value: object) -> "BotCapabilities":
@@ -38,6 +39,7 @@ class BotCapabilities:
             back_to_back_sources=_string_list(value.get("back_to_back_sources")),
             piece_stream=value.get("piece_stream") is True,
             spawn_position=value.get("spawn_position") is True,
+            board=value.get("board") is True,
         )
 
     def validate_rules(self, rules: Rules) -> Optional[str]:
@@ -110,6 +112,11 @@ class MsgStart:
     piece_stream: Optional["PieceStreamSnapshot"] = None
     incoming_garbage: list[int] | None = None
     extensions: dict[str, Any] | None = None
+
+
+@dataclass
+class MsgBoard:
+    board: Board
 
 
 @dataclass

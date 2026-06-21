@@ -256,7 +256,7 @@ earliest-resolving garbage chunk to latest-resolving chunk.
 | Field | Meaning |
 | --- | --- |
 | `seq` | Copied from the request. |
-| `status` | `synced`, `advanced`, `resynced`, `invalid`, or `no_suggestion`. |
+| `status` | `synced`, `advanced`, `reconciled`, `reset`, `invalid`, or `no_suggestion`. |
 | `placements` | All parsed placements returned by the bot. |
 | `placement` | Selected usable placement or null. |
 | `path` | Input path or null. |

@@ -16,11 +16,17 @@ from contracts.suggestion_status import SuggestionStatus
 from suggestion.derived_state import DerivedState
 from suggestion.move_selection import moving_piece_for, pick_move
 from suggestion.piece_stream_tracker import PieceStreamTracker
+from suggestion.session.reconciliation import (
+    Reconciliation,
+    ReconciliationAction,
+    ReconciliationStep,
+    choose_reconciliation,
+)
 from suggestion.session.transition import (
-    BotAction,
     PieceStreamAction,
-    ResyncType,
+    ReconciliationReason,
     SessionTransition,
+    TransitionType,
     classify_transition,
     observed_pieces,
 )
@@ -39,6 +45,10 @@ class BotSessionLike(Protocol):
     def advance_with(
         self, placement: Placement, new_pieces: list[Piece] | None = None
     ) -> None: ...
+
+    def supports_board_update(self) -> bool: ...
+
+    def update_board(self, snapshot: BotSnapshot, rules: Rules) -> bool: ...
 
     def reset_from(self, snapshot: BotSnapshot, rules: Rules) -> None: ...
 
@@ -107,8 +117,8 @@ class SuggestionContinuity:
                 reason=validation_error,
             )
 
-        transition = self._sync_to_request(request)
-        self._apply_bot_action(transition, request)
+        transition, reconciliation = self._sync_to_request(request)
+        self._apply_reconciliation(reconciliation, transition, request)
 
         moves = self.bot_session.suggest(
             request.timeout_ms,
@@ -155,14 +165,16 @@ class SuggestionContinuity:
         self.rules = request.rules
         return SuggestionResult(
             seq=request.snapshot.seq,
-            status=transition.status,
+            status=reconciliation.status,
             placements=moves,
             placement=chosen,
             path=path,
             reason=reason,
         )
 
-    def _sync_to_request(self, request: SuggestionRequest) -> SessionTransition:
+    def _sync_to_request(
+        self, request: SuggestionRequest
+    ) -> tuple[SessionTransition, Reconciliation]:
         incoming = request.snapshot
         previous_rules = self.rules
         transition_rules = previous_rules or request.rules
@@ -174,26 +186,41 @@ class SuggestionContinuity:
             derived_state=self.derived_state,
             rules=transition_rules,
         )
-        if previous_rules is not None and previous_rules != request.rules:
+        rules_changed = previous_rules is not None and previous_rules != request.rules
+        if rules_changed:
             transition = SessionTransition(
-                status=SuggestionStatus.Resynced,
-                bot_action=BotAction.Reset,
+                transition_type=transition.transition_type,
+                status=SuggestionStatus.Reset,
                 piece_stream_action=transition.piece_stream_action,
                 expected=transition.expected,
-                resync_type=ResyncType.RulesChanged,
+                reconciliation_reason=ReconciliationReason.RulesChanged,
             )
+
+        reconciliation = choose_reconciliation(
+            transition,
+            rules_changed=rules_changed,
+            supports_board=self.bot_session.supports_board_update(),
+        )
+
+        if transition.reconciliation_reason is not None:
+            self._log_reconciliation(transition, reconciliation, incoming)
 
         if transition.status == SuggestionStatus.Advanced:
             assert transition.expected is not None
             self.derived_state.update_from_confirmed(transition.expected.state)
-        elif transition.status == SuggestionStatus.Resynced:
-            self._log_resync(transition, incoming)
-            self.derived_state.repair_or_reset(incoming, request.rules)
-        elif transition.bot_action == BotAction.Start:
+        elif reconciliation.action == ReconciliationAction.AdvanceThenBoard:
+            assert transition.expected is not None
+            self.derived_state.update_from_confirmed(transition.expected.state)
+        elif transition.status in {
+            SuggestionStatus.Reconciled,
+            SuggestionStatus.Reset,
+        }:
+            self.derived_state.reconcile_from(incoming, request.rules)
+        elif transition.transition_type == TransitionType.Initial:
             self.derived_state = DerivedState.from_observed(incoming)
 
         self._apply_piece_stream_action(transition, incoming)
-        return transition
+        return transition, reconciliation
 
     def _apply_piece_stream_action(
         self, transition: SessionTransition, incoming: ObservedSnapshot
@@ -206,11 +233,14 @@ class SuggestionContinuity:
             case PieceStreamAction.Append:
                 assert transition.expected is not None
                 self.piece_stream.append(transition.expected.new_pieces)
-            case PieceStreamAction.Resync:
-                self.piece_stream.resync(observed_pieces(incoming))
+            case PieceStreamAction.Realign:
+                self.piece_stream.realign(observed_pieces(incoming))
 
-    def _apply_bot_action(
-        self, transition: SessionTransition, request: SuggestionRequest
+    def _apply_reconciliation(
+        self,
+        reconciliation: Reconciliation,
+        transition: SessionTransition,
+        request: SuggestionRequest,
     ) -> None:
         bot_snapshot = self._to_bot_snapshot(request)
         if self._bot_needs_start:
@@ -219,21 +249,26 @@ class SuggestionContinuity:
             self._bot_needs_start = False
             return
 
-        match transition.bot_action:
-            case BotAction.Start:
-                self.bot_session.start_from(bot_snapshot, request.rules)
-                self._bot_game_active = True
-            case BotAction.Keep:
-                pass
-            case BotAction.Advance:
-                assert self.previous_suggestion is not None
-                assert transition.expected is not None
-                self.bot_session.advance_with(
-                    self.previous_suggestion, transition.expected.new_pieces
-                )
-            case BotAction.Reset:
-                self.bot_session.reset_from(bot_snapshot, request.rules)
-                self._bot_game_active = True
+        for step in reconciliation.steps:
+            match step:
+                case ReconciliationStep.Start:
+                    self.bot_session.start_from(bot_snapshot, request.rules)
+                    self._bot_game_active = True
+                case ReconciliationStep.Advance:
+                    self._advance_bot(transition)
+                case ReconciliationStep.Board:
+                    self.bot_session.update_board(bot_snapshot, request.rules)
+                    self._bot_game_active = True
+                case ReconciliationStep.Reset:
+                    self.bot_session.reset_from(bot_snapshot, request.rules)
+                    self._bot_game_active = True
+
+    def _advance_bot(self, transition: SessionTransition) -> None:
+        assert self.previous_suggestion is not None
+        assert transition.expected is not None
+        self.bot_session.advance_with(
+            self.previous_suggestion, transition.expected.new_pieces
+        )
 
     def _reset_game_continuity(self) -> None:
         self._bot_game_active = False
@@ -270,18 +305,23 @@ class SuggestionContinuity:
             return "board must have 10 columns"
         return None
 
-    def _log_resync(
-        self, transition: SessionTransition, incoming: ObservedSnapshot
+    def _log_reconciliation(
+        self,
+        transition: SessionTransition,
+        reconciliation: Reconciliation,
+        incoming: ObservedSnapshot,
     ) -> None:
-        resync_type = (
-            transition.resync_type.value if transition.resync_type else "unknown"
+        reason = (
+            transition.reconciliation_reason.value
+            if transition.reconciliation_reason
+            else "unknown"
         )
         print(
-            "[info] minorail resync: "
-            f"type={resync_type} "
+            "[info] reconciliation: "
+            f"reason={reason} "
             f"seq={incoming.seq} "
-            f"bot_action={transition.bot_action.value} "
-            f"piece_stream_action={transition.piece_stream_action.value}",
+            f"action={reconciliation.action.value} "
+            f"piece_stream={transition.piece_stream_action.value}",
             file=sys.stderr,
         )
 

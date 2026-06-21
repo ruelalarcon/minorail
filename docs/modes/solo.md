@@ -80,4 +80,4 @@ Use `--pathfind` or `--no-pathfind` to override both the consumer default and
 
 * [Gameplay Behavior](../reference/gameplay-behavior.md)
 * [Evaluation](evaluation.md)
-* [Sessions And Resyncs](../internals/sessions-and-resyncs.md)
+* [Session Reconciliation](../internals/session-reconciliation.md)
