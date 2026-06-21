@@ -177,6 +177,19 @@ with `allspin`, `allspin-mini`, and `perfect-clear` source atoms.
 `allspin` and `allspin-mini` exclude T pieces. T-piece spins use `t-spin` and
 `t-spin-mini`.
 
+Spin detection modes:
+
+| Mode | Behavior |
+| --- | --- |
+| `none` | No spins are detected. |
+| `t-spins` | T pieces use T-spin corner and kick detection. Non-T pieces are not spins. |
+| `t-spins+` | `t-spins`, plus immobile T-piece fallback as mini. |
+| `all` | T pieces use T-spin detection. Immobile non-T pieces are full spins. |
+| `all+` | `all`, plus immobile T-piece fallback as mini. |
+| `all-mini` | T pieces use T-spin detection. Immobile non-T pieces are mini spins. |
+| `all-mini+` | `all-mini`, plus immobile T-piece fallback as mini. |
+| `mini-only` | T pieces force detected T-spins to mini. Immobile T and non-T pieces are mini spins. |
+
 ---
 
 ## Top Out
