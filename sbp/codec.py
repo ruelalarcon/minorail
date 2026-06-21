@@ -35,8 +35,8 @@ def rules_message(rules: Rules) -> MsgRules:
         sonic_drop=rules.sonic_drop,
         spin_detection=rules.spin_detection,
         back_to_back_sources=rules.back_to_back_sources,
-        spawn_x=rules.spawn_x,
-        spawn_y=rules.spawn_y,
+        spawn_position={"x": rules.spawn_x, "y": rules.spawn_y},
+        board_size={"width": rules.board_width, "height": rules.board_height},
     )
 
 
@@ -54,8 +54,8 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
                     "back_to_back_sources": _back_to_back_sources(
                         message.back_to_back_sources
                     ),
-                    "spawn_x": message.spawn_x,
-                    "spawn_y": message.spawn_y,
+                    "spawn_position": message.spawn_position,
+                    "board_size": message.board_size,
                 }
             )
         case MsgStart():
@@ -98,9 +98,9 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
 
 
 def board_to_sbp(board: Board) -> list[list[str | None]]:
-    rows: list[list[str | None]] = [[None] * 10 for _ in range(40)]
-    for x in range(10):
-        for y in range(40):
+    rows: list[list[str | None]] = [[None] * board.width for _ in range(board.height)]
+    for x in range(board.width):
+        for y in range(board.height):
             if board.cols[x] & (1 << y):
                 rows[y][x] = "G"
     return rows

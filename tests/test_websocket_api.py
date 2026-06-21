@@ -50,7 +50,7 @@ class WebSocketApiTests(unittest.TestCase):
                 "board": {"cols": [0] * 10},
                 "active": "T",
                 "queue": ["I", "O"],
-                "rules": {"spawn_x": 5, "spawn_y": 18},
+                "rules": {"spawn_position": {"x": 5, "y": 18}},
             },
             base_rules=Rules(),
         )
@@ -59,6 +59,41 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.rules.spawn_y, 18)
         self.assertEqual(request.snapshot.active.x, 5)
         self.assertEqual(request.snapshot.active.y, 18)
+
+    def test_request_rules_define_board_size_for_cols(self) -> None:
+        request = request_from_json(
+            {
+                "type": "suggest",
+                "seq": 7,
+                "board": {"cols": [1 << 70, 0]},
+                "active": "T",
+                "queue": ["I", "O"],
+                "rules": {"board_size": {"width": 2, "height": 100}},
+            },
+            base_rules=Rules(),
+        )
+
+        self.assertEqual(request.rules.board_width, 2)
+        self.assertEqual(request.rules.board_height, 100)
+        self.assertEqual(request.snapshot.board, Board([1 << 70, 0], height=100))
+
+    def test_request_rules_define_board_size_for_sbp_matrix(self) -> None:
+        rows: list[list[str | None]] = [[None, None] for _ in range(100)]
+        rows[70][1] = "G"
+
+        request = request_from_json(
+            {
+                "type": "suggest",
+                "seq": 7,
+                "board": rows,
+                "active": "T",
+                "queue": ["I", "O"],
+                "rules": {"board_size": {"width": 2, "height": 100}},
+            },
+            base_rules=Rules(),
+        )
+
+        self.assertEqual(request.snapshot.board, Board([0, 1 << 70], height=100))
 
     def test_request_accepts_extensions_object(self) -> None:
         extensions = {"minorail.example.v1": {"value": True}}

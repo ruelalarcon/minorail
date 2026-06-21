@@ -28,7 +28,7 @@ class _GarbageQueue:
 
 class TetrioGarbageRules:
     MAX_RISE_PER_LOCK = 8
-    WIDTH = 10
+    DEFAULT_WIDTH = 10
 
     def __init__(self, *, seed: int | None) -> None:
         self._rng = random.Random(seed)
@@ -75,7 +75,7 @@ class TetrioGarbageRules:
                 queue_after=current,
             )
 
-        holes, current = _holes_to_apply(current, lines, self._rng)
+        holes, current = _holes_to_apply(current, lines, state.board.width, self._rng)
         topped_out = _raise_garbage(state, holes)
         return GarbageApplication(
             lines=lines,
@@ -90,8 +90,10 @@ def _queue(value: GarbageQueue) -> _GarbageQueue:
     return value
 
 
-def _reroll_hole(rng: random.Random) -> int:
-    return rng.randrange(TetrioGarbageRules.WIDTH)
+def _reroll_hole(
+    rng: random.Random, width: int = TetrioGarbageRules.DEFAULT_WIDTH
+) -> int:
+    return rng.randrange(width)
 
 
 def _consume_queue(
@@ -121,6 +123,7 @@ def _consume_queue(
 def _holes_to_apply(
     queue: _GarbageQueue,
     lines: int,
+    width: int,
     rng: random.Random,
 ) -> tuple[list[int], _GarbageQueue]:
     holes: list[int] = []
@@ -129,8 +132,8 @@ def _holes_to_apply(
     for entry in queue.entries:
         if remaining <= 0:
             break
-        if current.last_hole is None:
-            current = _GarbageQueue(current.entries, _reroll_hole(rng))
+        if current.last_hole is None or current.last_hole >= width:
+            current = _GarbageQueue(current.entries, _reroll_hole(rng, width))
         assert current.last_hole is not None
         count = min(entry.lines, remaining)
         holes.extend([current.last_hole] * count)
@@ -146,18 +149,20 @@ def _holes_to_apply(
 
 def _raise_garbage(state: GameState, holes: list[int]) -> bool:
     lines = len(holes)
-    mask40 = (1 << 40) - 1
-    overflow_mask = ((1 << lines) - 1) << (40 - lines)
+    width = state.board.width
+    height = state.board.height
+    mask = (1 << height) - 1
+    overflow_mask = ((1 << min(lines, height)) - 1) << max(0, height - lines)
     topped_out = any(col & overflow_mask for col in state.board.cols)
 
-    bottom_masks = [0] * 10
+    bottom_masks = [0] * width
     for y, hole in enumerate(holes):
-        for x in range(10):
+        if y >= height:
+            break
+        for x in range(width):
             if x != hole:
                 bottom_masks[x] |= 1 << y
 
-    for x in range(10):
-        state.board.cols[x] = ((state.board.cols[x] << lines) & mask40) | bottom_masks[
-            x
-        ]
+    for x in range(width):
+        state.board.cols[x] = ((state.board.cols[x] << lines) & mask) | bottom_masks[x]
     return topped_out

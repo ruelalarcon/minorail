@@ -40,6 +40,10 @@ class BoardFrame:
     back_to_back: int
     editable: bool = False
 
+    @property
+    def width(self) -> int:
+        return len(self.cells[0]) if self.cells else 0
+
 
 def make_board_frame(
     state: GameState,
@@ -50,9 +54,11 @@ def make_board_frame(
     *,
     editable: bool = False,
 ) -> BoardFrame:
-    cells = [[RenderCell("empty") for _ in range(10)] for _ in range(visible_rows)]
+    width = state.board.width
+    visible_rows = min(visible_rows, state.board.height)
+    cells = [[RenderCell("empty") for _ in range(width)] for _ in range(visible_rows)]
 
-    for x in range(10):
+    for x in range(width):
         for y in range(visible_rows):
             if state.board.occupied(x, y):
                 cells[y][x] = RenderCell("filled")
@@ -75,13 +81,13 @@ def make_board_frame(
             active_y - drop,
         ):
             if (
-                0 <= gx < 10
+                0 <= gx < width
                 and 0 <= gy < visible_rows
                 and cells[gy][gx].kind == "empty"
             ):
                 cells[gy][gx] = RenderCell("ghost", active_piece)
         for ax, ay in piece_cells(active_piece, active_rotation, active_x, active_y):
-            if 0 <= ax < 10 and 0 <= ay < visible_rows:
+            if 0 <= ax < width and 0 <= ay < visible_rows:
                 cells[ay][ax] = RenderCell("active", active_piece)
 
     return BoardFrame(
@@ -106,7 +112,10 @@ def board_html(frame: BoardFrame) -> str:
     board_class = (
         "minorail-board-editable" if frame.editable else "minorail-board-disabled"
     )
-    out = [f'<div class="minorail-board {board_class}">']
+    out = [
+        f'<div class="minorail-board {board_class}" '
+        f'style="--board-width: {frame.width}">'
+    ]
     for y in reversed(range(len(frame.cells))):
         for x, cell in enumerate(frame.cells[y]):
             classes = f"minorail-cell minorail-cell-{cell.kind}"
@@ -362,7 +371,7 @@ CSS = """
 }
 .minorail-board {
   display: grid;
-  grid-template-columns: repeat(10, minmax(18px, 32px));
+  grid-template-columns: repeat(var(--board-width, 10), minmax(18px, 32px));
   grid-auto-rows: minmax(18px, 32px);
   gap: 1px;
   background: #1a2029;
@@ -554,7 +563,7 @@ CSS = """
     padding: 8px;
   }
   .minorail-board {
-    grid-template-columns: repeat(10, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--board-width, 10), minmax(0, 1fr));
     grid-auto-rows: auto;
   }
   .minorail-side {

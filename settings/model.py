@@ -15,8 +15,14 @@ DEFAULT: dict[str, Any] = {
             "sonic_drop": "only",
             "spin_detection": "t-spins",
             "back_to_back_sources": ["quad", "t-spin", "t-spin-mini"],
-            "spawn_x": 4,
-            "spawn_y": 20,
+            "spawn_position": {
+                "x": 4,
+                "y": 20,
+            },
+            "board_size": {
+                "width": 10,
+                "height": 40,
+            },
         },
         "start": {
             "piece_stream_limit": 11,

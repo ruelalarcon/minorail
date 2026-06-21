@@ -14,6 +14,52 @@ if TYPE_CHECKING:
     from contracts.piece_stream_snapshot import PieceStreamSnapshot
 
 
+@dataclass(frozen=True)
+class IntRange:
+    min: int
+    max: int
+
+    @staticmethod
+    def from_sbp(value: object) -> "IntRange | None":
+        if isinstance(value, bool):
+            return None
+        if isinstance(value, int):
+            return IntRange(value, value)
+        if not isinstance(value, dict):
+            return None
+        min_value = value.get("min")
+        max_value = value.get("max")
+        if isinstance(min_value, bool) or isinstance(max_value, bool):
+            return None
+        if not isinstance(min_value, int) or not isinstance(max_value, int):
+            return None
+        if min_value > max_value:
+            return None
+        return IntRange(min_value, max_value)
+
+    def contains(self, value: int) -> bool:
+        return self.min <= value <= self.max
+
+    def label(self) -> str:
+        return str(self.min) if self.min == self.max else f"{self.min}..{self.max}"
+
+
+@dataclass(frozen=True)
+class BoardSizeCapability:
+    width: IntRange
+    height: IntRange
+
+    @staticmethod
+    def from_sbp(value: object) -> "BoardSizeCapability | None":
+        if not isinstance(value, dict):
+            return None
+        width = IntRange.from_sbp(value.get("width"))
+        height = IntRange.from_sbp(value.get("height"))
+        if width is None or height is None:
+            return None
+        return BoardSizeCapability(width=width, height=height)
+
+
 @dataclass
 class BotCapabilities:
     randomizers: Optional[list[str]] = None
@@ -25,6 +71,7 @@ class BotCapabilities:
     piece_stream: bool = False
     spawn_position: bool = False
     board: bool = False
+    board_size: BoardSizeCapability | None = None
 
     @staticmethod
     def from_sbp(value: object) -> "BotCapabilities":
@@ -40,6 +87,7 @@ class BotCapabilities:
             piece_stream=value.get("piece_stream") is True,
             spawn_position=value.get("spawn_position") is True,
             board=value.get("board") is True,
+            board_size=BoardSizeCapability.from_sbp(value.get("board_size")),
         )
 
     def validate_rules(self, rules: Rules) -> Optional[str]:
@@ -80,6 +128,20 @@ class BotCapabilities:
                 )
         if (rules.spawn_x, rules.spawn_y) != (4, 20) and not self.spawn_position:
             return "bot does not support custom spawn_position"
+        if self.board_size is None:
+            if (rules.board_width, rules.board_height) != (10, 40):
+                return "bot does not support custom board_size"
+        else:
+            if not self.board_size.width.contains(rules.board_width):
+                return (
+                    f"bot does not support board_size.width {rules.board_width}; "
+                    f"supported: {self.board_size.width.label()}"
+                )
+            if not self.board_size.height.contains(rules.board_height):
+                return (
+                    f"bot does not support board_size.height {rules.board_height}; "
+                    f"supported: {self.board_size.height.label()}"
+                )
         return None
 
 
@@ -97,8 +159,8 @@ class MsgRules:
     sonic_drop: Optional[str] = None
     spin_detection: Optional[SpinDetection | str] = None
     back_to_back_sources: Optional[frozenset[BackToBackSource] | list[str]] = None
-    spawn_x: Optional[int] = None
-    spawn_y: Optional[int] = None
+    spawn_position: Optional[dict[str, int]] = None
+    board_size: Optional[dict[str, int]] = None
 
 
 @dataclass

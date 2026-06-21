@@ -107,8 +107,8 @@ def _rules(settings: Settings) -> dict[str, Any]:
         "back_to_back_sources": sorted(
             source.value for source in rules.back_to_back_sources
         ),
-        "spawn_x": rules.spawn_x,
-        "spawn_y": rules.spawn_y,
+        "spawn_position": {"x": rules.spawn_x, "y": rules.spawn_y},
+        "board_size": {"width": rules.board_width, "height": rules.board_height},
     }
 
 

@@ -201,8 +201,10 @@ def _board_lines(
     queue_size: int,
 ) -> list[str]:
     unset = "\x00"
-    grid: list[list[str]] = [[unset for _ in range(10)] for _ in range(visible_rows)]
-    for x in range(10):
+    width = state.board.width
+    visible_rows = min(visible_rows, state.board.height)
+    grid: list[list[str]] = [[unset for _ in range(width)] for _ in range(visible_rows)]
+    for x in range(width):
         for y in range(visible_rows):
             if state.board.occupied(x, y):
                 grid[y][x] = FILLED
@@ -212,17 +214,17 @@ def _board_lines(
         px, py, prot = active_loc
         drop = state.board.drop_distance(active_piece, prot, px, py)
         for gx, gy in piece_cells(active_piece, prot, px, py - drop):
-            if 0 <= gx < 10 and 0 <= gy < visible_rows and grid[gy][gx] == unset:
+            if 0 <= gx < width and 0 <= gy < visible_rows and grid[gy][gx] == unset:
                 grid[gy][gx] = GHOST
         for ax, ay in piece_cells(active_piece, prot, px, py):
-            if 0 <= ax < 10 and 0 <= ay < visible_rows:
+            if 0 <= ax < width and 0 <= ay < visible_rows:
                 grid[ay][ax] = colored(FILLED, active_piece)
 
-    lines = [title, "+" + "--" * 10 + "+"]
+    lines = [title, "+" + "--" * width + "+"]
     for row in reversed(range(visible_rows)):
         cells = "".join(EMPTY if c == unset else c for c in grid[row])
         lines.append("|" + cells + "|")
-    lines.append("+" + "--" * 10 + "+")
+    lines.append("+" + "--" * width + "+")
     hold = colored(state.hold.value, state.hold) if state.hold else " "
     queue = " ".join(colored(p.value, p) for p in state.queue[:queue_size])
     active_text = active[0].value if active is not None else state.active.piece.value

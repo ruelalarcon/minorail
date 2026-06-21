@@ -15,6 +15,7 @@ from tetris.model.rules import Rules
 from tetris.game.state import spawn_location
 from sbp.parser import parse
 from sbp.messages import BotCapabilities, MsgBoard, MsgRules, MsgStart, MsgSuggest
+from sbp.codec import rules_message, to_jsonable
 
 
 def empty_board() -> list[list[str | None]]:
@@ -22,21 +23,26 @@ def empty_board() -> list[list[str | None]]:
 
 
 class SbpParserTests(unittest.TestCase):
+    def test_rules_message_writes_board_size(self) -> None:
+        obj = to_jsonable(rules_message(Rules(board_width=12, board_height=80)))
+
+        self.assertEqual(obj["board_size"], {"width": 12, "height": 80})
+
     def test_rules_accept_spawn_position(self) -> None:
         msg = parse(
             json.dumps(
                 {
                     "type": "rules",
-                    "spawn_x": 5,
-                    "spawn_y": 18,
+                    "spawn_position": {"x": 5, "y": 18},
+                    "board_size": {"width": 12, "height": 80},
                 }
             )
         )
 
         self.assertIsInstance(msg, MsgRules)
         assert isinstance(msg, MsgRules)
-        self.assertEqual(msg.spawn_x, 5)
-        self.assertEqual(msg.spawn_y, 18)
+        self.assertEqual(msg.spawn_position, {"x": 5, "y": 18})
+        self.assertEqual(msg.board_size, {"width": 12, "height": 80})
 
     def test_start_active_is_piece_string(self) -> None:
         msg = parse(
@@ -189,6 +195,24 @@ class SbpParserTests(unittest.TestCase):
     def test_capabilities_parse_board_default_false(self) -> None:
         self.assertFalse(BotCapabilities.from_sbp({}).board)
         self.assertTrue(BotCapabilities.from_sbp({"board": True}).board)
+
+    def test_capabilities_accept_board_size_range_and_singular_width(self) -> None:
+        capabilities = BotCapabilities.from_sbp(
+            {
+                "rot180": True,
+                "board_size": {"width": 10, "height": {"min": 1, "max": 64}},
+            }
+        )
+
+        self.assertIsNone(capabilities.validate_rules(Rules(board_height=64)))
+        self.assertEqual(
+            capabilities.validate_rules(Rules(board_width=12)),
+            "bot does not support board_size.width 12; supported: 10",
+        )
+        self.assertEqual(
+            capabilities.validate_rules(Rules(board_height=80)),
+            "bot does not support board_size.height 80; supported: 1..64",
+        )
 
     def test_bot_session_reset_reuses_process_with_stop_start(self) -> None:
         class FakeProcess:

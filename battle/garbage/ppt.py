@@ -35,7 +35,7 @@ class PptGarbageRules:
     """
 
     MAX_RISE_PER_LOCK = 8
-    WIDTH = 10
+    DEFAULT_WIDTH = 10
     ENTRY_HOLE_CHANGE_CHANCE = 0.9
     LINE_HOLE_CHANGE_CHANCE = 0.3
 
@@ -84,7 +84,7 @@ class PptGarbageRules:
                 queue_after=current,
             )
 
-        holes, current = _holes_to_apply(current, lines, self._rng)
+        holes, current = _holes_to_apply(current, lines, state.board.width, self._rng)
         topped_out = _raise_garbage(state, holes)
         return GarbageApplication(
             lines=lines,
@@ -99,10 +99,15 @@ def _queue(value: GarbageQueue) -> _GarbageQueue:
     return value
 
 
-def _reroll_hole(rng: random.Random, current: int | None = None) -> int:
-    if current is None:
-        return rng.randrange(PptGarbageRules.WIDTH)
-    hole = rng.randrange(PptGarbageRules.WIDTH - 1)
+def _reroll_hole(
+    rng: random.Random,
+    current: int | None = None,
+    *,
+    width: int = PptGarbageRules.DEFAULT_WIDTH,
+) -> int:
+    if current is None or width <= 1:
+        return rng.randrange(width)
+    hole = rng.randrange(width - 1)
     if current is not None and hole >= current:
         hole += 1
     return hole
@@ -113,10 +118,11 @@ def _maybe_reroll_hole(
     current: int,
     *,
     chance: float,
+    width: int = PptGarbageRules.DEFAULT_WIDTH,
 ) -> int:
     if rng.random() >= chance:
         return current
-    return _reroll_hole(rng, current)
+    return _reroll_hole(rng, current, width=width)
 
 
 def _consume_queue(
@@ -150,6 +156,7 @@ def _consume_queue(
 def _holes_to_apply(
     queue: _GarbageQueue,
     lines: int,
+    width: int,
     rng: random.Random,
 ) -> tuple[list[int], _GarbageQueue]:
     holes: list[int] = []
@@ -160,8 +167,8 @@ def _holes_to_apply(
         if remaining <= 0:
             entries.append(entry)
             continue
-        if last_hole is None:
-            last_hole = _reroll_hole(rng)
+        if last_hole is None or last_hole >= width:
+            last_hole = _reroll_hole(rng, width=width)
         applied_lines = min(entry.lines, remaining)
         for _ in range(applied_lines):
             holes.append(last_hole)
@@ -169,6 +176,7 @@ def _holes_to_apply(
                 rng,
                 last_hole,
                 chance=PptGarbageRules.LINE_HOLE_CHANGE_CHANCE,
+                width=width,
             )
         remaining -= applied_lines
         if applied_lines == entry.lines:
@@ -176,6 +184,7 @@ def _holes_to_apply(
                 rng,
                 last_hole,
                 chance=PptGarbageRules.ENTRY_HOLE_CHANGE_CHANCE,
+                width=width,
             )
             continue
         entries.append(_PendingGarbage(lines=entry.lines - applied_lines))
@@ -184,18 +193,20 @@ def _holes_to_apply(
 
 def _raise_garbage(state: GameState, holes: list[int]) -> bool:
     lines = len(holes)
-    mask40 = (1 << 40) - 1
-    overflow_mask = ((1 << lines) - 1) << (40 - lines)
+    width = state.board.width
+    height = state.board.height
+    mask = (1 << height) - 1
+    overflow_mask = ((1 << min(lines, height)) - 1) << max(0, height - lines)
     topped_out = any(col & overflow_mask for col in state.board.cols)
 
-    bottom_masks = [0] * 10
+    bottom_masks = [0] * width
     for y, hole in enumerate(holes):
-        for x in range(10):
+        if y >= height:
+            break
+        for x in range(width):
             if x != hole:
                 bottom_masks[x] |= 1 << y
 
-    for x in range(10):
-        state.board.cols[x] = ((state.board.cols[x] << lines) & mask40) | bottom_masks[
-            x
-        ]
+    for x in range(width):
+        state.board.cols[x] = ((state.board.cols[x] << lines) & mask) | bottom_masks[x]
     return topped_out

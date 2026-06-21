@@ -30,7 +30,7 @@ def moving_piece_for(
 def placement_fits(board: Board, placement: Placement) -> bool:
     loc = placement.location
     return all(
-        0 <= x < 10 and 0 <= y < 40 and not board.occupied(x, y)
+        0 <= x < board.width and 0 <= y < board.height and not board.occupied(x, y)
         for x, y in piece_cells(loc.piece, loc.rotation, loc.x, loc.y)
     )
 

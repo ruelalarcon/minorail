@@ -20,8 +20,14 @@ rot180 = true
 sonic_drop = "only"
 spin_detection = "t-spins"
 back_to_back_sources = ["quad", "t-spin", "t-spin-mini"]
-spawn_x = 4
-spawn_y = 20
+
+[protocol.rules.spawn_position]
+x = 4
+y = 20
+
+[protocol.rules.board_size]
+width = 10
+height = 40
 ```
 
 These rules are used locally and are sent to the SBP bot in the `rules`
@@ -35,12 +41,15 @@ message.
 | `sonic_drop` | `only`, `allow` | Controls whether pathfinding can use soft drops, sonic drops, or both. |
 | `spin_detection` | `none`, `t-spins`, `t-spins+`, `all`, `all+`, `all-mini`, `all-mini+`, `mini-only` | Controls local spin classification behavior. |
 | `back_to_back_sources` | list of source atoms | Controls which clear classes maintain back to back. Default: `quad`, `t-spin`, `t-spin-mini`. |
-| `spawn_x` | integer | Active piece spawn x coordinate. |
-| `spawn_y` | integer | Active piece spawn y coordinate. |
+| `spawn_position.x` | integer | Active piece spawn x coordinate. |
+| `spawn_position.y` | integer | Active piece spawn y coordinate. |
+| `board_size.width` | positive integer | Number of board columns. |
+| `board_size.height` | positive integer | Number of board rows. |
 
 !> Startup fails if the bot reports capabilities that do not support configured
 rules such as the randomizer, kickset, `rot180`, sonic drop mode,
-`spin_detection`, `back_to_back_sources`, or custom spawn position.
+`spin_detection`, `back_to_back_sources`, custom spawn position, or custom
+board size.
 
 `back_to_back_sources` atoms are `quad`, `t-spin`, `t-spin-mini`, `allspin`,
 `allspin-mini`, and `perfect-clear`. `allspin` and `allspin-mini` apply only to

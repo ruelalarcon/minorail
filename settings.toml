@@ -12,8 +12,14 @@ back_to_back_sources = [
     # "allspin-mini",   # mini non-T spin clears
     # "perfect-clear",  # board fully empty
 ]
-spawn_x = 4   # active piece spawn x coordinate
-spawn_y = 20  # active piece spawn y coordinate
+
+[protocol.rules.spawn_position]
+x = 4  # active piece spawn x coordinate
+y = 20 # active piece spawn y coordinate
+
+[protocol.rules.board_size]
+width = 10  # board columns
+height = 40 # board rows
 
 [protocol.start]
 piece_stream_limit = 11  # 0 omits piece_stream; otherwise send up to this many generated pieces

@@ -44,7 +44,6 @@ class ModernGarbageRules:
     """
 
     MAX_RISE_PER_LOCK = 8
-    WIDTH = 10
     # Approximate score thresholds. At guideline scoring rates, 50 and 150
     # locks are practical mid-game and late-game stand-ins for 20k and 60k.
     PHASES = (
@@ -107,7 +106,7 @@ class ModernGarbageRules:
                 queue_after=current,
             )
 
-        holes, current = _holes_to_apply(current, lines, self._rng)
+        holes, current = _holes_to_apply(current, lines, state.board.width, self._rng)
         topped_out = _raise_garbage(state, holes)
         return GarbageApplication(
             lines=lines,
@@ -134,10 +133,10 @@ def _increment_locks(queue: _GarbageQueue) -> _GarbageQueue:
     return _GarbageQueue(queue.entries, queue.last_hole, queue.locks + 1)
 
 
-def _reroll_hole(rng: random.Random, current: int | None = None) -> int:
-    if current is None:
-        return rng.randrange(ModernGarbageRules.WIDTH)
-    hole = rng.randrange(ModernGarbageRules.WIDTH - 1)
+def _reroll_hole(rng: random.Random, width: int, current: int | None = None) -> int:
+    if current is None or width <= 1:
+        return rng.randrange(width)
+    hole = rng.randrange(width - 1)
     if hole >= current:
         hole += 1
     return hole
@@ -145,13 +144,14 @@ def _reroll_hole(rng: random.Random, current: int | None = None) -> int:
 
 def _maybe_reroll_hole(
     rng: random.Random,
+    width: int,
     current: int,
     *,
     chance: float,
 ) -> int:
     if chance <= 0.0 or rng.random() >= chance:
         return current
-    return _reroll_hole(rng, current)
+    return _reroll_hole(rng, width, current)
 
 
 def _consume_queue(queue: _GarbageQueue, lines: int) -> _GarbageQueue:
@@ -172,6 +172,7 @@ def _consume_queue(queue: _GarbageQueue, lines: int) -> _GarbageQueue:
 def _holes_to_apply(
     queue: _GarbageQueue,
     lines: int,
+    width: int,
     rng: random.Random,
 ) -> tuple[list[int], _GarbageQueue]:
     phase = _phase_for_locks(queue.locks)
@@ -184,12 +185,13 @@ def _holes_to_apply(
             entries.append(entry)
             continue
         if last_hole is None:
-            last_hole = _reroll_hole(rng)
+            last_hole = _reroll_hole(rng, width)
         applied_lines = min(entry.lines, remaining)
         for _ in range(applied_lines):
             holes.append(last_hole)
             last_hole = _maybe_reroll_hole(
                 rng,
+                width,
                 last_hole,
                 chance=phase.line_hole_change_chance,
             )
@@ -197,7 +199,7 @@ def _holes_to_apply(
         if applied_lines == entry.lines:
             # A completed attack chunk starts the next chunk in another random
             # clean column, matching the observed "random clean columns" start.
-            last_hole = _reroll_hole(rng, last_hole)
+            last_hole = _reroll_hole(rng, width, last_hole)
             continue
         entries.append(_PendingGarbage(lines=entry.lines - applied_lines))
     return holes, _GarbageQueue(tuple(entries), last_hole, queue.locks)
@@ -205,18 +207,20 @@ def _holes_to_apply(
 
 def _raise_garbage(state: GameState, holes: list[int]) -> bool:
     lines = len(holes)
-    mask40 = (1 << 40) - 1
-    overflow_mask = ((1 << lines) - 1) << (40 - lines)
+    width = state.board.width
+    height = state.board.height
+    mask = (1 << height) - 1
+    overflow_mask = ((1 << min(lines, height)) - 1) << max(0, height - lines)
     topped_out = any(col & overflow_mask for col in state.board.cols)
 
-    bottom_masks = [0] * 10
+    bottom_masks = [0] * width
     for y, hole in enumerate(holes):
-        for x in range(10):
+        if y >= height:
+            break
+        for x in range(width):
             if x != hole:
                 bottom_masks[x] |= 1 << y
 
-    for x in range(10):
-        state.board.cols[x] = ((state.board.cols[x] << lines) & mask40) | bottom_masks[
-            x
-        ]
+    for x in range(width):
+        state.board.cols[x] = ((state.board.cols[x] << lines) & mask) | bottom_masks[x]
     return topped_out

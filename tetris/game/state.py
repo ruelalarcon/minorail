@@ -71,7 +71,7 @@ class GameState:
         loc = placement.location
         cells = piece_cells(loc.piece, loc.rotation, loc.x, loc.y)
         for x, y in cells:
-            if x < 0 or x >= 10 or y < 0 or y >= 40:
+            if x < 0 or x >= self.board.width or y < 0 or y >= self.board.height:
                 return None
             if self.board.occupied(x, y):
                 return None

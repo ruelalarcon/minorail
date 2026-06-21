@@ -21,8 +21,14 @@ class Rules:
     back_to_back_sources: frozenset[BackToBackSource] = DEFAULT_BACK_TO_BACK_SOURCES
     spawn_x: int = 4
     spawn_y: int = 20
+    board_width: int = 10
+    board_height: int = 40
 
     def __post_init__(self) -> None:
+        if self.board_width < 1:
+            raise ValueError("board_width must be at least 1")
+        if self.board_height < 1:
+            raise ValueError("board_height must be at least 1")
         object.__setattr__(
             self,
             "spin_detection",
@@ -36,6 +42,10 @@ class Rules:
 
     @staticmethod
     def from_values(values: dict[str, Any]) -> Rules:
+        spawn_position = _object_value(
+            values.get("spawn_position", {}), "spawn_position"
+        )
+        board_size = _object_value(values.get("board_size", {}), "board_size")
         return Rules(
             randomizer=values.get("randomizer", "seven_bag"),
             kickset=values.get("kickset", "srs"),
@@ -45,8 +55,10 @@ class Rules:
             back_to_back_sources=values.get(
                 "back_to_back_sources", DEFAULT_BACK_TO_BACK_SOURCES
             ),
-            spawn_x=values.get("spawn_x", 4),
-            spawn_y=values.get("spawn_y", 20),
+            spawn_x=spawn_position.get("x", 4),
+            spawn_y=spawn_position.get("y", 20),
+            board_width=board_size.get("width", 10),
+            board_height=board_size.get("height", 40),
         )
 
 
@@ -56,6 +68,12 @@ def _spin_detection_value(value: object) -> SpinDetection:
     if isinstance(value, str):
         return SpinDetection(value)
     raise ValueError("spin_detection must be a string")
+
+
+def _object_value(value: object, field: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise ValueError(f"{field} must be an object")
+    return value
 
 
 def _back_to_back_sources_value(value: object) -> frozenset[BackToBackSource]:

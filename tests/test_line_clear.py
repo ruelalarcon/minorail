@@ -127,6 +127,20 @@ class LineClearTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             Rules.from_values({"back_to_back_sources": ["quad", "quad"]})
 
+    def test_board_distance_to_ground_supports_rows_above_64(self) -> None:
+        board = Board(cols=[1 << 70, 0], height=100)
+
+        self.assertEqual(board.distance_to_ground(0, 75), 4)
+        self.assertEqual(board.distance_to_ground(1, 75), 75)
+
+    def test_line_clear_supports_rows_above_64(self) -> None:
+        board = Board(cols=[1 << 70, 1 << 70], height=100)
+
+        self.assertEqual(board.line_clears(), 1 << 70)
+        board.remove_lines(1 << 70)
+
+        self.assertEqual(board.cols, [0, 0])
+
 
 if __name__ == "__main__":
     unittest.main()

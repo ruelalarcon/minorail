@@ -132,6 +132,7 @@ class TerminalVisualizer:
         active_piece: Optional[Piece] = None,
         active_loc: Optional[tuple[int, int, Rotation]] = None,
     ) -> None:
+        visible_rows = min(self._settings.visible_rows, state.board.height)
         if active_piece is None or active_loc is None:
             active_piece = state.active.piece
             active_loc = (state.active.x, state.active.y, state.active.rotation)
@@ -139,15 +140,18 @@ class TerminalVisualizer:
             state,
             active_piece,
             active_loc,
-            self._settings.visible_rows,
+            visible_rows,
             self._settings.queue_size,
             self._status.text,
             self._total_attack,
             self._terminal,
         )
 
-    def _frame_height(self) -> int:
-        return self._settings.visible_rows + 2
+    def _frame_height(self, board_height: int | None = None) -> int:
+        visible_rows = self._settings.visible_rows
+        if board_height is not None:
+            visible_rows = min(visible_rows, board_height)
+        return visible_rows + 2
 
 
 def _render(
@@ -161,9 +165,11 @@ def _render(
     terminal: LiveTerminalRegion,
 ) -> None:
     unset = "\x00"
-    grid: list[list[str]] = [[unset for _ in range(10)] for _ in range(visible_rows)]
+    width = state.board.width
+    visible_rows = min(visible_rows, state.board.height)
+    grid: list[list[str]] = [[unset for _ in range(width)] for _ in range(visible_rows)]
 
-    for x in range(10):
+    for x in range(width):
         for y in range(visible_rows):
             if state.board.occupied(x, y):
                 grid[y][x] = FILLED
@@ -172,17 +178,17 @@ def _render(
         px, py, prot = active_loc
         drop = state.board.drop_distance(active_piece, prot, px, py)
         for gx, gy in piece_cells(active_piece, prot, px, py - drop):
-            if 0 <= gx < 10 and 0 <= gy < visible_rows and grid[gy][gx] == unset:
+            if 0 <= gx < width and 0 <= gy < visible_rows and grid[gy][gx] == unset:
                 grid[gy][gx] = GHOST
         for ax, ay in piece_cells(active_piece, prot, px, py):
-            if 0 <= ax < 10 and 0 <= ay < visible_rows:
+            if 0 <= ax < width and 0 <= ay < visible_rows:
                 grid[ay][ax] = colored(FILLED, active_piece)
 
-    board_lines: list[str] = ["+" + "--" * 10 + "+"]
+    board_lines: list[str] = ["+" + "--" * width + "+"]
     for row in reversed(range(visible_rows)):
         cells = "".join(EMPTY if c == unset else c for c in grid[row])
         board_lines.append("|" + cells + "|")
-    board_lines.append("+" + "--" * 10 + "+")
+    board_lines.append("+" + "--" * width + "+")
 
     if active_piece is not None and active_loc is not None:
         active_x, active_y, active_rotation = active_loc

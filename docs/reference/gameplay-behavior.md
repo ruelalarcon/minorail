@@ -7,7 +7,9 @@ suggestion output.
 
 ## Board And Coordinates
 
-Minorail uses a 10 by 40 board.
+Minorail defaults to a 10 by 40 board. `protocol.rules.board_size.width` and
+`protocol.rules.board_size.height` can configure another size for local runs
+and websocket requests.
 
 | Item | Behavior |
 | --- | --- |
@@ -17,9 +19,14 @@ Minorail uses a 10 by 40 board.
 | Default spawn | `x = 4`, `y = 20`, `rotation = North`. |
 | Internal board | `cols[x]` has bit `y` set when cell `(x, y)` is occupied. |
 
+Minorail stores columns as Python integer bitboards, so Minorail itself does
+not impose a 64-row board-height limit. SBP bots may advertise narrower
+board-size support; Frostetra, for example, supports width 10 and heights from
+1 through 64.
+
 SBP board matrices and websocket board matrices use the same coordinate system:
 row arrays are ordered from bottom to top, `null` means empty, and any string
-means occupied.
+means occupied. Matrix dimensions must match the active board-size rules.
 
 ---
 

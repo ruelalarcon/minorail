@@ -34,7 +34,7 @@ class LocalGame:
         )
         return cls(
             state=GameState(
-                board=Board(),
+                board=Board.empty(rules.board_width, rules.board_height),
                 active=active,
                 queue=[randomizer.next() for _ in range(max(0, initial_pieces - 1))],
                 hold=None,
@@ -75,7 +75,7 @@ class LocalGame:
     def set_cells(self, edits: list[CellEdit]) -> None:
         changed = False
         for edit in edits:
-            _validate_cell(edit.x, edit.y)
+            _validate_cell(edit.x, edit.y, self.state.board)
             mask = 1 << edit.y
             was_filled = bool(self.state.board.cols[edit.x] & mask)
             if was_filled == edit.filled:
@@ -93,19 +93,23 @@ class LocalGame:
     def clear_board(self) -> None:
         edits = [
             CellEdit(x, y, False)
-            for x in range(10)
-            for y in range(40)
+            for x in range(self.state.board.width)
+            for y in range(self.state.board.height)
             if self.state.board.cols[x] & (1 << y)
         ]
         self.set_cells(edits)
 
     def is_topped_out(self) -> bool:
         return any(
-            0 <= x < 10 and 0 <= y < 40 and self.state.board.occupied(x, y)
+            0 <= x < self.state.board.width
+            and 0 <= y < self.state.board.height
+            and self.state.board.occupied(x, y)
             for x, y in self.state.active.cells()
         )
 
 
-def _validate_cell(x: int, y: int) -> None:
-    if x < 0 or x >= 10 or y < 0 or y >= 40:
+def _validate_cell(x: int, y: int, board: Board | None = None) -> None:
+    width = 10 if board is None else board.width
+    height = 40 if board is None else board.height
+    if x < 0 or x >= width or y < 0 or y >= height:
         raise ValueError(f"cell out of bounds: ({x}, {y})")

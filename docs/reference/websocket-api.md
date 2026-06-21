@@ -84,8 +84,9 @@ The preferred Minorail board format is column bitboards:
 }
 ```
 
-`cols[x]` has bit `y` set when cell `(x, y)` is occupied. Each column must fit
-in 40 bits.
+`cols[x]` has bit `y` set when cell `(x, y)` is occupied. The number of
+columns must match `board_size.width`, and each column must fit in
+`board_size.height` bits. Defaults are 10 columns and 40 rows.
 
 The API also accepts an SBP board matrix:
 
@@ -97,8 +98,8 @@ The API also accepts an SBP board matrix:
 }
 ```
 
-The full matrix must contain 40 rows with 10 cells each. Row 0 is the bottom.
-`null` is empty. Any string is occupied.
+The full matrix must contain `board_size.height` rows with `board_size.width`
+cells each. Row 0 is the bottom. `null` is empty. Any string is occupied.
 
 Board coordinates use the same grid convention in every request and response:
 
@@ -152,8 +153,8 @@ A request can include partial rule overrides:
   "rules": {
     "kickset": "srs_plus",
     "rot180": true,
-    "spawn_x": 4,
-    "spawn_y": 20
+    "spawn_position": { "x": 4, "y": 20 },
+    "board_size": { "width": 10, "height": 40 }
   }
 }
 ```
@@ -166,13 +167,18 @@ A request can include partial rule overrides:
 | `sonic_drop` | string |
 | `spin_detection` | string |
 | `back_to_back_sources` | array of strings |
-| `spawn_x` | integer |
-| `spawn_y` | integer |
+| `spawn_position` | object with integer `x` and `y` |
+| `board_size` | object with positive integer `width` and `height` |
 
 Unknown rule fields are rejected.
 
 When spawn coordinates are overridden, Minorail spawns the active piece at
 those coordinates for that request.
+
+When board size is overridden, the request board must match that size.
+`board_size.height` is not capped by Minorail; Python integer bitboards are used
+for column storage. SBP bots may still reject sizes outside their advertised
+board-size capabilities.
 
 Rules are evaluated on every request. If the effective rules for an existing
 session change, Minorail resets the internal bot session from the incoming
@@ -294,7 +300,7 @@ The API rejects:
 * missing or invalid `seq`
 * unknown request types
 * invalid board shape
-* board columns outside 40 bits
+* board columns outside the configured `board_size.height`
 * invalid piece strings
 * unknown rule fields
 * non object extensions

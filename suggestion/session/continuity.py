@@ -106,7 +106,7 @@ class SuggestionContinuity:
             self._reset_game_continuity()
 
     def _suggest_locked(self, request: SuggestionRequest) -> SuggestionResult:
-        validation_error = self._validate(request.snapshot)
+        validation_error = self._validate(request.snapshot, request.rules)
         if validation_error is not None:
             return SuggestionResult(
                 seq=request.snapshot.seq,
@@ -300,9 +300,11 @@ class SuggestionContinuity:
             ),
         )
 
-    def _validate(self, snapshot: ObservedSnapshot) -> Optional[str]:
-        if len(snapshot.board.cols) != 10:
-            return "board must have 10 columns"
+    def _validate(self, snapshot: ObservedSnapshot, rules: Rules) -> Optional[str]:
+        if snapshot.board.width != rules.board_width:
+            return f"board must have {rules.board_width} columns"
+        if snapshot.board.height != rules.board_height:
+            return f"board must have {rules.board_height} rows"
         return None
 
     def _log_reconciliation(

@@ -150,7 +150,7 @@ def request_from_json(
     hold_raw = obj.get("hold")
     hold = None if hold_raw is None else _piece(hold_raw, "hold")
     snapshot = ObservedSnapshot(
-        board=_board(obj.get("board")),
+        board=_board(obj.get("board"), rules),
         active=spawn_location(active, x=rules.spawn_x, y=rules.spawn_y),
         queue=queue,
         hold=hold,
@@ -197,12 +197,14 @@ def error_to_json(error: WebSocketApiError) -> dict[str, Any]:
     }
 
 
-def _board(value: object) -> Board:
+def _board(value: object, rules: Rules) -> Board:
     if isinstance(value, dict):
         cols = value.get("cols")
-        if not isinstance(cols, list) or len(cols) != 10:
+        if not isinstance(cols, list) or len(cols) != rules.board_width:
             raise WebSocketApiError(
-                "invalid_request", "board.cols must be a list of 10 integers"
+                "invalid_request",
+                "board.cols must be a list of "
+                f"{rules.board_width} integers from rules.board_size.width",
             )
         parsed_cols: list[int] = []
         for i, col in enumerate(cols):
@@ -210,23 +212,33 @@ def _board(value: object) -> Board:
                 raise WebSocketApiError(
                     "invalid_request", f"board.cols[{i}] must be an integer"
                 )
-            if col < 0 or col >= (1 << 40):
+            if col < 0 or col >= (1 << rules.board_height):
                 raise WebSocketApiError(
-                    "invalid_request", f"board.cols[{i}] must fit in 40 bits"
+                    "invalid_request",
+                    f"board.cols[{i}] must fit in "
+                    f"{rules.board_height} bits from rules.board_size.height",
                 )
             parsed_cols.append(col)
-        return Board(cols=parsed_cols)
+        return Board(cols=parsed_cols, height=rules.board_height)
     if isinstance(value, list):
-        if len(value) != 40:
+        if len(value) != rules.board_height:
             raise WebSocketApiError(
-                "invalid_request", "SBP board matrix must contain 40 rows"
+                "invalid_request",
+                "SBP board matrix must contain "
+                f"{rules.board_height} rows from rules.board_size.height",
             )
         for y, row in enumerate(value):
-            if not isinstance(row, list) or len(row) != 10:
+            if not isinstance(row, list) or len(row) != rules.board_width:
                 raise WebSocketApiError(
-                    "invalid_request", f"SBP board row {y} must contain 10 cells"
+                    "invalid_request",
+                    f"SBP board row {y} must contain "
+                    f"{rules.board_width} cells from rules.board_size.width",
                 )
-        return Board.from_sbp(value)
+        return Board.from_sbp(
+            value,
+            width=rules.board_width,
+            height=rules.board_height,
+        )
     raise WebSocketApiError(
         "invalid_request", "board must be {'cols': [...]} or an SBP row matrix"
     )
@@ -318,8 +330,8 @@ def _rules(value: object, base_rules: Rules) -> Rules:
         "sonic_drop",
         "spin_detection",
         "back_to_back_sources",
-        "spawn_x",
-        "spawn_y",
+        "spawn_position",
+        "board_size",
     }
     unknown = sorted(set(value) - allowed)
     if unknown:
@@ -354,9 +366,32 @@ def _rules(value: object, base_rules: Rules) -> Rules:
     for field in ("rot180",):
         if field in value:
             updates[field] = _bool(value[field], f"rules.{field}")
-    for field in ("spawn_x", "spawn_y"):
-        if field in value:
-            updates[field] = _int(value[field], f"rules.{field}")
+    if "spawn_position" in value:
+        spawn_position = _object(value["spawn_position"], "rules.spawn_position")
+        unknown = sorted(set(spawn_position) - {"x", "y"})
+        if unknown:
+            raise WebSocketApiError(
+                "invalid_request",
+                f"unknown rules.spawn_position field: {', '.join(unknown)}",
+            )
+        if "x" in spawn_position:
+            updates["spawn_x"] = _int(spawn_position["x"], "rules.spawn_position.x")
+        if "y" in spawn_position:
+            updates["spawn_y"] = _int(spawn_position["y"], "rules.spawn_position.y")
+    if "board_size" in value:
+        board_size = _object(value["board_size"], "rules.board_size")
+        unknown = sorted(set(board_size) - {"width", "height"})
+        if unknown:
+            raise WebSocketApiError(
+                "invalid_request",
+                f"unknown rules.board_size field: {', '.join(unknown)}",
+            )
+        if "width" in board_size:
+            updates["board_width"] = _int(board_size["width"], "rules.board_size.width")
+        if "height" in board_size:
+            updates["board_height"] = _int(
+                board_size["height"], "rules.board_size.height"
+            )
     try:
         return replace(base_rules, **updates)
     except ValueError as e:
@@ -368,6 +403,12 @@ def _extensions(value: object) -> dict[str, Any] | None:
         return None
     if not isinstance(value, dict):
         raise WebSocketApiError("invalid_request", "extensions must be an object")
+    return dict(value)
+
+
+def _object(value: object, field: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise WebSocketApiError("invalid_request", f"{field} must be an object")
     return dict(value)
 
 
