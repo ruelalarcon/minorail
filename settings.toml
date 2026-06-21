@@ -13,7 +13,7 @@ back_to_back_sources = [
     # "perfect-clear",     # board fully empty
 ]
 spawn_x = 4   # active piece spawn x coordinate
-spawn_y = 19  # active piece spawn y coordinate
+spawn_y = 20  # active piece spawn y coordinate
 
 [protocol.start]
 piece_stream_limit = 11  # 0 omits piece_stream; otherwise send up to this many generated pieces
@@ -56,7 +56,7 @@ calculator = "modern_guideline"
 move_delay_ms = 50         # delay between each animated input step
 lock_delay_ms = 150        # pause after a piece locks before the next piece appears
 first_move_delay_ms = 200  # pause before animating the first move
-visible_rows = 20          # how many rows of the board to show (max 40)
+visible_rows = 22          # how many rows of the board to show (max 40)
 queue_size = 5             # number of next pieces shown in the queue panel
 
 [visualizer.web]

@@ -158,7 +158,7 @@ def _settings(*, attack_calculator: str = "tetrio_s2") -> Settings:
                     "spin_detection": "t-spins",
                     "back_to_back_sources": ["quad", "t-spin", "t-spin-mini"],
                     "spawn_x": 4,
-                    "spawn_y": 19,
+                    "spawn_y": 20,
                 },
                 "start": {"piece_stream_limit": 11},
             },

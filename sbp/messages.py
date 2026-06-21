@@ -76,7 +76,7 @@ class BotCapabilities:
                     f"{', '.join(unsupported)!r}; supported: "
                     f"{', '.join(self.back_to_back_sources) or 'none'}"
                 )
-        if (rules.spawn_x, rules.spawn_y) != (4, 19) and not self.spawn_position:
+        if (rules.spawn_x, rules.spawn_y) != (4, 20) and not self.spawn_position:
             return "bot does not support custom spawn_position"
         return None
 

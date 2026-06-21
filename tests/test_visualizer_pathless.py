@@ -119,8 +119,8 @@ class PathlessVisualizerTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(html.count("minorail-garbage-cell-layer-0"), 15)
-        self.assertEqual(html.count("minorail-garbage-cell-layer-1"), 5)
+        self.assertEqual(html.count("minorail-garbage-cell-layer-0"), 19)
+        self.assertEqual(html.count("minorail-garbage-cell-layer-1"), 3)
 
 
 def _state(piece: Piece = Piece.T) -> GameState:
@@ -153,7 +153,7 @@ def _settings() -> VisualizerSettings:
         move_delay_ms=0,
         lock_delay_ms=0,
         first_move_delay_ms=0,
-        visible_rows=20,
+        visible_rows=22,
         queue_size=5,
     )
 

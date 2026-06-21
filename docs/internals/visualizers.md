@@ -81,7 +81,7 @@ Solo and battle visualizers use the same `[visualizer]` timing settings:
 move_delay_ms = 50
 lock_delay_ms = 150
 first_move_delay_ms = 200
-visible_rows = 20
+visible_rows = 22
 queue_size = 5
 
 [visualizer.web]

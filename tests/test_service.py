@@ -374,7 +374,7 @@ class ServiceTests(unittest.TestCase):
         self.assertIsNotNone(result.path)
         assert result.path is not None
         self.assertNotIn(MoveStep.SonicDrop, result.path)
-        self.assertEqual(result.path.count(MoveStep.SoftDrop), 19)
+        self.assertEqual(result.path.count(MoveStep.SoftDrop), 20)
 
     def test_going_idle_closes_bot_and_restarts_from_snapshot(self) -> None:
         class FakeTimer:

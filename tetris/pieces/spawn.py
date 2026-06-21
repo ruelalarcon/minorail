@@ -3,7 +3,7 @@ from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 
 SPAWN_X = 4
-SPAWN_Y = 19
+SPAWN_Y = 20
 
 
 def spawn_location(piece: Piece, x: int = SPAWN_X, y: int = SPAWN_Y) -> PieceLocation:

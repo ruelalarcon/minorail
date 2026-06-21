@@ -21,7 +21,7 @@ sonic_drop = "only"
 spin_detection = "t-spins"
 back_to_back_sources = ["quad", "t-spin", "t-spin-mini"]
 spawn_x = 4
-spawn_y = 19
+spawn_y = 20
 ```
 
 These rules are used locally and are sent to the SBP bot in the `rules`
@@ -50,7 +50,7 @@ Default spawn:
 
 ```text
 x = 4
-y = 19
+y = 20
 rotation = North
 ```
 
@@ -245,7 +245,7 @@ per-game phase state resets for each battle game.
 move_delay_ms = 50
 lock_delay_ms = 150
 first_move_delay_ms = 200
-visible_rows = 20
+visible_rows = 22
 queue_size = 5
 
 [visualizer.web]

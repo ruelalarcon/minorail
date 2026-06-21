@@ -14,7 +14,7 @@ Minorail uses a 10 by 40 board.
 | x axis | Increases from left to right. |
 | y axis | Increases upward. |
 | Row 0 | Bottom row. |
-| Default spawn | `x = 4`, `y = 19`, `rotation = North`. |
+| Default spawn | `x = 4`, `y = 20`, `rotation = North`. |
 | Internal board | `cols[x]` has bit `y` set when cell `(x, y)` is occupied. |
 
 SBP board matrices and websocket board matrices use the same coordinate system:

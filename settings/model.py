@@ -16,7 +16,7 @@ DEFAULT: dict[str, Any] = {
             "spin_detection": "t-spins",
             "back_to_back_sources": ["quad", "t-spin", "t-spin-mini"],
             "spawn_x": 4,
-            "spawn_y": 19,
+            "spawn_y": 20,
         },
         "start": {
             "piece_stream_limit": 11,
@@ -66,7 +66,7 @@ DEFAULT: dict[str, Any] = {
         "move_delay_ms": 50,
         "lock_delay_ms": 150,
         "first_move_delay_ms": 200,
-        "visible_rows": 20,
+        "visible_rows": 22,
         "queue_size": 5,
     },
     "battle": {

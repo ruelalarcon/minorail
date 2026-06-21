@@ -21,7 +21,7 @@ class PathfinderTests(unittest.TestCase):
 
         self.assertEqual(
             converted,
-            [MoveStep.Right] + [MoveStep.SoftDrop] * 19 + [MoveStep.HardDrop],
+            [MoveStep.Right] + [MoveStep.SoftDrop] * 20 + [MoveStep.HardDrop],
         )
 
     def test_convert_sonic_drop_uses_custom_spawn_y(self) -> None:

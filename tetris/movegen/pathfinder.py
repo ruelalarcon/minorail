@@ -123,7 +123,7 @@ def convert_sonic_drops(
     piece: Piece,
     kickset: str = "srs",
     spawn_x: int = 4,
-    spawn_y: int = 19,
+    spawn_y: int = 20,
 ) -> list[MoveStep]:
     spawn_rot = Rotation.North
     if obstructed(board, piece, spawn_rot, spawn_x, spawn_y):

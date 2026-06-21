@@ -20,7 +20,7 @@ class Rules:
     spin_detection: SpinDetection = SpinDetection.t_spins
     back_to_back_sources: frozenset[BackToBackSource] = DEFAULT_BACK_TO_BACK_SOURCES
     spawn_x: int = 4
-    spawn_y: int = 19
+    spawn_y: int = 20
 
     def __post_init__(self) -> None:
         object.__setattr__(
@@ -46,7 +46,7 @@ class Rules:
                 "back_to_back_sources", DEFAULT_BACK_TO_BACK_SOURCES
             ),
             spawn_x=values.get("spawn_x", 4),
-            spawn_y=values.get("spawn_y", 19),
+            spawn_y=values.get("spawn_y", 20),
         )
 
 

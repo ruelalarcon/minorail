@@ -38,7 +38,7 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.snapshot.active.piece, Piece.T)
         self.assertEqual(request.snapshot.active.rotation, Rotation.North)
         self.assertEqual(request.snapshot.active.x, 4)
-        self.assertEqual(request.snapshot.active.y, 19)
+        self.assertEqual(request.snapshot.active.y, 20)
         self.assertEqual(request.snapshot.queue, [Piece.I, Piece.O])
         self.assertEqual(request.snapshot.board, Board([0] * 10))
 

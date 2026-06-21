@@ -18,7 +18,7 @@ class FakeRandomizer:
 class LocalGameTests(unittest.TestCase):
     def test_topout_when_active_spawn_cell_is_occupied(self) -> None:
         board = Board()
-        board.cols[4] |= 1 << 19
+        board.cols[4] |= 1 << 20
         game = _game(board, active=Piece.O)
 
         self.assertTrue(game.is_topped_out())

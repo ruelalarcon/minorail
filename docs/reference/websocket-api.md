@@ -152,7 +152,7 @@ A request can include partial rule overrides:
     "kickset": "srs_plus",
     "rot180": true,
     "spawn_x": 4,
-    "spawn_y": 19
+    "spawn_y": 20
   }
 }
 ```
