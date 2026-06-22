@@ -133,12 +133,8 @@ def _batch_summary(games: list[dict[str, Any]]) -> dict[str, Any]:
         "games": count,
         "statuses": statuses,
         "topouts": statuses.get("topout", 0),
-        "total_pieces": total_pieces,
-        "average_pieces": total_pieces / count if count else 0.0,
-        "min_pieces": min((summary["pieces"] for summary in summaries), default=0),
-        "max_pieces": max((summary["pieces"] for summary in summaries), default=0),
-        "total_elapsed_ms": total_elapsed_ms,
-        "average_elapsed_ms": total_elapsed_ms / count if count else 0.0,
+        "pieces": total_pieces,
+        "elapsed_ms": total_elapsed_ms,
         "average_pps": (
             total_pieces / (total_elapsed_ms / 1000) if total_elapsed_ms > 0 else 0.0
         ),
@@ -155,9 +151,9 @@ def _batch_summary(games: list[dict[str, Any]]) -> dict[str, Any]:
             (summary["max_back_to_back"] for summary in summaries),
             default=0,
         ),
-        "perfect_clears": sum(summary["perfect_clears"] for summary in summaries),
-        "holds": sum(summary["holds"] for summary in summaries),
         "attack": sum(summary["attack"] for summary in summaries),
         "max_attack": max((summary["max_attack"] for summary in summaries), default=0),
         "attack_placements": sum(summary["attack_placements"] for summary in summaries),
+        "perfect_clears": sum(summary["perfect_clears"] for summary in summaries),
+        "holds": sum(summary["holds"] for summary in summaries),
     }

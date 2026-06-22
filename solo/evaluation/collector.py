@@ -22,11 +22,11 @@ class EvaluationCollector:
             "max_combo": 0,
             "back_to_back_steps": 0,
             "max_back_to_back": 0,
-            "perfect_clears": 0,
-            "holds": 0,
             "attack": 0,
             "max_attack": 0,
             "attack_placements": 0,
+            "perfect_clears": 0,
+            "holds": 0,
         }
 
     def on_game_started(self, event: GameStartedEvent) -> None:

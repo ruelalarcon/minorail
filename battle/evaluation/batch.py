@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from typing import Any, Callable
 
 from battle.evaluation.collector import EvaluationCollector
@@ -31,7 +30,6 @@ def run_evaluation(
     if games < 1:
         raise ValueError("games must be at least 1")
 
-    started_at = time.time()
     protocol_start = settings.protocol_start()
     bot_cfg = settings.bot()
     service_a = SuggestionService(
@@ -81,13 +79,12 @@ def run_evaluation(
                 progress(
                     f"[info] battle game={game_number}/{games} "
                     f"status={summary['status']} winner={summary['winner']} "
-                    f"total_pieces={summary['total_pieces']}"
+                    f"pieces={summary['pieces']}"
                 )
     finally:
         service_a.close()
         service_b.close()
 
-    elapsed = time.time() - started_at
     return {
         "schema": "minorail.eval.battle.v1",
         "label": label,
@@ -102,7 +99,6 @@ def run_evaluation(
         },
         "limits": _limits(limits),
         "summary": _batch_summary(game_results),
-        "elapsed_ms": round(elapsed * 1000),
         "games": game_results,
     }
 
@@ -118,24 +114,34 @@ def _batch_summary(games: list[dict[str, Any]]) -> dict[str, Any]:
         statuses[summary["status"]] = statuses.get(summary["status"], 0) + 1
         if summary["winner"] in wins:
             wins[summary["winner"]] += 1
-        total_pieces += summary["total_pieces"]
+        total_pieces += summary["pieces"]
         total_elapsed_ms += summary["elapsed_ms"]
     return {
         "games": count,
         "statuses": statuses,
         "wins": wins,
         "topouts": statuses.get("topout", 0),
-        "total_pieces": total_pieces,
-        "average_pieces": total_pieces / count if count else 0.0,
-        "total_elapsed_ms": total_elapsed_ms,
-        "average_elapsed_ms": total_elapsed_ms / count if count else 0.0,
+        "pieces": total_pieces,
+        "player_pieces": _sum_player_metric(summaries, "player_pieces"),
+        "elapsed_ms": total_elapsed_ms,
         "average_pps": (
             total_pieces / (total_elapsed_ms / 1000) if total_elapsed_ms > 0 else 0.0
         ),
+        "lines_cleared": _sum_player_metric(summaries, "lines_cleared"),
+        "line_clear_placements": _sum_player_metric(summaries, "line_clear_placements"),
+        "combo_steps": _sum_player_metric(summaries, "combo_steps"),
+        "max_combo": _max_player_metric(summaries, "max_combo"),
+        "back_to_back_steps": _sum_player_metric(summaries, "back_to_back_steps"),
+        "max_back_to_back": _max_player_metric(summaries, "max_back_to_back"),
         "attack": _sum_player_metric(summaries, "attack"),
+        "max_attack": _max_player_metric(summaries, "max_attack"),
+        "attack_placements": _sum_player_metric(summaries, "attack_placements"),
+        "perfect_clears": _sum_player_metric(summaries, "perfect_clears"),
+        "holds": _sum_player_metric(summaries, "holds"),
         "garbage_sent": _sum_player_metric(summaries, "garbage_sent"),
         "garbage_cancelled": _sum_player_metric(summaries, "garbage_cancelled"),
         "garbage_applied": _sum_player_metric(summaries, "garbage_applied"),
+        "max_incoming_garbage": _max_player_metric(summaries, "max_incoming_garbage"),
     }
 
 
@@ -143,4 +149,11 @@ def _sum_player_metric(summaries: list[dict[str, Any]], key: str) -> dict[str, i
     return {
         "A": sum(summary[key]["A"] for summary in summaries),
         "B": sum(summary[key]["B"] for summary in summaries),
+    }
+
+
+def _max_player_metric(summaries: list[dict[str, Any]], key: str) -> dict[str, int]:
+    return {
+        "A": max((summary[key]["A"] for summary in summaries), default=0),
+        "B": max((summary[key]["B"] for summary in summaries), default=0),
     }

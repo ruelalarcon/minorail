@@ -39,8 +39,8 @@ Solo output uses schema `minorail.eval.solo.v1`:
 
 Per-game summaries include generic run rollups: status, pieces, elapsed time,
 pps, lines cleared, line-clear placements, combo steps, max combo,
-back-to-back steps, max back-to-back, perfect-clears, holds, attack,
-max attack, and attack-producing placements.
+back-to-back steps, max back-to-back, attack, max attack,
+attack-producing placements, perfect-clears, and holds.
 
 Each solo `piece_locked` event records placement, hold use, line clear facts,
 combo and back-to-back before/after values, stack height, occupied cells,
@@ -70,6 +70,11 @@ Battle output uses schema `minorail.eval.battle.v1`:
 
 Battle evaluation keeps two bot processes alive across a multi-game batch and
 sends per-player stop-game semantics at each game boundary.
+
+Battle summaries include the same generic fields as solo summaries. Cumulative
+`pieces` is the total across both players, while `player_pieces` keeps the
+per-player breakdown. Battle-specific rollups also include wins, garbage sent,
+garbage cancelled, garbage applied, and max incoming garbage.
 
 Battle `piece_locked` events include the same core solo lock facts plus:
 

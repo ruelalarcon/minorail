@@ -21,17 +21,21 @@ class EvaluationCollector:
             "status": "unknown",
             "winner": None,
             "loser": None,
-            "pieces": {"A": 0, "B": 0},
-            "total_pieces": 0,
+            "pieces": 0,
+            "player_pieces": {"A": 0, "B": 0},
             "elapsed_ms": 0,
             "pps": 0.0,
             "lines_cleared": {"A": 0, "B": 0},
             "line_clear_placements": {"A": 0, "B": 0},
+            "combo_steps": {"A": 0, "B": 0},
             "max_combo": {"A": 0, "B": 0},
+            "back_to_back_steps": {"A": 0, "B": 0},
             "max_back_to_back": {"A": 0, "B": 0},
+            "attack": {"A": 0, "B": 0},
+            "max_attack": {"A": 0, "B": 0},
+            "attack_placements": {"A": 0, "B": 0},
             "perfect_clears": {"A": 0, "B": 0},
             "holds": {"A": 0, "B": 0},
-            "attack": {"A": 0, "B": 0},
             "garbage_sent": {"A": 0, "B": 0},
             "garbage_cancelled": {"A": 0, "B": 0},
             "garbage_applied": {"A": 0, "B": 0},
@@ -55,10 +59,14 @@ class EvaluationCollector:
         self._summary["lines_cleared"][player] += applied.lines_cleared
         if applied.lines_cleared > 0:
             self._summary["line_clear_placements"][player] += 1
+        if applied.combo_after > applied.combo_before:
+            self._summary["combo_steps"][player] += 1
         self._summary["max_combo"][player] = max(
             self._summary["max_combo"][player],
             applied.combo_after,
         )
+        if applied.back_to_back_after > applied.back_to_back_before:
+            self._summary["back_to_back_steps"][player] += 1
         self._summary["max_back_to_back"][player] = max(
             self._summary["max_back_to_back"][player],
             applied.back_to_back_after,
@@ -68,6 +76,12 @@ class EvaluationCollector:
         if event.hold_used:
             self._summary["holds"][player] += 1
         self._summary["attack"][player] += event.attack
+        self._summary["max_attack"][player] = max(
+            self._summary["max_attack"][player],
+            event.attack,
+        )
+        if event.attack > 0:
+            self._summary["attack_placements"][player] += 1
         self._summary["garbage_sent"][player] += event.garbage_sent
         self._summary["garbage_cancelled"][player] += event.garbage_cancelled
         self._summary["max_incoming_garbage"][player] = max(
@@ -120,8 +134,8 @@ class EvaluationCollector:
         self._summary["status"] = event.status
         self._summary["winner"] = event.winner
         self._summary["loser"] = event.loser
-        self._summary["pieces"] = dict(event.pieces)
-        self._summary["total_pieces"] = total
+        self._summary["pieces"] = total
+        self._summary["player_pieces"] = dict(event.pieces)
         self._summary["elapsed_ms"] = round(event.elapsed * 1000)
         self._summary["pps"] = event.pps
         self._append_event(
@@ -130,8 +144,8 @@ class EvaluationCollector:
                 "status": event.status,
                 "winner": event.winner,
                 "loser": event.loser,
-                "pieces": dict(event.pieces),
-                "total_pieces": total,
+                "pieces": total,
+                "player_pieces": dict(event.pieces),
                 "elapsed_ms": round(event.elapsed * 1000),
                 "pps": event.pps,
                 "stack_height": dict(event.stack_height),
