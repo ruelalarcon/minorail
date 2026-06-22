@@ -39,6 +39,15 @@ class BattleAttackRegistryTests(unittest.TestCase):
 
 
 class TetrioS2AttackCalculatorTests(unittest.TestCase):
+    def test_no_clear_sends_no_attack_even_with_combo_and_back_to_back(self) -> None:
+        attack = TetrioS2AttackCalculator().calculate(
+            _applied(
+                Piece.T, lines=0, spin=Spin.full, combo_after=8, back_to_back_after=4
+            )
+        )
+
+        self.assertEqual(attack, 0)
+
     def test_minorail_combo_after_1_normalizes_to_combo_0(self) -> None:
         attack = TetrioS2AttackCalculator().calculate(
             _applied(Piece.I, lines=4, combo_after=1)
@@ -91,6 +100,13 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
 
         self.assertEqual(attack, 11)
 
+    def test_perfect_clear_t_spin_mini_does_not_use_s2_special_bonus(self) -> None:
+        attack = TetrioS2AttackCalculator().calculate(
+            _applied(Piece.T, lines=1, spin=Spin.mini, perfect_clear=True)
+        )
+
+        self.assertEqual(attack, 5)
+
     def test_back_to_back_surge_uses_normalized_back_to_back_before_counter(
         self,
     ) -> None:
@@ -121,6 +137,15 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
 
 
 class TetrioS1AttackCalculatorTests(unittest.TestCase):
+    def test_no_clear_sends_no_attack_even_with_combo_and_back_to_back(self) -> None:
+        attack = TetrioS1AttackCalculator().calculate(
+            _applied(
+                Piece.T, lines=0, spin=Spin.full, combo_after=8, back_to_back_after=4
+            )
+        )
+
+        self.assertEqual(attack, 0)
+
     def test_perfect_clear_is_10_without_s2_special_bonus(self) -> None:
         attack = TetrioS1AttackCalculator().calculate(
             _applied(Piece.I, lines=4, perfect_clear=True, back_to_back_after=2)
@@ -137,12 +162,33 @@ class TetrioS1AttackCalculatorTests(unittest.TestCase):
 
 
 class GuidelineAttackCalculatorTests(unittest.TestCase):
+    def test_classic_guideline_no_clear_sends_no_attack(self) -> None:
+        attack = ClassicGuidelineAttackCalculator().calculate(
+            _applied(Piece.I, lines=0, combo_after=8, back_to_back_after=4)
+        )
+
+        self.assertEqual(attack, 0)
+
     def test_classic_guideline_uses_fixed_additive_combo_table(self) -> None:
         attack = ClassicGuidelineAttackCalculator().calculate(
             _applied(Piece.I, lines=4, combo_after=6)
         )
 
-        self.assertEqual(attack, 7)
+        self.assertEqual(attack, 6)
+
+    def test_classic_guideline_one_combo_uses_first_combo_table_entry(self) -> None:
+        attack = ClassicGuidelineAttackCalculator().calculate(
+            _applied(Piece.I, lines=4, combo_after=2)
+        )
+
+        self.assertEqual(attack, 4)
+
+    def test_modern_guideline_no_clear_sends_no_attack(self) -> None:
+        attack = ModernGuidelineAttackCalculator().calculate(
+            _applied(Piece.I, lines=0, combo_after=8, back_to_back_after=4)
+        )
+
+        self.assertEqual(attack, 0)
 
     def test_modern_guideline_uses_fixed_additive_combo_table(self) -> None:
         attack = ModernGuidelineAttackCalculator().calculate(

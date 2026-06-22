@@ -15,6 +15,9 @@ class ClassicGuidelineAttackCalculator:
     BACK_TO_BACK_BONUS = 1
 
     def calculate(self, applied: AppliedMove) -> int:
+        if applied.lines_cleared <= 0:
+            return 0
+
         # Minorail counters are one-based from the first clear. Guideline-style
         # combo and back-to-back formulas use displayed/derived counts, so subtract one.
         combo = normalized_combo(applied)

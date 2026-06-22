@@ -20,6 +20,9 @@ class TetrioS2AttackCalculator:
     BACK_TO_BACK_SURGE_BASE = 3
 
     def calculate(self, applied: AppliedMove) -> int:
+        if applied.lines_cleared <= 0:
+            return 0
+
         # Minorail counters are one-based from the first clear. TETR.IO combo
         # and back-to-back attack formulas use displayed/derived counts, so subtract one.
         combo = normalized_combo(applied)
@@ -78,5 +81,5 @@ def _is_t_piece_spin_clear(applied: AppliedMove) -> bool:
     return (
         applied.lines_cleared > 0
         and applied.placement.location.piece == Piece.T
-        and applied.placement.spin != Spin.none
+        and applied.placement.spin == Spin.full
     )

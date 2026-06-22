@@ -43,7 +43,7 @@ def normalized_back_to_back_before(applied: AppliedMove) -> int:
 def fixed_combo_bonus(combo_table: list[int], normalized_combo: int) -> int:
     if normalized_combo <= 0:
         return 0
-    return combo_table[min(normalized_combo, len(combo_table) - 1)]
+    return combo_table[min(normalized_combo - 1, len(combo_table) - 1)]
 
 
 def t_spin_only_line_clear_attack(applied: AppliedMove) -> int:
