@@ -168,8 +168,7 @@ class EvaluationCollectorTests(unittest.TestCase):
         result = collector.result(game=0)
         summary = result["summary"]
 
-        self.assertEqual(summary["pieces"], 1)
-        self.assertEqual(summary["player_pieces"], {"A": 1, "B": 0})
+        self.assertEqual(summary["pieces"], {"A": 1, "B": 0})
         self.assertEqual(summary["combo_steps"], {"A": 1, "B": 0})
         self.assertEqual(summary["back_to_back_steps"], {"A": 1, "B": 0})
         self.assertEqual(summary["attack"], {"A": 3, "B": 0})
@@ -184,8 +183,7 @@ class EvaluationCollectorTests(unittest.TestCase):
                 "summary": {
                     "status": "topout",
                     "winner": "A",
-                    "pieces": 3,
-                    "player_pieces": {"A": 2, "B": 1},
+                    "pieces": {"A": 2, "B": 1},
                     "elapsed_ms": 1500,
                     "lines_cleared": {"A": 2, "B": 0},
                     "line_clear_placements": {"A": 1, "B": 0},
@@ -208,8 +206,7 @@ class EvaluationCollectorTests(unittest.TestCase):
 
         summary = battle_batch_summary(games)
 
-        self.assertEqual(summary["pieces"], 3)
-        self.assertEqual(summary["player_pieces"], {"A": 2, "B": 1})
+        self.assertEqual(summary["pieces"], {"A": 2, "B": 1})
         self.assertEqual(summary["elapsed_ms"], 1500)
         self.assertEqual(summary["average_pps"], 2.0)
         self.assertEqual(summary["combo_steps"], {"A": 1, "B": 0})

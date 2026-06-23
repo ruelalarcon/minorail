@@ -71,10 +71,10 @@ Battle output uses schema `minorail.eval.battle.v1`:
 Battle evaluation keeps two bot processes alive across a multi-game batch and
 sends per-player stop-game semantics at each game boundary.
 
-Battle summaries include the same generic fields as solo summaries. Cumulative
-`pieces` is the total across both players, while `player_pieces` keeps the
-per-player breakdown. Battle-specific rollups also include wins, garbage sent,
-garbage cancelled, garbage applied, and max incoming garbage.
+Battle summaries include the same generic fields as solo summaries. `pieces`
+is a per-player object such as `{"A": 120, "B": 118}`; total pieces can be
+computed by adding the two values. Battle-specific rollups also include wins,
+garbage sent, garbage cancelled, garbage applied, and max incoming garbage.
 
 Battle `piece_locked` events include the same core solo lock facts plus:
 

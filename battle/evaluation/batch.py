@@ -76,10 +76,12 @@ def run_evaluation(
             game_results.append(result)
             if progress is not None:
                 summary = result["summary"]
+                pieces = summary["pieces"]
+                total_pieces = pieces["A"] + pieces["B"]
                 progress(
                     f"[info] battle game={game_number}/{games} "
                     f"status={summary['status']} winner={summary['winner']} "
-                    f"pieces={summary['pieces']}"
+                    f"pieces={total_pieces}"
                 )
     finally:
         service_a.close()
@@ -114,15 +116,14 @@ def _batch_summary(games: list[dict[str, Any]]) -> dict[str, Any]:
         statuses[summary["status"]] = statuses.get(summary["status"], 0) + 1
         if summary["winner"] in wins:
             wins[summary["winner"]] += 1
-        total_pieces += summary["pieces"]
+        total_pieces += summary["pieces"]["A"] + summary["pieces"]["B"]
         total_elapsed_ms += summary["elapsed_ms"]
     return {
         "games": count,
         "statuses": statuses,
         "wins": wins,
         "topouts": statuses.get("topout", 0),
-        "pieces": total_pieces,
-        "player_pieces": _sum_player_metric(summaries, "player_pieces"),
+        "pieces": _sum_player_metric(summaries, "pieces"),
         "elapsed_ms": total_elapsed_ms,
         "average_pps": (
             total_pieces / (total_elapsed_ms / 1000) if total_elapsed_ms > 0 else 0.0

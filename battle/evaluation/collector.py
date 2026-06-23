@@ -21,8 +21,7 @@ class EvaluationCollector:
             "status": "unknown",
             "winner": None,
             "loser": None,
-            "pieces": 0,
-            "player_pieces": {"A": 0, "B": 0},
+            "pieces": {"A": 0, "B": 0},
             "elapsed_ms": 0,
             "pps": 0.0,
             "lines_cleared": {"A": 0, "B": 0},
@@ -134,8 +133,7 @@ class EvaluationCollector:
         self._summary["status"] = event.status
         self._summary["winner"] = event.winner
         self._summary["loser"] = event.loser
-        self._summary["pieces"] = total
-        self._summary["player_pieces"] = dict(event.pieces)
+        self._summary["pieces"] = dict(event.pieces)
         self._summary["elapsed_ms"] = round(event.elapsed * 1000)
         self._summary["pps"] = event.pps
         self._append_event(
@@ -144,8 +142,7 @@ class EvaluationCollector:
                 "status": event.status,
                 "winner": event.winner,
                 "loser": event.loser,
-                "pieces": total,
-                "player_pieces": dict(event.pieces),
+                "pieces": dict(event.pieces),
                 "elapsed_ms": round(event.elapsed * 1000),
                 "pps": event.pps,
                 "stack_height": dict(event.stack_height),
