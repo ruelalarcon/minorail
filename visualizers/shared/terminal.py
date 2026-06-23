@@ -20,8 +20,8 @@ PIECE_COLORS = {
 }
 
 FILLED = "[]"
-EMPTY = "  "
-GHOST = DIM + ".." + RESET
+EMPTY = " ."
+GHOST = DIM + "::" + RESET
 
 
 def colored(text: str, piece: Piece) -> str:
