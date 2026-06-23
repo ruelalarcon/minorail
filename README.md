@@ -30,7 +30,7 @@ to Minorail's websocket API.
 | Headless runs | Runs batches without rendering for testing or benchmarking. |
 | Evaluation output | Writes JSON summaries and lock-by-lock events for batch analysis. |
 | Websocket API | Serves Minorail suggestions to external clients while keeping per session state. |
-| Resync handling | Treats incoming snapshots as authoritative and resets or advances the bot session as needed. |
+| Session reconciliation | Treats incoming snapshots as authoritative and resets or advances the bot session as needed. |
 | Piece stream tracking | Keeps generated piece chronology aligned for bots that support SBP `piece_stream`. |
 | Path output | Finds input paths to selected placements and can convert sonic drops to soft drops. |
 | Rule settings | Supports randomizer, kickset, 180s, sonic drop mode, all spin back to back, perfect-clear back to back, and spawn position settings. |
