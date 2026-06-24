@@ -1,21 +1,21 @@
 [protocol.rules]
-randomizer = "seven_bag"    # "seven_bag" or "pure_random"
-kickset = "srs"             # "srs", "srs_plus"
-rot180 = true               # allow 180-degree rotations (only effective if kickset supports it)
-sonic_drop = "only"         # "only" = sonic drop only, "allow" = sonic drop and soft drop
-spin_detection = "t-spins"  # "none", "t-spins", "t-spins+", "all", "all+", "all-mini", "all-mini+", "mini-only"
+randomizer = "seven_bag"      # "seven_bag" or "pure_random"
+kickset = "srs_plus"          # "srs", "srs_plus"
+rot180 = true                 # allow 180-degree rotations (only effective if kickset supports it)
+sonic_drop = "only"           # "only" = sonic drop only, "allow" = sonic drop and soft drop
+spin_detection = "all-mini+"  # "none", "t-spins", "t-spins+", "all", "all+", "all-mini", "all-mini+", "mini-only"
 back_to_back_sources = [
-    "quad",             # four-line clears
-    "t-spin",           # full T-spin clears
-    "t-spin-mini",      # mini T-spin clears
-    # "allspin",        # full non-T spin clears
-    # "allspin-mini",   # mini non-T spin clears
-    # "perfect-clear",  # board fully empty
+    "quad",           # four-line clears
+    "t-spin",         # full T-spin clears
+    "t-spin-mini",    # mini T-spin clears
+    "allspin",        # full non-T spin clears
+    "allspin-mini",   # mini non-T spin clears
+    "perfect-clear",  # board fully empty
 ]
 
 [protocol.rules.spawn_position]
 x = 4   # active piece spawn x coordinate
-y = 20  # active piece spawn y coordinate
+y = 21  # active piece spawn y coordinate
 
 [protocol.rules.board_size]
 width = 10   # board columns
@@ -47,7 +47,7 @@ refill_threshold = 5  # when queue length drops below this, add pieces until it 
 # seed = 0  # integer base seed for reproducible local piece streams
 
 [game.attack]
-calculator = "modern_guideline"  # "modern_guideline", "classic_guideline", "tetrio_s2", "tetrio_s1", "ppt"
+calculator = "tetrio_s2"  # "modern_guideline", "classic_guideline", "tetrio_s2", "tetrio_s1", "ppt"
 
 [game.limits]
 # piece_limit = 1000      # stop after this many accepted piece locks
@@ -57,7 +57,7 @@ calculator = "modern_guideline"  # "modern_guideline", "classic_guideline", "tet
 move_delay_ms = 50         # delay between each animated input step
 lock_delay_ms = 150        # pause after a piece locks before the next piece appears
 first_move_delay_ms = 200  # pause before animating the first move
-visible_rows = 22          # how many rows of the board to show (max 40)
+visible_rows = 23          # how many rows of the board to show (max 40)
 queue_size = 5             # number of next pieces shown in the queue panel
 
 [visualizer.web]
@@ -65,4 +65,4 @@ host = "127.0.0.1"  # host for python minorail.py solo play --web
 # port = 8080       # omit for an automatically selected open port
 
 [battle.garbage]
-rules = "modern"  # "modern", "ppt", "tetrio"
+rules = "tetrio"  # "modern", "ppt", "tetrio"
