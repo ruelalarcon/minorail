@@ -28,8 +28,6 @@ class TerminalVisualizer:
         self._settings = settings
         self._move_delay = settings.move_delay_ms / 1000
         self._lock_delay = settings.lock_delay_ms / 1000
-        self._first_move_delay = settings.first_move_delay_ms / 1000
-        self._first_spawn = True
         self._status = VisualizerStatus(("A", "B"))
         self._active: dict[str, tuple[Piece, tuple[int, int, Rotation]] | None] = {
             "A": None,
@@ -55,9 +53,6 @@ class TerminalVisualizer:
         self._status.set_player(player, f"Spawn: {piece.value}")
         self._active[player] = (piece, (state.active.x, state.active.y, Rotation.North))
         self._render(states, incoming_garbage)
-        if self._first_spawn:
-            time.sleep(self._first_move_delay)
-            self._first_spawn = False
 
     def animate_suggestion(
         self,

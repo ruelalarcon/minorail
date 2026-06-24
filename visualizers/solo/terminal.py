@@ -30,8 +30,6 @@ class TerminalVisualizer:
         self._settings = settings
         self._move_delay = settings.move_delay_ms / 1000
         self._lock_delay = settings.lock_delay_ms / 1000
-        self._first_move_delay = settings.first_move_delay_ms / 1000
-        self._first_spawn = True
         self._status = VisualizerStatus()
         self._terminal = LiveTerminalRegion()
         self._total_attack = 0
@@ -51,9 +49,6 @@ class TerminalVisualizer:
             state.active.piece,
             (state.active.x, state.active.y, state.active.rotation),
         )
-        if self._first_spawn:
-            time.sleep(self._first_move_delay)
-            self._first_spawn = False
 
     def animate_suggestion(
         self,

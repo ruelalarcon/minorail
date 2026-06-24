@@ -71,6 +71,7 @@ class LocalGameSession:
             piece_stream_limit=protocol_start.piece_stream_limit,
             info_print_topics=self._settings.bot_info_topics(),
             idle_ms=bot_cfg.idle_ms,
+            start_delay_ms=bot_cfg.start_delay_ms,
         )
 
         self._rules = Rules.from_values(self._settings.rules_values())

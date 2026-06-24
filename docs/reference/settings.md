@@ -115,17 +115,20 @@ them. Headless runs and evaluation do not request paths by default.
 [bot]
 suggest_timeout_ms = 10000
 idle_ms = 60000
+# start_delay_ms = 0
 ```
 
 | Field | Behavior |
 | --- | --- |
 | `suggest_timeout_ms` | How long Minorail waits for a usable suggestion before treating the result as no usable suggestion. |
 | `idle_ms` | How long a suggestion session can sit idle before Minorail closes the bot process. |
+| `start_delay_ms` | Pause after sending the SBP `start` message before requesting the first suggestion. Lets the bot process the initial state before moves begin. |
 
 When a bot process goes idle, the session is not forgotten. On the next
 request, Minorail starts a new bot process from the latest known state.
 
-`idle_ms` must be a positive integer.
+`idle_ms` must be a positive integer. `start_delay_ms` must be a
+non-negative integer.
 
 ---
 
@@ -253,7 +256,6 @@ per-game phase state resets for each battle game.
 [visualizer]
 move_delay_ms = 50
 lock_delay_ms = 150
-first_move_delay_ms = 200
 visible_rows = 22
 queue_size = 5
 
@@ -266,7 +268,6 @@ host = "127.0.0.1"
 | --- | --- |
 | `move_delay_ms` | Delay between animated input steps. |
 | `lock_delay_ms` | Pause after a piece locks. |
-| `first_move_delay_ms` | Pause before animating the first move. |
 | `visible_rows` | Number of board rows shown by visualizers. |
 | `queue_size` | Number of upcoming pieces shown by visualizers. |
 | `visualizer.web.host` | Default bind host for `minorail.py solo play --web` and `minorail.py battle play --web`. CLI `--web-host` overrides `visualizer.web.host` for one invocation. |

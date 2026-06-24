@@ -36,6 +36,7 @@ DEFAULT: dict[str, Any] = {
     "bot": {
         "suggest_timeout_ms": 10_000,
         "idle_ms": 60_000,
+        "start_delay_ms": 0,
     },
     "api": {
         "websocket": {
@@ -71,7 +72,6 @@ DEFAULT: dict[str, Any] = {
         },
         "move_delay_ms": 50,
         "lock_delay_ms": 150,
-        "first_move_delay_ms": 200,
         "visible_rows": 22,
         "queue_size": 5,
     },
@@ -109,6 +109,7 @@ class BindEndpoint:
 class BotSettings:
     suggest_timeout_ms: int
     idle_ms: int
+    start_delay_ms: int
 
 
 @dataclass(frozen=True)
@@ -126,7 +127,6 @@ class ProtocolStartSettings:
 class VisualizerSettings:
     move_delay_ms: int
     lock_delay_ms: int
-    first_move_delay_ms: int
     visible_rows: int
     queue_size: int
 
@@ -179,6 +179,10 @@ class Settings:
                 cfg.get("suggest_timeout_ms"),
             ),
             idle_ms=_positive_int("bot.idle_ms", cfg.get("idle_ms")),
+            start_delay_ms=_non_negative_int(
+                "bot.start_delay_ms",
+                cfg.get("start_delay_ms"),
+            ),
         )
 
     def bot_info_topics(self) -> list[str]:
@@ -284,10 +288,6 @@ class Settings:
             lock_delay_ms=_non_negative_int(
                 "visualizer.lock_delay_ms",
                 cfg.get("lock_delay_ms"),
-            ),
-            first_move_delay_ms=_non_negative_int(
-                "visualizer.first_move_delay_ms",
-                cfg.get("first_move_delay_ms"),
             ),
             visible_rows=_positive_int(
                 "visualizer.visible_rows", cfg.get("visible_rows")

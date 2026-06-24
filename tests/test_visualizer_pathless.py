@@ -152,7 +152,6 @@ def _settings() -> VisualizerSettings:
     return VisualizerSettings(
         move_delay_ms=0,
         lock_delay_ms=0,
-        first_move_delay_ms=0,
         visible_rows=22,
         queue_size=5,
     )

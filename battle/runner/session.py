@@ -64,6 +64,7 @@ class Session:
             piece_stream_limit=protocol_start.piece_stream_limit,
             info_print_topics=settings.bot_info_topics(),
             idle_ms=bot_cfg.idle_ms,
+            start_delay_ms=bot_cfg.start_delay_ms,
         )
         self._service_b = service_b or SuggestionService(
             bot_b_path,
@@ -71,6 +72,7 @@ class Session:
             piece_stream_limit=protocol_start.piece_stream_limit,
             info_print_topics=settings.bot_info_topics(),
             idle_ms=bot_cfg.idle_ms,
+            start_delay_ms=bot_cfg.start_delay_ms,
         )
 
         self._players = [

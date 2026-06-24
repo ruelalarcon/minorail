@@ -80,7 +80,6 @@ Solo and battle visualizers use the same `[visualizer]` timing settings:
 [visualizer]
 move_delay_ms = 50
 lock_delay_ms = 150
-first_move_delay_ms = 200
 visible_rows = 22
 queue_size = 5
 
@@ -88,6 +87,11 @@ queue_size = 5
 host = "127.0.0.1"
 # port = 8080
 ```
+
+The bot startup pause before any moves begin is configured under `[bot]`
+as `start_delay_ms`. It applies to all visualizers, including headless
+and null modes, because it pauses the runner thread after the SBP `start`
+message is sent.
 
 These settings affect rendering only.
 

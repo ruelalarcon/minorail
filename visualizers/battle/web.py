@@ -54,8 +54,6 @@ class WebVisualizer:
         self._settings = settings
         self._move_delay = settings.move_delay_ms / 1000
         self._lock_delay = settings.lock_delay_ms / 1000
-        self._first_move_delay = settings.first_move_delay_ms / 1000
-        self._first_spawn = True
         self._host = host
         self._port = port
         self._lock = threading.Lock()
@@ -77,7 +75,6 @@ class WebVisualizer:
     def on_game_started(
         self, states: dict[str, GameState], incoming_garbage: dict[str, int]
     ) -> None:
-        self._first_spawn = True
         self._active = {name: None for name in states}
         self._ensure_server_started()
         self._status.reset_players("Waiting for browser")
@@ -97,9 +94,6 @@ class WebVisualizer:
         self._active[player] = (piece, (state.active.x, state.active.y, Rotation.North))
         self._status.set_player(player, f"Spawn: {piece.value}")
         self._render(states, incoming_garbage)
-        if self._first_spawn:
-            time.sleep(self._first_move_delay)
-            self._first_spawn = False
 
     def animate_suggestion(
         self,

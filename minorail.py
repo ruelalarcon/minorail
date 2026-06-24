@@ -325,6 +325,7 @@ def _solo_play(args: argparse.Namespace) -> None:
         piece_stream_limit=protocol_start.piece_stream_limit,
         info_print_topics=settings.bot_info_topics(),
         idle_ms=bot_cfg.idle_ms,
+        start_delay_ms=bot_cfg.start_delay_ms,
     )
     web_visualizer = None
     if args.web:
@@ -455,6 +456,7 @@ def _battle_play(args: argparse.Namespace) -> None:
         piece_stream_limit=protocol_start.piece_stream_limit,
         info_print_topics=settings.bot_info_topics(),
         idle_ms=bot_cfg.idle_ms,
+        start_delay_ms=bot_cfg.start_delay_ms,
     )
     service_b = SuggestionService(
         args.bot_b,
@@ -462,6 +464,7 @@ def _battle_play(args: argparse.Namespace) -> None:
         piece_stream_limit=protocol_start.piece_stream_limit,
         info_print_topics=settings.bot_info_topics(),
         idle_ms=bot_cfg.idle_ms,
+        start_delay_ms=bot_cfg.start_delay_ms,
     )
     web_visualizer = None
     if args.web:

@@ -25,10 +25,12 @@ class BotSession:
         bot_path: str,
         bot_args: list[str] | None = None,
         info_print_topics: set[str] | None = None,
+        start_delay_ms: int = 0,
     ) -> None:
         self._bot_path = bot_path
         self._bot_args = bot_args or []
         self._info_print_topics = info_print_topics or set()
+        self._start_delay_s = start_delay_ms / 1000
         self._bot: Optional[BotProcess] = None
         self._register_event = threading.Event()
         self._ready_event = threading.Event()
@@ -193,6 +195,8 @@ class BotSession:
                 extensions=snapshot.extensions,
             )
         )
+        if self._start_delay_s > 0:
+            time.sleep(self._start_delay_s)
 
     def _clear_suggestion(self) -> None:
         self._suggestion_event.clear()
