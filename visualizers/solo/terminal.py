@@ -8,19 +8,14 @@ from contracts.suggestion_result import SuggestionResult
 from settings import VisualizerSettings
 from solo.runner.controls import GameControls
 from tetris.game.state import GameState
-from tetris.model.board import cell_piece
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
 from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed
-from tetris.pieces.cells import piece_cells
 from visualizers.shared.terminal import (
-    EMPTY,
-    FILLED,
-    GHOST,
     LiveTerminalRegion,
     colored,
-    colored_cell,
+    render_board_lines,
 )
 from visualizers.shared.status import VisualizerStatus
 
@@ -161,31 +156,10 @@ def _render(
     total_attack: int,
     terminal: LiveTerminalRegion,
 ) -> None:
-    unset = "\x00"
-    width = state.board.width
-    visible_rows = min(visible_rows, state.board.height)
-    grid: list[list[str]] = [[unset for _ in range(width)] for _ in range(visible_rows)]
-
-    for x in range(width):
-        for y in range(visible_rows):
-            if state.board.occupied(x, y):
-                grid[y][x] = colored_cell(FILLED, cell_piece(state.board.cell(x, y)))
-
+    active = None
     if active_piece is not None and active_loc is not None:
-        px, py, prot = active_loc
-        drop = state.board.drop_distance(active_piece, prot, px, py)
-        for gx, gy in piece_cells(active_piece, prot, px, py - drop):
-            if 0 <= gx < width and 0 <= gy < visible_rows and grid[gy][gx] == unset:
-                grid[gy][gx] = GHOST
-        for ax, ay in piece_cells(active_piece, prot, px, py):
-            if 0 <= ax < width and 0 <= ay < visible_rows:
-                grid[ay][ax] = colored(FILLED, active_piece)
-
-    board_lines: list[str] = ["+" + "--" * width + "+"]
-    for row in reversed(range(visible_rows)):
-        cells = "".join(EMPTY if c == unset else c for c in grid[row])
-        board_lines.append("|" + cells + "|")
-    board_lines.append("+" + "--" * width + "+")
+        active = (active_piece, active_loc)
+    board_lines = render_board_lines(state, visible_rows, active)
 
     if active_piece is not None and active_loc is not None:
         active_x, active_y, active_rotation = active_loc
@@ -208,15 +182,13 @@ def _render(
         "",
         f"Combo: {state.combo}",
         f"Back-to-Back: {state.back_to_back}",
-        "",
         f"Total Attack: {total_attack}",
-        "",
-        "Status:",
-        status,
+        f"Status: {status}",
     ]
 
-    out: list[str] = []
-    for i, row_str in enumerate(board_lines):
-        out.append(f"{row_str}  {side[i] if i < len(side) else ''}")
-
-    terminal.render(out)
+    terminal.render(
+        [
+            f"{row}  {side[index] if index < len(side) else ''}"
+            for index, row in enumerate(board_lines)
+        ]
+    )

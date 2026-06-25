@@ -443,18 +443,12 @@ def _side_html(frame: _RenderFrame) -> str:
       <div class="minorail-piece-row">{queue}</div>
     </section>
     <section class="minorail-panel">
-      <dl class="minorail-stats minorail-large-stats">
+      <div class="minorail-section-title">info</div>
+      <dl class="minorail-stats-layout">
         <div><dt>Combo</dt><dd>{board.combo}</dd></div>
         <div><dt>Back-to-Back</dt><dd>{board.back_to_back}</dd></div>
+        <div class="minorail-stat-wide"><dt>Total Attack</dt><dd>{frame.total_attack}</dd></div>
+        <div class="minorail-stat-wide"><dt>Status</dt><dd class="minorail-status">{status}</dd></div>
       </dl>
-    </section>
-    <section class="minorail-panel">
-      <dl class="minorail-stats minorail-single-stat">
-        <div><dt>Total Attack</dt><dd>{frame.total_attack}</dd></div>
-      </dl>
-    </section>
-    <section class="minorail-panel minorail-status">
-      <div class="minorail-section-title">status</div>
-      {status}
     </section>
     """

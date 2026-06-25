@@ -4,7 +4,11 @@ import atexit
 import shutil
 import sys
 
+from tetris.game.state import GameState
+from tetris.model.board import cell_piece
 from tetris.model.piece import Piece
+from tetris.model.rotation import Rotation
+from tetris.pieces.cells import piece_cells
 
 RESET = "\033[0m"
 DIM = "\033[2m"
@@ -21,7 +25,7 @@ PIECE_COLORS = {
 
 FILLED = "[]"
 EMPTY = " ."
-GHOST = DIM + "::" + RESET
+GHOST = "::"
 
 
 def colored(text: str, piece: Piece) -> str:
@@ -32,6 +36,93 @@ def colored_cell(text: str, piece: Piece | None) -> str:
     if piece is None:
         return text
     return colored(text, piece)
+
+
+def ghost_cell(piece: Piece) -> str:
+    return DIM + PIECE_COLORS[piece] + GHOST + RESET
+
+
+def board_width_columns(width: int) -> int:
+    return 2 * width + 2
+
+
+def render_board_lines(
+    state: GameState,
+    visible_rows: int,
+    active: tuple[Piece, tuple[int, int, Rotation]] | None,
+) -> list[str]:
+    unset = "\x00"
+    width = state.board.width
+    visible_rows = min(visible_rows, state.board.height)
+    grid: list[list[str]] = [[unset for _ in range(width)] for _ in range(visible_rows)]
+
+    for x in range(width):
+        for y in range(visible_rows):
+            if state.board.occupied(x, y):
+                grid[y][x] = colored_cell(FILLED, cell_piece(state.board.cell(x, y)))
+
+    if active is not None:
+        active_piece, active_loc = active
+        px, py, prot = active_loc
+        drop = state.board.drop_distance(active_piece, prot, px, py)
+        for gx, gy in piece_cells(active_piece, prot, px, py - drop):
+            if 0 <= gx < width and 0 <= gy < visible_rows and grid[gy][gx] == unset:
+                grid[gy][gx] = ghost_cell(active_piece)
+        for ax, ay in piece_cells(active_piece, prot, px, py):
+            if 0 <= ax < width and 0 <= ay < visible_rows:
+                grid[ay][ax] = colored(FILLED, active_piece)
+
+    lines = ["+" + "--" * width + "+"]
+    for row in reversed(range(visible_rows)):
+        cells = "".join(EMPTY if cell == unset else cell for cell in grid[row])
+        lines.append("|" + cells + "|")
+    lines.append("+" + "--" * width + "+")
+    return lines
+
+
+def visible_len(value: str) -> int:
+    return len(strip_ansi(value))
+
+
+def pad_visible(value: str, width: int) -> str:
+    return value + " " * max(0, width - visible_len(value))
+
+
+def truncate_visible(value: str, width: int) -> str:
+    if visible_len(value) <= width:
+        return value
+
+    result = ""
+    visible = 0
+    in_escape = False
+    saw_escape = False
+    for char in value:
+        if visible >= width:
+            break
+        result += char
+        if char == "\033":
+            in_escape = True
+            saw_escape = True
+        elif in_escape and char == "m":
+            in_escape = False
+        elif not in_escape:
+            visible += 1
+    if saw_escape and not result.endswith(RESET):
+        result += RESET
+    return result
+
+
+def strip_ansi(value: str) -> str:
+    result = ""
+    in_escape = False
+    for char in value:
+        if char == "\033":
+            in_escape = True
+        elif in_escape and char == "m":
+            in_escape = False
+        elif not in_escape:
+            result += char
+    return result
 
 
 class LiveTerminalRegion:

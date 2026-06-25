@@ -346,19 +346,13 @@ def _player_side_html(frame: _PlayerFrame) -> str:
       <div class="minorail-piece-row">{queue}</div>
     </section>
     <section class="minorail-panel">
-      <dl class="minorail-stats minorail-battle-stats">
+      <div class="minorail-section-title">info</div>
+      <dl class="minorail-stats-layout">
         <div><dt>Combo</dt><dd>{board.combo}</dd></div>
         <div><dt>Back-to-Back</dt><dd>{board.back_to_back}</dd></div>
+        <div class="minorail-stat-wide"><dt>Incoming Garbage</dt><dd>{frame.incoming_garbage}</dd></div>
+        <div class="minorail-stat-wide"><dt>Status</dt><dd class="minorail-status">{html.escape(frame.status)}</dd></div>
       </dl>
-    </section>
-    <section class="minorail-panel">
-      <dl class="minorail-stats minorail-battle-garbage-stats">
-        <div><dt>Incoming Garbage</dt><dd>{frame.incoming_garbage}</dd></div>
-      </dl>
-    </section>
-    <section class="minorail-panel minorail-status">
-      <div class="minorail-section-title">status</div>
-      {html.escape(frame.status)}
     </section>
     """
 
@@ -446,29 +440,28 @@ _BATTLE_CSS = """
   gap: 0;
 }
 .minorail-battle-board-with-garbage .minorail-board {
-  border-left-color: transparent;
   border-top-left-radius: 0;
   border-bottom-left-radius: 0;
+  border-left: 0;
 }
 .minorail-garbage-meter {
   position: relative;
   display: grid;
   grid-template-rows: repeat(var(--visible-rows), minmax(0, 1fr));
-  gap: 1px;
+  gap: 0;
   flex: 0 0 auto;
   width: 18px;
-  padding: 5px 4px 5px 5px;
-  border: 1px solid #48515f;
+  padding: 0 4px 0 0;
+  border: 1px solid #343b47;
   border-right: 0;
   border-radius: 4px 0 0 4px;
-  background: #111720;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
+  background: #14171d;
   overflow: visible;
 }
 .minorail-garbage-cell {
   width: 100%;
   min-width: 0;
-  background: #10151d;
+  background: #14171d;
   border: 0;
 }
 .minorail-garbage-cell-layer-0 {
@@ -499,9 +492,8 @@ _BATTLE_CSS = """
 .minorail-garbage-cell-layer-4,
 .minorail-garbage-cell-layer-5,
 .minorail-garbage-cell-layer-6 {
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.12);
+  outline: 1px solid rgba(255, 255, 255, 0.08);
+  outline-offset: -1px;
 }
 .minorail-battle-player .minorail-side {
   flex: 0 1 340px;
@@ -510,12 +502,6 @@ _BATTLE_CSS = """
 }
 .minorail-battle-player .minorail-panel {
   width: 100%;
-}
-.minorail-battle-stats {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.minorail-battle-garbage-stats {
-  grid-template-columns: minmax(0, 1fr);
 }
 @media (max-width: 1280px) {
   .minorail-battle-main {

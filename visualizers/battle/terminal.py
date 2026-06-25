@@ -6,21 +6,21 @@ import time
 from contracts.suggestion_result import SuggestionResult
 from settings import VisualizerSettings
 from tetris.game.state import GameState
-from tetris.model.board import cell_piece
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
 from tetris.movegen.pathfinder import MoveStep, apply_step, obstructed
-from tetris.pieces.cells import piece_cells
 from visualizers.shared.terminal import (
-    EMPTY,
-    FILLED,
-    GHOST,
     LiveTerminalRegion,
+    board_width_columns,
     colored,
-    colored_cell,
+    pad_visible,
+    render_board_lines,
+    truncate_visible,
 )
 from visualizers.shared.status import VisualizerStatus
+
+_BOARD_GAP = 8
 
 
 class TerminalVisualizer:
@@ -177,11 +177,7 @@ class TerminalVisualizer:
                 self._settings.queue_size,
             ),
         ]
-        width = max(len(_strip_ansi(line)) for line in rendered[0])
-        out = [
-            f"{left:<{width + _ansi_extra(left)}}    {right}"
-            for left, right in zip(*rendered)
-        ]
+        out = _battle_lines(rendered[0], rendered[1], states["A"].board.width)
         self._terminal.render(out)
 
     def _frame_height(self) -> int:
@@ -197,31 +193,7 @@ def _board_lines(
     visible_rows: int,
     queue_size: int,
 ) -> list[str]:
-    unset = "\x00"
-    width = state.board.width
-    visible_rows = min(visible_rows, state.board.height)
-    grid: list[list[str]] = [[unset for _ in range(width)] for _ in range(visible_rows)]
-    for x in range(width):
-        for y in range(visible_rows):
-            if state.board.occupied(x, y):
-                grid[y][x] = colored_cell(FILLED, cell_piece(state.board.cell(x, y)))
-
-    if active is not None:
-        active_piece, active_loc = active
-        px, py, prot = active_loc
-        drop = state.board.drop_distance(active_piece, prot, px, py)
-        for gx, gy in piece_cells(active_piece, prot, px, py - drop):
-            if 0 <= gx < width and 0 <= gy < visible_rows and grid[gy][gx] == unset:
-                grid[gy][gx] = GHOST
-        for ax, ay in piece_cells(active_piece, prot, px, py):
-            if 0 <= ax < width and 0 <= ay < visible_rows:
-                grid[ay][ax] = colored(FILLED, active_piece)
-
-    lines = [title, "+" + "--" * width + "+"]
-    for row in reversed(range(visible_rows)):
-        cells = "".join(EMPTY if c == unset else c for c in grid[row])
-        lines.append("|" + cells + "|")
-    lines.append("+" + "--" * width + "+")
+    lines = [title, *render_board_lines(state, visible_rows, active)]
     hold = colored(state.hold.value, state.hold) if state.hold else " "
     queue = " ".join(colored(p.value, p) for p in state.queue[:queue_size])
     active_text = active[0].value if active is not None else state.active.piece.value
@@ -230,29 +202,24 @@ def _board_lines(
             f"Active: {colored(active_text, Piece(active_text))}",
             f"Hold: {hold}",
             f"Queue: {queue}",
+            "",
             f"Combo: {state.combo}",
             f"Back-to-Back: {state.back_to_back}",
             f"Incoming Garbage: {incoming}",
-            "",
-            "Status:",
-            status,
+            f"Status: {status}",
         ]
     )
     return lines
 
 
-def _strip_ansi(value: str) -> str:
-    result = ""
-    in_escape = False
-    for char in value:
-        if char == "\033":
-            in_escape = True
-        elif in_escape and char == "m":
-            in_escape = False
-        elif not in_escape:
-            result += char
-    return result
-
-
-def _ansi_extra(value: str) -> int:
-    return len(value) - len(_strip_ansi(value))
+def _battle_lines(
+    left_lines: list[str],
+    right_lines: list[str],
+    left_board_width: int,
+) -> list[str]:
+    left_region_width = max(len("Player A"), board_width_columns(left_board_width))
+    left_region_width += _BOARD_GAP
+    return [
+        f"{pad_visible(truncate_visible(left, left_region_width), left_region_width)}{right}"
+        for left, right in zip(left_lines, right_lines)
+    ]
