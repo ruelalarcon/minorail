@@ -5,7 +5,13 @@ import unittest
 from tetris.game.back_to_back import clear_sources
 from tetris.game.line_clear import LineClear
 from tetris.model.back_to_back_source import BackToBackSource
-from tetris.model.board import Board
+from tetris.model.board import (
+    EMPTY_CELL,
+    GARBAGE_CELL,
+    PIECE_TO_CELL,
+    Board,
+    cell_label,
+)
 from tetris.model.piece import Piece
 from tetris.model.rules import DEFAULT_BACK_TO_BACK_SOURCES, Rules
 from tetris.model.spin import Spin
@@ -140,6 +146,48 @@ class LineClearTests(unittest.TestCase):
         board.remove_lines(1 << 70)
 
         self.assertEqual(board.cols, [0, 0])
+
+    def test_board_preserves_piece_cell_labels(self) -> None:
+        board = Board.from_sbp([["I", "J", "L", "O", "S", "T", "Z", "G", 1]])
+
+        self.assertEqual(
+            [board.cell(x, 0) for x in range(9)],
+            [
+                PIECE_TO_CELL[Piece.I],
+                PIECE_TO_CELL[Piece.J],
+                PIECE_TO_CELL[Piece.L],
+                PIECE_TO_CELL[Piece.O],
+                PIECE_TO_CELL[Piece.S],
+                PIECE_TO_CELL[Piece.T],
+                PIECE_TO_CELL[Piece.Z],
+                GARBAGE_CELL,
+                GARBAGE_CELL,
+            ],
+        )
+        self.assertEqual(
+            [cell_label(board.cell(x, 0)) for x in range(9)], list("IJLOSTZGG")
+        )
+
+    def test_apply_garbage_accepts_arbitrary_rows(self) -> None:
+        board = Board.empty(width=4, height=4)
+        board.set_cell(1, 0, PIECE_TO_CELL[Piece.T])
+        topped_out = board.apply_garbage(
+            [
+                [GARBAGE_CELL, EMPTY_CELL, GARBAGE_CELL, GARBAGE_CELL],
+                [PIECE_TO_CELL[Piece.I], EMPTY_CELL, EMPTY_CELL, GARBAGE_CELL],
+            ]
+        )
+
+        self.assertFalse(topped_out)
+        self.assertEqual(
+            board.rows[0],
+            bytearray([GARBAGE_CELL, EMPTY_CELL, GARBAGE_CELL, GARBAGE_CELL]),
+        )
+        self.assertEqual(
+            board.rows[1],
+            bytearray([PIECE_TO_CELL[Piece.I], EMPTY_CELL, EMPTY_CELL, GARBAGE_CELL]),
+        )
+        self.assertEqual(board.cell(1, 2), PIECE_TO_CELL[Piece.T])
 
 
 if __name__ == "__main__":

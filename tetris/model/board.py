@@ -1,41 +1,98 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any
 
-from tetris.model.piece import Piece
+from tetris.model.piece import PIECES, Piece
 from tetris.model.rotation import Rotation
 from tetris.pieces.cells import piece_cells
 
+EMPTY_CELL = 0
+GARBAGE_CELL = 8
+GENERIC_FILLED_CELL = GARBAGE_CELL
 
-@dataclass
+PIECE_TO_CELL = {piece: i + 1 for i, piece in enumerate(PIECES)}
+CELL_TO_LABEL = {value: piece.value for piece, value in PIECE_TO_CELL.items()}
+CELL_TO_LABEL[GARBAGE_CELL] = "G"
+LABEL_TO_CELL = {label: value for value, label in CELL_TO_LABEL.items()}
+
+
+@dataclass(init=False)
 class Board:
-    """Column-major bitboard: cols[x] has bit y set iff (x, y) is occupied."""
+    """Row-major byte board: rows[y][x] is 0 for empty, nonzero for occupied."""
 
-    cols: list[int] = field(default_factory=lambda: [0] * 10)
-    height: int = 40
+    rows: list[bytearray] = field(default_factory=list)
 
-    def __post_init__(self) -> None:
-        if len(self.cols) < 1:
-            raise ValueError("board must have at least 1 column")
-        if self.height < 1:
+    def __init__(
+        self,
+        cols: list[int] | None = None,
+        *,
+        rows: Sequence[bytearray | Sequence[int]] | None = None,
+        height: int = 40,
+    ) -> None:
+        if rows is not None and cols is not None:
+            raise ValueError("board cannot be initialized with both rows and cols")
+        if rows is not None:
+            self.rows = [_coerce_row(row) for row in rows]
+            self._validate_rows()
+            return
+        if height < 1:
             raise ValueError("board height must be at least 1")
-        limit = 1 << self.height
-        for i, col in enumerate(self.cols):
+        source_cols = [0] * 10 if cols is None else list(cols)
+        if len(source_cols) < 1:
+            raise ValueError("board must have at least 1 column")
+        limit = 1 << height
+        for i, col in enumerate(source_cols):
             if col < 0 or col >= limit:
-                raise ValueError(f"board column {i} must fit in {self.height} bits")
+                raise ValueError(f"board column {i} must fit in {height} bits")
+        self.rows = [bytearray(len(source_cols)) for _ in range(height)]
+        for x, col in enumerate(source_cols):
+            bits = col
+            while bits:
+                y = (bits & -bits).bit_length() - 1
+                self.rows[y][x] = GENERIC_FILLED_CELL
+                bits &= ~(1 << y)
+        self._validate_rows()
+
+    def _validate_rows(self) -> None:
+        if len(self.rows) < 1:
+            raise ValueError("board height must be at least 1")
+        width = len(self.rows[0])
+        if width < 1:
+            raise ValueError("board must have at least 1 column")
+        for y, row in enumerate(self.rows):
+            if len(row) != width:
+                raise ValueError(f"board row {y} must contain {width} cells")
+            for value in row:
+                if value < 0 or value > 255:
+                    raise ValueError("board cell values must fit in one byte")
 
     @property
     def width(self) -> int:
-        return len(self.cols)
+        return len(self.rows[0])
+
+    @property
+    def height(self) -> int:
+        return len(self.rows)
+
+    @property
+    def cols(self) -> list[int]:
+        cols = [0] * self.width
+        for y, row in enumerate(self.rows):
+            bit = 1 << y
+            for x, cell in enumerate(row):
+                if cell:
+                    cols[x] |= bit
+        return cols
 
     @staticmethod
     def empty(width: int = 10, height: int = 40) -> Board:
-        return Board(cols=[0] * width, height=height)
+        return Board(rows=[bytearray(width) for _ in range(height)])
 
     @staticmethod
     def from_sbp(
-        rows: list[list[Optional[str]]],
+        rows: Sequence[Sequence[Any]],
         *,
         width: int | None = None,
         height: int | None = None,
@@ -45,45 +102,60 @@ class Board:
         parsed_width = (
             max((len(row) for row in rows), default=10) if width is None else width
         )
-        cols = [0] * parsed_width
+        parsed_rows = [bytearray(parsed_width) for _ in range(parsed_height)]
         for y, row in enumerate(rows):
             if y >= parsed_height:
                 break
             for x, cell in enumerate(row):
                 if x < parsed_width and cell is not None:
-                    cols[x] |= 1 << y
-        return Board(cols=cols, height=parsed_height)
+                    parsed_rows[y][x] = cell_value(cell)
+        return Board(rows=parsed_rows)
 
     def occupied(self, x: int, y: int) -> bool:
         if x < 0 or x >= self.width or y < 0 or y >= self.height:
             return True
-        return bool(self.cols[x] & (1 << y))
+        return self.rows[y][x] != EMPTY_CELL
+
+    def cell(self, x: int, y: int) -> int:
+        if x < 0 or x >= self.width or y < 0 or y >= self.height:
+            raise IndexError(f"cell out of bounds: ({x}, {y})")
+        return self.rows[y][x]
+
+    def set_cell(self, x: int, y: int, value: int) -> None:
+        if x < 0 or x >= self.width or y < 0 or y >= self.height:
+            raise IndexError(f"cell out of bounds: ({x}, {y})")
+        if value < 0 or value > 255:
+            raise ValueError("board cell value must fit in one byte")
+        self.rows[y][x] = value
 
     def place(self, piece: Piece, rotation: Rotation, cx: int, cy: int) -> None:
+        value = PIECE_TO_CELL[piece]
         for x, y in piece_cells(piece, rotation, cx, cy):
             assert 0 <= x < self.width and 0 <= y < self.height
-            self.cols[x] |= 1 << y
+            self.rows[y][x] = value
 
     def line_clears(self) -> int:
         """Bitmask of completely filled rows."""
-        mask = (1 << self.height) - 1
-        for c in self.cols:
-            mask &= c
+        mask = 0
+        for y, row in enumerate(self.rows):
+            if all(row):
+                mask |= 1 << y
         return mask
 
     def remove_lines(self, lines: int) -> None:
         """Clear rows indicated by bitmask, shifting rows above down."""
-        for i in range(self.width):
-            self.cols[i] = _clear_lines(self.cols[i], lines, self.height)
+        kept = [row for y, row in enumerate(self.rows) if not (lines & (1 << y))]
+        self.rows = kept + [
+            bytearray(self.width) for _ in range(self.height - len(kept))
+        ]
 
     def distance_to_ground(self, x: int, y: int) -> int:
         """How many rows cell (x, y) can fall before hitting something."""
         assert 0 <= x < self.width and 0 <= y < self.height
-        blockers_below = self.cols[x] & ((1 << y) - 1)
-        if blockers_below == 0:
-            return y
-        highest_blocker_y = blockers_below.bit_length() - 1
-        return y - highest_blocker_y - 1
+        for yy in range(y - 1, -1, -1):
+            if self.rows[yy][x]:
+                return y - yy - 1
+        return y
 
     def drop_distance(self, piece: Piece, rotation: Rotation, cx: int, cy: int) -> int:
         """How far the piece can drop from (cx, cy) before landing."""
@@ -99,21 +171,59 @@ class Board:
         return result
 
     def is_empty(self) -> bool:
-        return all(c == 0 for c in self.cols)
+        return all(not any(row) for row in self.rows)
+
+    def stack_height(self) -> int:
+        for y in range(self.height - 1, -1, -1):
+            if any(self.rows[y]):
+                return y + 1
+        return 0
+
+    def occupied_count(self) -> int:
+        return sum(1 for row in self.rows for cell in row if cell)
+
+    def apply_garbage(self, rows: Sequence[bytearray | Sequence[int]]) -> bool:
+        """Apply arbitrary garbage rows, pushing existing rows upward."""
+        insert_rows = [_coerce_row(row) for row in rows]
+        if not insert_rows:
+            return False
+        for y, row in enumerate(insert_rows):
+            if len(row) != self.width:
+                raise ValueError(f"inserted row {y} must contain {self.width} cells")
+        lines = len(insert_rows)
+        topped_out = any(any(row) for row in self.rows[max(0, self.height - lines) :])
+        shifted = insert_rows[: self.height]
+        shifted.extend(self.rows[: max(0, self.height - lines)])
+        self.rows = shifted[: self.height]
+        return topped_out
 
     def copy(self) -> Board:
-        return Board(cols=list(self.cols), height=self.height)
+        return Board(rows=[bytearray(row) for row in self.rows])
 
 
-def _clear_lines(col: int, lines: int, height: int) -> int:
-    """Remove rows in `lines` bitmask from col, shifting higher bits down."""
-    mask = (1 << height) - 1
-    col &= mask
-    remaining = lines & mask
-    while remaining:
-        i = (remaining & -remaining).bit_length() - 1
-        low_mask = (1 << i) - 1
-        col = (col & low_mask) | ((col >> 1) & ~low_mask & mask)
-        remaining &= ~(1 << i)
-        remaining >>= 1
-    return col
+def cell_value(value: Any) -> int:
+    if isinstance(value, str):
+        return LABEL_TO_CELL.get(value, GENERIC_FILLED_CELL)
+    return GENERIC_FILLED_CELL
+
+
+def cell_label(value: int) -> str | None:
+    if value == EMPTY_CELL:
+        return None
+    return CELL_TO_LABEL.get(value, "G")
+
+
+def cell_piece(value: int) -> Piece | None:
+    label = cell_label(value)
+    if label is None or label == "G":
+        return None
+    try:
+        return Piece(label)
+    except ValueError:
+        return None
+
+
+def _coerce_row(row: bytearray | Sequence[int]) -> bytearray:
+    if isinstance(row, bytearray):
+        return bytearray(row)
+    return bytearray(row)

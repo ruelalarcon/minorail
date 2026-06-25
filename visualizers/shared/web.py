@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from tetris.game.state import GameState
+from tetris.model.board import cell_piece
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.pieces.cells import piece_cells
@@ -61,7 +62,7 @@ def make_board_frame(
     for x in range(width):
         for y in range(visible_rows):
             if state.board.occupied(x, y):
-                cells[y][x] = RenderCell("filled")
+                cells[y][x] = RenderCell("filled", cell_piece(state.board.cell(x, y)))
 
     active_x: Optional[int] = None
     active_y: Optional[int] = None
@@ -401,7 +402,7 @@ CSS = """
   cursor: cell;
 }
 .minorail-cell-filled {
-  background: #7f8896;
+  background: var(--piece-color, #7f8896);
   border-color: rgba(235, 240, 247, 0.42);
 }
 .minorail-cell-active {

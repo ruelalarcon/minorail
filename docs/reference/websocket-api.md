@@ -32,11 +32,15 @@ overrides `api.websocket.host`; `--ws-port` overrides `api.websocket.port`.
 
 Each request is a JSON text frame.
 
-```json
+```js
 {
   "type": "suggest",
   "seq": 7,
-  "board": { "cols": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  "board": [
+    [null, null, null, null, null, null, null, null, null, null],
+    ...,
+    [null, null, null, null, null, null, null, null, null, null]
+  ],
   "active": "T",
   "queue": ["I", "O", "L", "J"],
   "hold": null,
@@ -50,7 +54,7 @@ Required fields:
 | Field | Type | Notes |
 | --- | --- | --- |
 | `seq` | integer | Non negative sequence number. |
-| `board` | object or matrix | Column bitboard object or SBP row matrix. |
+| `board` | matrix | SBP row matrix. |
 | `active` | string | Piece string. |
 | `queue` | string array | Upcoming pieces only. |
 
@@ -74,32 +78,23 @@ Optional fields:
 
 ## Board Formats
 
-The preferred Minorail board format is column bitboards:
+The preferred Minorail board format is an SBP-style row matrix:
 
-```json
-{
-  "board": {
-    "cols": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-  }
-}
-```
-
-`cols[x]` has bit `y` set when cell `(x, y)` is occupied. The number of
-columns must match `board_size.width`, and each column must fit in
-`board_size.height` bits. Defaults are 10 columns and 40 rows.
-
-The API also accepts an SBP board matrix:
-
-```json
+```js
 {
   "board": [
+    [null, null, null, null, null, null, null, null, null, null],
+    ...,
     [null, null, null, null, null, null, null, null, null, null]
   ]
 }
 ```
 
 The full matrix must contain `board_size.height` rows with `board_size.width`
-cells each. Row 0 is the bottom. `null` is empty. Any string is occupied.
+cells each. Row 0 is the bottom. `null` is empty. Any non-null value is
+occupied. Known string labels `"I"`, `"J"`, `"L"`, `"O"`, `"S"`, `"T"`,
+`"Z"`, and `"G"` are preserved internally for visualizer colors; other
+non-null values are treated as generic garbage-colored occupied cells.
 
 Board coordinates use the same grid convention in every request and response:
 
@@ -110,7 +105,7 @@ Board coordinates use the same grid convention in every request and response:
 | `x` direction | Increases to the right. |
 | `y` direction | Increases upward. |
 | Matrix rows | Ordered from bottom to top. |
-| Matrix cells | `null` is empty; any string is occupied. |
+| Matrix cells | `null` is empty; any non-null value is occupied. |
 
 ---
 
@@ -176,9 +171,8 @@ When spawn coordinates are overridden, Minorail spawns the active piece at
 those coordinates for that request.
 
 When board size is overridden, the request board must match that size.
-`board_size.height` is not capped by Minorail; Python integer bitboards are used
-for column storage. SBP bots may still reject sizes outside their advertised
-board-size capabilities.
+`board_size.height` is not capped by Minorail. SBP bots may still reject sizes
+outside their advertised board-size capabilities.
 
 Rules are evaluated on every request. If the effective rules for an existing
 session change, Minorail resets the internal bot session from the incoming
@@ -195,12 +189,16 @@ websocket connection.
 Provide `session_id` when one connection needs to drive multiple independent
 games:
 
-```json
+```js
 {
   "type": "suggest",
   "session_id": "game-42",
   "seq": 12,
-  "board": { "cols": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  "board": [
+    [null, null, null, null, null, null, null, null, null, null],
+    ...,
+    [null, null, null, null, null, null, null, null, null, null]
+  ],
   "active": "I",
   "queue": ["T", "L", "J"]
 }
@@ -300,7 +298,6 @@ The API rejects:
 * missing or invalid `seq`
 * unknown request types
 * invalid board shape
-* board columns outside the configured `board_size.height`
 * invalid piece strings
 * unknown rule fields
 * non object extensions

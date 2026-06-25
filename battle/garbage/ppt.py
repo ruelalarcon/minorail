@@ -9,6 +9,7 @@ from battle.garbage.base import (
     GarbageQueue,
 )
 from tetris.game.state import GameState
+from tetris.model.board import EMPTY_CELL, GARBAGE_CELL
 
 
 @dataclass(frozen=True)
@@ -192,21 +193,14 @@ def _holes_to_apply(
 
 
 def _raise_garbage(state: GameState, holes: list[int]) -> bool:
-    lines = len(holes)
-    width = state.board.width
-    height = state.board.height
-    mask = (1 << height) - 1
-    overflow_mask = ((1 << min(lines, height)) - 1) << max(0, height - lines)
-    topped_out = any(col & overflow_mask for col in state.board.cols)
+    return state.board.apply_garbage(_hole_garbage_rows(holes, state.board.width))
 
-    bottom_masks = [0] * width
-    for y, hole in enumerate(holes):
-        if y >= height:
-            break
-        for x in range(width):
-            if x != hole:
-                bottom_masks[x] |= 1 << y
 
-    for x in range(width):
-        state.board.cols[x] = ((state.board.cols[x] << lines) & mask) | bottom_masks[x]
-    return topped_out
+def _hole_garbage_rows(holes: list[int], width: int) -> list[bytearray]:
+    rows = []
+    for hole in holes:
+        row = bytearray([GARBAGE_CELL] * width)
+        if 0 <= hole < width:
+            row[hole] = EMPTY_CELL
+        rows.append(row)
+    return rows

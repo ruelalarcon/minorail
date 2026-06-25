@@ -17,16 +17,20 @@ and websocket requests.
 | y axis | Increases upward. |
 | Row 0 | Bottom row. |
 | Default spawn | `x = 4`, `y = 20`, `rotation = North`. |
-| Internal board | `cols[x]` has bit `y` set when cell `(x, y)` is occupied. |
+| Internal board | `rows[y][x]` is a byte cell id. `0` is empty; nonzero is occupied. |
 
-Minorail stores columns as Python integer bitboards, so Minorail itself does
-not impose a 64-row board-height limit. SBP bots may advertise narrower
-board-size support; Frostetra, for example, supports width 10 and heights from
-1 through 64.
+Minorail stores board cells as byte rows. Cell id `0` is empty, `1..7` map to
+the built-in pieces in `IJLOSTZ` order, and `8` is garbage. Other nonzero cell
+ids are treated as occupied and use the same generic visual color as garbage.
+Minorail itself does not impose a 64-row board-height limit. SBP bots may
+advertise narrower board-size support; Frostetra, for example, supports width
+10 and heights from 1 through 64.
 
 SBP board matrices and websocket board matrices use the same coordinate system:
-row arrays are ordered from bottom to top, `null` means empty, and any string
-means occupied. Matrix dimensions must match the active board-size rules.
+row arrays are ordered from bottom to top, `null` means empty, and any non-null
+cell means occupied. Known cell labels preserve visual color; unknown non-null
+cells become generic garbage-colored cells. Matrix dimensions must match the
+active board-size rules.
 
 ---
 

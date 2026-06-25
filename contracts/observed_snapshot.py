@@ -32,8 +32,7 @@ class ObservedSnapshot:
 
     def physically_equals(self, other: ObservedSnapshot) -> bool:
         return (
-            self.board.cols == other.board.cols
-            and self.board.height == other.board.height
+            self.board.rows == other.board.rows
             and self.active == other.active
             and self.queue == other.queue
             and self.hold == other.hold

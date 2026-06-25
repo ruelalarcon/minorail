@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from solo.runner.controls import CellEdit
 from contracts.observed_snapshot import ObservedSnapshot
 from tetris.game.state import AppliedMove, GameState, spawn_location
-from tetris.model.board import Board
+from tetris.model.board import Board, GARBAGE_CELL, EMPTY_CELL
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.randomizer import Randomizer
@@ -76,14 +76,13 @@ class LocalGame:
         changed = False
         for edit in edits:
             _validate_cell(edit.x, edit.y, self.state.board)
-            mask = 1 << edit.y
-            was_filled = bool(self.state.board.cols[edit.x] & mask)
+            was_filled = self.state.board.occupied(edit.x, edit.y)
             if was_filled == edit.filled:
                 continue
             if edit.filled:
-                self.state.board.cols[edit.x] |= mask
+                self.state.board.set_cell(edit.x, edit.y, GARBAGE_CELL)
             else:
-                self.state.board.cols[edit.x] &= ~mask
+                self.state.board.set_cell(edit.x, edit.y, EMPTY_CELL)
             changed = True
 
         if changed:
@@ -95,7 +94,7 @@ class LocalGame:
             CellEdit(x, y, False)
             for x in range(self.state.board.width)
             for y in range(self.state.board.height)
-            if self.state.board.cols[x] & (1 << y)
+            if self.state.board.occupied(x, y)
         ]
         self.set_cells(edits)
 

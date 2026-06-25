@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from tetris.model.board import Board
+from tetris.model.board import Board, GARBAGE_CELL
 from tetris.model.location import PieceLocation
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
@@ -15,7 +15,7 @@ from tetris.spin import detect_spin
 def board_with(cells: set[tuple[int, int]]) -> Board:
     board = Board()
     for x, y in cells:
-        board.cols[x] |= 1 << y
+        board.set_cell(x, y, GARBAGE_CELL)
     return board
 
 

@@ -28,6 +28,12 @@ def colored(text: str, piece: Piece) -> str:
     return PIECE_COLORS[piece] + text + RESET
 
 
+def colored_cell(text: str, piece: Piece | None) -> str:
+    if piece is None:
+        return text
+    return colored(text, piece)
+
+
 class LiveTerminalRegion:
     def __init__(self) -> None:
         self._interactive = sys.stdout.isatty()

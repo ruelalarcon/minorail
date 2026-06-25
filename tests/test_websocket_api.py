@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from tetris.model.board import Board
+from tetris.model.board import GARBAGE_CELL, PIECE_TO_CELL, Board
 from tetris.model.location import PieceLocation
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
@@ -19,13 +19,17 @@ from contracts.suggestion_result import SuggestionResult
 from contracts.suggestion_status import SuggestionStatus
 
 
+def _empty_board(width: int = 10, height: int = 40) -> list[list[None]]:
+    return [[None] * width for _ in range(height)]
+
+
 class WebSocketApiTests(unittest.TestCase):
     def test_request_active_is_piece_string(self) -> None:
         request = request_from_json(
             {
                 "type": "suggest",
                 "seq": 7,
-                "board": {"cols": [0] * 10},
+                "board": _empty_board(),
                 "active": "T",
                 "queue": ["I", "O"],
                 "hold": None,
@@ -40,14 +44,14 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.snapshot.active.x, 4)
         self.assertEqual(request.snapshot.active.y, 20)
         self.assertEqual(request.snapshot.queue, [Piece.I, Piece.O])
-        self.assertEqual(request.snapshot.board, Board([0] * 10))
+        self.assertEqual(request.snapshot.board, Board.empty())
 
     def test_request_rules_can_override_spawn_position(self) -> None:
         request = request_from_json(
             {
                 "type": "suggest",
                 "seq": 7,
-                "board": {"cols": [0] * 10},
+                "board": _empty_board(),
                 "active": "T",
                 "queue": ["I", "O"],
                 "rules": {"spawn_position": {"x": 5, "y": 18}},
@@ -59,23 +63,6 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(request.rules.spawn_y, 18)
         self.assertEqual(request.snapshot.active.x, 5)
         self.assertEqual(request.snapshot.active.y, 18)
-
-    def test_request_rules_define_board_size_for_cols(self) -> None:
-        request = request_from_json(
-            {
-                "type": "suggest",
-                "seq": 7,
-                "board": {"cols": [1 << 70, 0]},
-                "active": "T",
-                "queue": ["I", "O"],
-                "rules": {"board_size": {"width": 2, "height": 100}},
-            },
-            base_rules=Rules(),
-        )
-
-        self.assertEqual(request.rules.board_width, 2)
-        self.assertEqual(request.rules.board_height, 100)
-        self.assertEqual(request.snapshot.board, Board([1 << 70, 0], height=100))
 
     def test_request_rules_define_board_size_for_sbp_matrix(self) -> None:
         rows: list[list[str | None]] = [[None, None] for _ in range(100)]
@@ -95,13 +82,35 @@ class WebSocketApiTests(unittest.TestCase):
 
         self.assertEqual(request.snapshot.board, Board([0, 1 << 70], height=100))
 
+    def test_request_sbp_matrix_accepts_any_non_null_cell(self) -> None:
+        rows: list[list[object | None]] = [[None, None] for _ in range(4)]
+        rows[0][0] = "T"
+        rows[1][1] = 123
+        rows[2][0] = True
+
+        request = request_from_json(
+            {
+                "type": "suggest",
+                "seq": 7,
+                "board": rows,
+                "active": "T",
+                "queue": ["I", "O"],
+                "rules": {"board_size": {"width": 2, "height": 4}},
+            },
+            base_rules=Rules(),
+        )
+
+        self.assertEqual(request.snapshot.board.cell(0, 0), PIECE_TO_CELL[Piece.T])
+        self.assertEqual(request.snapshot.board.cell(1, 1), GARBAGE_CELL)
+        self.assertEqual(request.snapshot.board.cell(0, 2), GARBAGE_CELL)
+
     def test_request_accepts_extensions_object(self) -> None:
         extensions = {"minorail.example.v1": {"value": True}}
         request = request_from_json(
             {
                 "type": "suggest",
                 "seq": 7,
-                "board": {"cols": [0] * 10},
+                "board": _empty_board(),
                 "active": "T",
                 "queue": ["I", "O"],
                 "extensions": extensions,
@@ -117,7 +126,7 @@ class WebSocketApiTests(unittest.TestCase):
             {
                 "type": "suggest",
                 "seq": 7,
-                "board": {"cols": [0] * 10},
+                "board": _empty_board(),
                 "active": "T",
                 "queue": ["I", "O"],
                 "incoming_garbage": [4, 2],
@@ -132,7 +141,7 @@ class WebSocketApiTests(unittest.TestCase):
             {
                 "type": "suggest",
                 "seq": 7,
-                "board": {"cols": [0] * 10},
+                "board": _empty_board(),
                 "active": "T",
                 "queue": ["I", "O"],
                 "pathfinding": False,
@@ -149,7 +158,7 @@ class WebSocketApiTests(unittest.TestCase):
                 {
                     "type": "suggest",
                     "seq": 7,
-                    "board": {"cols": [0] * 10},
+                    "board": _empty_board(),
                     "active": "T",
                     "queue": ["I", "O"],
                     "extensions": ["minorail.example.v1"],
@@ -166,7 +175,7 @@ class WebSocketApiTests(unittest.TestCase):
                 {
                     "type": "suggest",
                     "seq": 7,
-                    "board": {"cols": [0] * 10},
+                    "board": _empty_board(),
                     "active": {
                         "type": "T",
                         "orientation": "north",

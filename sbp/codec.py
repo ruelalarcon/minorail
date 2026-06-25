@@ -12,7 +12,7 @@ from sbp.messages import (
     MsgStop,
     MsgSuggest,
 )
-from tetris.model.board import Board
+from tetris.model.board import Board, cell_label
 from tetris.model.rules import Rules
 
 OutboundMessage = (
@@ -99,10 +99,9 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
 
 def board_to_sbp(board: Board) -> list[list[str | None]]:
     rows: list[list[str | None]] = [[None] * board.width for _ in range(board.height)]
-    for x in range(board.width):
-        for y in range(board.height):
-            if board.cols[x] & (1 << y):
-                rows[y][x] = "G"
+    for y in range(board.height):
+        for x in range(board.width):
+            rows[y][x] = cell_label(board.cell(x, y))
     return rows
 
 

@@ -2,7 +2,7 @@ import unittest
 
 from solo.runner.local_game import LocalGame
 from tetris.game.state import GameState, spawn_location
-from tetris.model.board import Board
+from tetris.model.board import Board, GARBAGE_CELL
 from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 
@@ -18,14 +18,14 @@ class FakeRandomizer:
 class LocalGameTests(unittest.TestCase):
     def test_topout_when_active_spawn_cell_is_occupied(self) -> None:
         board = Board()
-        board.cols[4] |= 1 << 20
+        board.set_cell(4, 20, GARBAGE_CELL)
         game = _game(board, active=Piece.O)
 
         self.assertTrue(game.is_topped_out())
 
     def test_high_cell_outside_active_spawn_is_not_topout(self) -> None:
         board = Board()
-        board.cols[0] |= 1 << 25
+        board.set_cell(0, 25, GARBAGE_CELL)
         game = _game(board, active=Piece.O)
 
         self.assertFalse(game.is_topped_out())

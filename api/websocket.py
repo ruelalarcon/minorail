@@ -199,28 +199,6 @@ def error_to_json(error: WebSocketApiError) -> dict[str, Any]:
 
 
 def _board(value: object, rules: Rules) -> Board:
-    if isinstance(value, dict):
-        cols = value.get("cols")
-        if not isinstance(cols, list) or len(cols) != rules.board_width:
-            raise WebSocketApiError(
-                "invalid_request",
-                "board.cols must be a list of "
-                f"{rules.board_width} integers from rules.board_size.width",
-            )
-        parsed_cols: list[int] = []
-        for i, col in enumerate(cols):
-            if isinstance(col, bool) or not isinstance(col, int):
-                raise WebSocketApiError(
-                    "invalid_request", f"board.cols[{i}] must be an integer"
-                )
-            if col < 0 or col >= (1 << rules.board_height):
-                raise WebSocketApiError(
-                    "invalid_request",
-                    f"board.cols[{i}] must fit in "
-                    f"{rules.board_height} bits from rules.board_size.height",
-                )
-            parsed_cols.append(col)
-        return Board(cols=parsed_cols, height=rules.board_height)
     if isinstance(value, list):
         if len(value) != rules.board_height:
             raise WebSocketApiError(
@@ -240,9 +218,7 @@ def _board(value: object, rules: Rules) -> Board:
             width=rules.board_width,
             height=rules.board_height,
         )
-    raise WebSocketApiError(
-        "invalid_request", "board must be {'cols': [...]} or an SBP row matrix"
-    )
+    raise WebSocketApiError("invalid_request", "board must be an SBP row matrix")
 
 
 def _seq(value: object) -> int:

@@ -6,6 +6,7 @@ import time
 from contracts.suggestion_result import SuggestionResult
 from settings import VisualizerSettings
 from tetris.game.state import GameState
+from tetris.model.board import cell_piece
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
@@ -17,6 +18,7 @@ from visualizers.shared.terminal import (
     GHOST,
     LiveTerminalRegion,
     colored,
+    colored_cell,
 )
 from visualizers.shared.status import VisualizerStatus
 
@@ -202,7 +204,7 @@ def _board_lines(
     for x in range(width):
         for y in range(visible_rows):
             if state.board.occupied(x, y):
-                grid[y][x] = FILLED
+                grid[y][x] = colored_cell(FILLED, cell_piece(state.board.cell(x, y)))
 
     if active is not None:
         active_piece, active_loc = active

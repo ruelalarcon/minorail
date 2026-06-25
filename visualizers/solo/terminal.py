@@ -8,6 +8,7 @@ from contracts.suggestion_result import SuggestionResult
 from settings import VisualizerSettings
 from solo.runner.controls import GameControls
 from tetris.game.state import GameState
+from tetris.model.board import cell_piece
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
@@ -19,6 +20,7 @@ from visualizers.shared.terminal import (
     GHOST,
     LiveTerminalRegion,
     colored,
+    colored_cell,
 )
 from visualizers.shared.status import VisualizerStatus
 
@@ -167,7 +169,7 @@ def _render(
     for x in range(width):
         for y in range(visible_rows):
             if state.board.occupied(x, y):
-                grid[y][x] = FILLED
+                grid[y][x] = colored_cell(FILLED, cell_piece(state.board.cell(x, y)))
 
     if active_piece is not None and active_loc is not None:
         px, py, prot = active_loc
