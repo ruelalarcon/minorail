@@ -13,7 +13,6 @@ from tetris.pieces import spawn as _spawn
 from tetris.game.hold import Hold
 from tetris.game.line_clear import LineClear
 
-_ALL_PIECES = list(Piece)
 SPAWN_X = _spawn.SPAWN_X
 SPAWN_Y = _spawn.SPAWN_Y
 spawn_location = _spawn.spawn_location

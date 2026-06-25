@@ -10,7 +10,7 @@ from typing import Any
 from settings import PathSettings, Settings
 from tetris.game.state import spawn_location
 from tetris.model.board import Board
-from tetris.model.piece import Piece
+from tetris.model.piece import PIECE_ORDER, Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.movegen.steps import MoveStep
@@ -269,7 +269,7 @@ def _piece(value: object, field: str) -> Piece:
         return Piece(value)
     except ValueError as e:
         raise WebSocketApiError(
-            "invalid_request", f"{field} must be one of I, O, T, L, J, S, Z"
+            "invalid_request", f"{field} must be one of {', '.join(PIECE_ORDER)}"
         ) from e
 
 

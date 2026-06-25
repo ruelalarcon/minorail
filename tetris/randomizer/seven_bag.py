@@ -3,9 +3,9 @@ from __future__ import annotations
 import random
 from typing import Optional
 
-from tetris.model.piece import Piece
+from tetris.model.piece import PIECES, Piece
 
-_ALL_PIECES = list(Piece)
+_ALL_PIECES = list(PIECES)
 
 
 class SevenBag:

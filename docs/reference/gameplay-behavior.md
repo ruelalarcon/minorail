@@ -35,7 +35,7 @@ means occupied. Matrix dimensions must match the active board-size rules.
 The built-in Minorail piece set is the seven tetromino strings:
 
 ```text
-I O T L J S Z
+I J L O S T Z
 ```
 
 Each piece definition is identified by a string and consists of relative

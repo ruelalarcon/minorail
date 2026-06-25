@@ -119,7 +119,7 @@ Board coordinates use the same grid convention in every request and response:
 Piece fields use SBP piece strings:
 
 ```text
-I O T L J S Z
+I J L O S T Z
 ```
 
 Those seven tetromino identifiers are the built-in Minorail pieces. Stock
