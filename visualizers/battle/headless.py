@@ -49,6 +49,8 @@ class HeadlessVisualizer:
         player: str,
         states: dict[str, GameState],
         incoming_garbage: dict[str, int],
+        *,
+        attack: int,
     ) -> None:
         self._pieces += 1
         if self._progress_every <= 0 or self._pieces % self._progress_every != 0:
@@ -57,7 +59,7 @@ class HeadlessVisualizer:
         pps = self._pieces / elapsed if elapsed > 0 else 0
         print(
             f"[info] locks={self._pieces} elapsed={elapsed:.1f}s "
-            f"pps={pps:.2f} incoming={incoming_garbage}",
+            f"pps={pps:.2f} incoming={incoming_garbage} attack={attack}",
             file=sys.stderr,
         )
 

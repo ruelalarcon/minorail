@@ -39,6 +39,8 @@ class BattleVisualizer(Protocol):
         player: str,
         states: dict[str, GameState],
         incoming_garbage: dict[str, int],
+        *,
+        attack: int,
     ) -> None: ...
 
     def on_garbage_applied(

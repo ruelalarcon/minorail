@@ -4,7 +4,7 @@ import sys
 import time
 from typing import Any
 
-from battle.garbage.base import GarbageRules
+from battle.garbage.base import GarbageQueue, GarbageRules
 from battle.garbage.registry import garbage_rules as garbage_rules_type
 from battle.runner.events import (
     GameEndedEvent,
@@ -102,8 +102,16 @@ class Session:
             garbage_type(seed=settings.base_seed(random_seed)),
             garbage_type(seed=None if random_seed is None else random_seed + 1),
         ]
-        for player, garbage_rules in zip(self._players, self._garbage):
-            player.garbage_queue = garbage_rules.empty_queue()
+        self._garbage_queues: dict[str, GarbageQueue] = {
+            player.name: garbage_rules.empty_queue()
+            for player, garbage_rules in zip(self._players, self._garbage)
+        }
+        self._pieces_locked: dict[str, int] = {
+            player.name: 0 for player in self._players
+        }
+        self._attack_total: dict[str, int] = {
+            player.name: 0 for player in self._players
+        }
 
     def play_game(self) -> dict[str, Any]:
         bot_cfg = self._settings.bot()
@@ -140,7 +148,7 @@ class Session:
                         pathfinding=self._pathfinding,
                         timeout_ms=bot_cfg.suggest_timeout_ms,
                         incoming_garbage=garbage_rules.queue_chunks(
-                            player.garbage_queue
+                            self._garbage_queues[player.name]
                         ),
                     )
                 except BotStartupError as e:
@@ -193,17 +201,21 @@ class Session:
                     winner = opponent.name
                     break
 
-                incoming_before = garbage_rules.queue_total(player.garbage_queue)
+                incoming_before = garbage_rules.queue_total(
+                    self._garbage_queues[player.name]
+                )
                 attack = self._attack.calculate(applied)
                 exchange = garbage_rules.exchange(
                     attack=attack,
-                    queue=player.garbage_queue,
+                    queue=self._garbage_queues[player.name],
                 )
-                player.garbage_queue = exchange.queue_after
+                self._garbage_queues[player.name] = exchange.queue_after
                 opponent_garbage_rules = self._garbage[1 - player_index]
-                opponent.garbage_queue = opponent_garbage_rules.enqueue_attack(
-                    opponent.garbage_queue,
-                    attack=exchange.sent,
+                self._garbage_queues[opponent.name] = (
+                    opponent_garbage_rules.enqueue_attack(
+                        self._garbage_queues[opponent.name],
+                        attack=exchange.sent,
+                    )
                 )
 
                 garbage_applied = None
@@ -212,16 +224,16 @@ class Session:
                 ):
                     garbage_applied = garbage_rules.apply_queue(
                         player.game.state,
-                        player.garbage_queue,
+                        self._garbage_queues[player.name],
                     )
-                    player.garbage_queue = garbage_applied.queue_after
+                    self._garbage_queues[player.name] = garbage_applied.queue_after
 
                 player.game.refill_queue(refill_at)
                 self._notify_piece_locked(
                     PieceLockedEvent(
                         session_id=self._session_id,
                         player=player.name,
-                        piece_index=player.pieces_locked,
+                        piece_index=self._pieces_locked[player.name],
                         placement=chosen,
                         hold_used=hold_used,
                         applied=applied,
@@ -232,13 +244,17 @@ class Session:
                         garbage_cancelled=exchange.cancelled,
                         garbage_sent=exchange.sent,
                         incoming_garbage_after=garbage_rules.queue_total(
-                            player.garbage_queue
+                            self._garbage_queues[player.name]
                         ),
                     )
                 )
-                player.pieces_locked += 1
+                self._pieces_locked[player.name] += 1
+                self._attack_total[player.name] += attack
                 self._visualizer.on_piece_locked(
-                    player.name, self._states(), self._incoming()
+                    player.name,
+                    self._states(),
+                    self._incoming(),
+                    attack=attack,
                 )
 
                 if garbage_applied is not None and garbage_applied.lines > 0:
@@ -247,7 +263,7 @@ class Session:
                         player=player.name,
                         lines=garbage_applied.lines,
                         incoming_garbage_after=garbage_rules.queue_total(
-                            player.garbage_queue
+                            self._garbage_queues[player.name]
                         ),
                         stack_height=stack_height(player.game.state),
                         occupied_cells=occupied_cells(player.game.state),
@@ -270,7 +286,7 @@ class Session:
 
                 if self._limits.piece_limit is not None:
                     if (
-                        sum(p.pieces_locked for p in self._players)
+                        sum(self._pieces_locked.values())
                         >= self._limits.piece_limit
                     ):
                         status = "piece_limit"
@@ -298,7 +314,7 @@ class Session:
             )
             self._notify_game_ended(status, winner, loser, elapsed)
 
-        pieces = {p.name: p.pieces_locked for p in self._players}
+        pieces = dict(self._pieces_locked)
         total = sum(pieces.values())
         return {
             "status": status,
@@ -315,7 +331,9 @@ class Session:
 
     def _incoming(self) -> dict[str, int]:
         return {
-            player.name: garbage_rules.queue_total(player.garbage_queue)
+            player.name: garbage_rules.queue_total(
+                self._garbage_queues[player.name]
+            )
             for player, garbage_rules in zip(self._players, self._garbage)
         }
 
@@ -343,7 +361,7 @@ class Session:
         loser: str | None,
         elapsed: float,
     ) -> None:
-        pieces = {p.name: p.pieces_locked for p in self._players}
+        pieces = dict(self._pieces_locked)
         total = sum(pieces.values())
         event = GameEndedEvent(
             session_id=self._session_id,

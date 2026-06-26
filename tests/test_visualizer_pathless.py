@@ -114,6 +114,8 @@ class PathlessVisualizerTests(unittest.TestCase):
             _PlayerFrame(
                 name="A",
                 board=frame.players["A"].board,
+                pieces=0,
+                total_attack=0,
                 incoming_garbage=25,
                 status="",
             )

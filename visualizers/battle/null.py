@@ -40,6 +40,8 @@ class NullVisualizer:
         player: str,
         states: dict[str, GameState],
         incoming_garbage: dict[str, int],
+        *,
+        attack: int,
     ) -> None:
         pass
 

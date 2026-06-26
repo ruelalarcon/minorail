@@ -35,11 +35,17 @@ class TerminalVisualizer:
             "A": None,
             "B": None,
         }
+        self._pieces: dict[str, int] = {"A": 0, "B": 0}
+        self._total_attack: dict[str, int] = {"A": 0, "B": 0}
         self._terminal = LiveTerminalRegion()
 
     def on_game_started(
         self, states: dict[str, GameState], incoming_garbage: dict[str, int]
     ) -> None:
+        for name in self._pieces:
+            self._pieces[name] = 0
+        for name in self._total_attack:
+            self._total_attack[name] = 0
         self._status.reset_players("Battle started")
         self._terminal.start(self._frame_height())
         self._render(states, incoming_garbage)
@@ -118,7 +124,11 @@ class TerminalVisualizer:
         player: str,
         states: dict[str, GameState],
         incoming_garbage: dict[str, int],
+        *,
+        attack: int,
     ) -> None:
+        self._pieces[player] = self._pieces.get(player, 0) + 1
+        self._total_attack[player] = self._total_attack.get(player, 0) + attack
         self._status.set_player(player, "Locked")
         self._active[player] = None
         self._render(states, incoming_garbage)
@@ -164,6 +174,8 @@ class TerminalVisualizer:
                 incoming_garbage["A"],
                 self._active.get("A"),
                 self._status.player("A"),
+                self._pieces.get("A", 0),
+                self._total_attack.get("A", 0),
                 self._settings.visible_rows,
                 self._settings.queue_size,
             ),
@@ -173,6 +185,8 @@ class TerminalVisualizer:
                 incoming_garbage["B"],
                 self._active.get("B"),
                 self._status.player("B"),
+                self._pieces.get("B", 0),
+                self._total_attack.get("B", 0),
                 self._settings.visible_rows,
                 self._settings.queue_size,
             ),
@@ -190,6 +204,8 @@ def _board_lines(
     incoming: int,
     active: tuple[Piece, tuple[int, int, Rotation]] | None,
     status: str,
+    pieces: int,
+    total_attack: int,
     visible_rows: int,
     queue_size: int,
 ) -> list[str]:
@@ -205,6 +221,8 @@ def _board_lines(
             "",
             f"Combo: {state.combo}",
             f"Back-to-Back: {state.back_to_back}",
+            f"Pieces: {pieces}",
+            f"Total Attack: {total_attack}",
             f"Incoming Garbage: {incoming}",
             f"Status: {status}",
         ]

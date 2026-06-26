@@ -32,6 +32,8 @@ from visualizers.shared.status import VisualizerStatus
 class _PlayerFrame:
     name: str
     board: BoardFrame
+    pieces: int
+    total_attack: int
     incoming_garbage: int
     status: str
 
@@ -65,6 +67,8 @@ class WebVisualizer:
             "A": None,
             "B": None,
         }
+        self._pieces: dict[str, int] = {"A": 0, "B": 0}
+        self._total_attack: dict[str, int] = {"A": 0, "B": 0}
 
     @property
     def url(self) -> str:
@@ -76,6 +80,10 @@ class WebVisualizer:
         self, states: dict[str, GameState], incoming_garbage: dict[str, int]
     ) -> None:
         self._active = {name: None for name in states}
+        for name in self._pieces:
+            self._pieces[name] = 0
+        for name in self._total_attack:
+            self._total_attack[name] = 0
         self._ensure_server_started()
         self._status.reset_players("Waiting for browser")
         self._render(states, incoming_garbage)
@@ -158,8 +166,12 @@ class WebVisualizer:
         player: str,
         states: dict[str, GameState],
         incoming_garbage: dict[str, int],
+        *,
+        attack: int,
     ) -> None:
         self._active[player] = None
+        self._pieces[player] = self._pieces.get(player, 0) + 1
+        self._total_attack[player] = self._total_attack.get(player, 0) + attack
         self._status.set_player(player, "Locked")
         self._render(states, incoming_garbage)
         time.sleep(self._lock_delay * 0.5)
@@ -216,6 +228,8 @@ class WebVisualizer:
                     self._settings.visible_rows,
                     self._settings.queue_size,
                 ),
+                pieces=self._pieces.get(name, 0),
+                total_attack=self._total_attack.get(name, 0),
                 incoming_garbage=incoming_garbage[name],
                 status=self._status.player(name),
             )
@@ -232,6 +246,8 @@ class WebVisualizer:
                 name: _PlayerFrame(
                     name=frame.name,
                     board=frame.board,
+                    pieces=frame.pieces,
+                    total_attack=frame.total_attack,
                     incoming_garbage=frame.incoming_garbage,
                     status=self._status.player(name),
                 )
@@ -350,7 +366,9 @@ def _player_side_html(frame: _PlayerFrame) -> str:
       <dl class="minorail-stats-layout">
         <div><dt>Combo</dt><dd>{board.combo}</dd></div>
         <div><dt>Back-to-Back</dt><dd>{board.back_to_back}</dd></div>
-        <div class="minorail-stat-wide"><dt>Incoming Garbage</dt><dd>{frame.incoming_garbage}</dd></div>
+        <div class="minorail-stat-wide"><dt>Pieces</dt><dd>{frame.pieces}</dd></div>
+        <div><dt>Total Attack</dt><dd>{frame.total_attack}</dd></div>
+        <div><dt>Incoming Garbage</dt><dd>{frame.incoming_garbage}</dd></div>
         <div class="minorail-stat-wide"><dt>Status</dt><dd class="minorail-status">{html.escape(frame.status)}</dd></div>
       </dl>
     </section>

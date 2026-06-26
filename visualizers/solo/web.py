@@ -36,6 +36,7 @@ class _RenderFrame:
     status: str
     paused: bool
     editable: bool
+    pieces: int
     total_attack: int
 
     @property
@@ -69,6 +70,7 @@ class WebVisualizer:
         self._lock = threading.Lock()
         self._frame: Optional[_RenderFrame] = None
         self._status = VisualizerStatus()
+        self._pieces = 0
         self._total_attack = 0
         self._client_connected = threading.Event()
         self._server_started = False
@@ -89,6 +91,7 @@ class WebVisualizer:
         self._controls = controls
 
     def on_game_started(self, state: GameState) -> None:
+        self._pieces = 0
         self._total_attack = 0
         self._ensure_server_started()
         self._render(state, status="Waiting for browser")
@@ -171,6 +174,7 @@ class WebVisualizer:
         time.sleep(self._lock_delay)
 
     def on_piece_locked(self, state: GameState, *, total_attack: int) -> None:
+        self._pieces += 1
         self._total_attack = total_attack
         self._render(state, status="Locked")
         time.sleep(self._lock_delay * 0.5)
@@ -213,6 +217,7 @@ class WebVisualizer:
             status=self._status.text,
             paused=self._paused,
             editable=self._editable,
+            pieces=self._pieces,
             total_attack=self._total_attack,
         )
         with self._lock:
@@ -228,6 +233,7 @@ class WebVisualizer:
                 status=self._status.text,
                 paused=self._paused,
                 editable=self._editable,
+                pieces=self._frame.pieces,
                 total_attack=self._frame.total_attack,
             )
 
@@ -447,6 +453,7 @@ def _side_html(frame: _RenderFrame) -> str:
       <dl class="minorail-stats-layout">
         <div><dt>Combo</dt><dd>{board.combo}</dd></div>
         <div><dt>Back-to-Back</dt><dd>{board.back_to_back}</dd></div>
+        <div class="minorail-stat-wide"><dt>Pieces</dt><dd>{frame.pieces}</dd></div>
         <div class="minorail-stat-wide"><dt>Total Attack</dt><dd>{frame.total_attack}</dd></div>
         <div class="minorail-stat-wide"><dt>Status</dt><dd class="minorail-status">{status}</dd></div>
       </dl>
