@@ -14,9 +14,17 @@ to Minorail's websocket API.
 
 # Screenshots
 
-<img width="auto" height="500" alt="web_visualizer" src="https://github.com/user-attachments/assets/394f76be-7d1b-4f49-b2b0-182a9ebe22b4" />
+## Solo Web Visualizer
 
-<img width="auto" height="500" alt="terminal_visualizer" src="https://github.com/user-attachments/assets/e288fa1d-a836-4c7a-a8c5-2b076a14a2be" />
+<img width="auto" height="500" alt="web_solo" src="https://github.com/user-attachments/assets/294829cb-e69a-49e1-b223-3675430df6f1" />
+
+## Battle Web Visualizer
+
+<img width="auto" height="500" alt="web_battle" src="https://github.com/user-attachments/assets/f537ca82-4128-46b0-9af7-0e4493aea927" />
+
+## Solo Terminal Visualizer
+
+<img width="auto" height="500" alt="terminal_solo" src="https://github.com/user-attachments/assets/a261b575-3489-457a-9ddd-52566e21b69b" />
 
 ## Features
 
