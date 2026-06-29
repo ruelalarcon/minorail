@@ -65,6 +65,7 @@ class FakeBotSession:
         self.resets: list[BotSnapshot] = []
         self.reset_rules: list[Rules] = []
         self.advanced: list[tuple[Placement, list[Piece]]] = []
+        self.new_pieces: list[Piece] = []
         self.suggested_incoming_garbage: list[list[int] | None] = []
         self.suggested_extensions: list[dict[str, Any] | None] = []
         self.stopped = False
@@ -90,6 +91,9 @@ class FakeBotSession:
         self, placement: Placement, new_pieces: list[Piece] | None = None
     ) -> None:
         self.advanced.append((placement, list(new_pieces or [])))
+
+    def add_new_pieces(self, pieces: list[Piece]) -> None:
+        self.new_pieces.extend(pieces)
 
     def supports_board_update(self) -> bool:
         return self._supports_board
@@ -257,6 +261,119 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )
+
+    def test_begin_and_finish_advance_split_move_from_new_piece_append(self) -> None:
+        first = placement(Piece.O, 4, 0)
+        second = placement(Piece.I, 0, 2, Rotation.East)
+        fake = FakeBotSession([[first], [second]])
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        started = session.begin_advance(first, rules)
+
+        state = GameState(
+            Board(),
+            spawn_location(Piece.O),
+            [Piece.I, Piece.T, Piece.L, Piece.J],
+            None,
+            0,
+            0,
+        )
+        self.assertTrue(state.apply_move(first, rules))
+        state.queue.append(Piece.S)
+        advanced = snapshot(
+            state.board,
+            active=state.active.piece,
+            queue=state.queue,
+            seq=1,
+            last_move=first,
+        )
+        session.finish_advance(snapshot=advanced, rules=rules, new_pieces=[Piece.S])
+        result = session.suggest(SuggestionRequest(snapshot=advanced, rules=rules))
+
+        self.assertTrue(started)
+        self.assertEqual(fake.advanced, [(first, [])])
+        self.assertEqual(fake.new_pieces, [Piece.S])
+        self.assertEqual(result.status, SuggestionStatus.Synced)
+        self.assertEqual(result.placement, second)
+
+    def test_pending_begin_advance_finishes_from_next_suggest_snapshot(self) -> None:
+        first = placement(Piece.O, 4, 0)
+        second = placement(Piece.I, 0, 2, Rotation.East)
+        fake = FakeBotSession([[first], [second]])
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        self.assertTrue(session.begin_advance(first, rules))
+
+        state = GameState(
+            Board(),
+            spawn_location(Piece.O),
+            [Piece.I, Piece.T, Piece.L, Piece.J],
+            None,
+            0,
+            0,
+        )
+        self.assertTrue(state.apply_move(first, rules))
+        state.queue.append(Piece.S)
+        advanced = snapshot(
+            state.board,
+            active=state.active.piece,
+            queue=state.queue,
+            seq=1,
+            last_move=first,
+        )
+
+        result = session.suggest(SuggestionRequest(snapshot=advanced, rules=rules))
+
+        self.assertEqual(fake.advanced, [(first, [])])
+        self.assertEqual(fake.new_pieces, [Piece.S])
+        self.assertEqual(result.status, SuggestionStatus.Synced)
+        self.assertEqual(result.placement, second)
+
+    def test_finish_advance_sends_board_update_after_early_mismatch(self) -> None:
+        first = placement(Piece.O, 4, 0)
+        fake = FakeBotSession(
+            [[first], [placement(Piece.I, 0, 2, Rotation.East)]],
+            supports_board=True,
+        )
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        self.assertTrue(session.begin_advance(first, rules))
+
+        state = GameState(
+            Board(),
+            spawn_location(Piece.O),
+            [Piece.I, Piece.T, Piece.L, Piece.J],
+            None,
+            0,
+            0,
+        )
+        self.assertTrue(state.apply_move(first, rules))
+        state.queue.append(Piece.S)
+        changed_board = state.board.copy()
+        changed_board.set_cell(0, 0, 1)
+        advanced = snapshot(
+            changed_board,
+            active=state.active.piece,
+            queue=state.queue,
+            seq=1,
+            last_move=first,
+        )
+
+        session.finish_advance(snapshot=advanced, rules=rules, new_pieces=[Piece.S])
+
+        self.assertEqual(fake.advanced, [(first, [])])
+        self.assertEqual(fake.new_pieces, [Piece.S])
+        self.assertEqual(
+            [board.cols for board in fake.board_updates],
+            [[1, 0, 0, 0, 3, 3, 0, 0, 0, 0]],
+        )
+        self.assertEqual(fake.resets, [])
 
     def test_same_rules_and_same_snapshot_keep_bot_session(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)], [placement(Piece.O, 4, 0)]])

@@ -106,18 +106,40 @@ class SuggestionWebSocketServer:
                     "invalid_request", "message must be a JSON object"
                 )
             seq = _optional_seq(obj.get("seq"))
-            request = request_from_json(
-                obj,
-                base_rules=self._rules,
-                default_session_id=connection_session_id,
-                default_timeout_ms=self._timeout_ms,
-                default_pathfinding=self._pathfinding.pathfinding,
-                default_convert_sonic_drops=(self._pathfinding.convert_sonic_drops),
+            message_type = obj.get("type", "suggest")
+            if message_type == "suggest":
+                request = request_from_json(
+                    obj,
+                    base_rules=self._rules,
+                    default_session_id=connection_session_id,
+                    default_timeout_ms=self._timeout_ms,
+                    default_pathfinding=self._pathfinding.pathfinding,
+                    default_convert_sonic_drops=(self._pathfinding.convert_sonic_drops),
+                )
+                session_ids.add(request.session_id)
+                async with self._lock:
+                    result = await asyncio.to_thread(self._service.suggest, request)
+                return result_to_json(result)
+            if message_type == "advance":
+                advance = advance_request_from_json(
+                    obj,
+                    base_rules=self._rules,
+                    default_session_id=connection_session_id,
+                )
+                session_ids.add(advance["session_id"])
+                async with self._lock:
+                    accepted = await asyncio.to_thread(
+                        self._service.begin_advance,
+                        advance["session_id"],
+                        placement=advance["placement"],
+                        rules=advance["rules"],
+                    )
+                return advance_result_to_json(seq, accepted)
+            raise WebSocketApiError(
+                "invalid_request",
+                "type must be 'suggest' or 'advance'",
+                seq=seq,
             )
-            session_ids.add(request.session_id)
-            async with self._lock:
-                result = await asyncio.to_thread(self._service.suggest, request)
-            return result_to_json(result)
         except WebSocketApiError as e:
             return error_to_json(e)
         except BotStartupError as e:
@@ -177,6 +199,26 @@ def request_from_json(
     )
 
 
+def advance_request_from_json(
+    obj: dict[str, Any],
+    *,
+    base_rules: Rules,
+    default_session_id: str = "default",
+) -> dict[str, Any]:
+    if obj.get("type") != "advance":
+        raise WebSocketApiError(
+            "invalid_request",
+            "type must be 'advance'",
+            seq=_optional_seq(obj.get("seq")),
+        )
+
+    return {
+        "session_id": _session_id(obj.get("session_id"), default_session_id),
+        "placement": _placement_from_json(obj.get("placement"), "placement"),
+        "rules": _rules(obj.get("rules"), base_rules),
+    }
+
+
 def result_to_json(result: SuggestionResult) -> dict[str, Any]:
     return {
         "type": "suggestion",
@@ -186,6 +228,14 @@ def result_to_json(result: SuggestionResult) -> dict[str, Any]:
         "placement": _optional_output_placement(result.placement),
         "path": None if result.path is None else [_step(step) for step in result.path],
         "reason": result.reason,
+    }
+
+
+def advance_result_to_json(seq: int | None, accepted: bool) -> dict[str, Any]:
+    return {
+        "type": "advance",
+        "seq": seq,
+        "accepted": accepted,
     }
 
 
@@ -284,6 +334,10 @@ def _timeout_ms(value: object, default: int) -> int:
 def _optional_placement(value: object, field: str) -> Placement | None:
     if value is None:
         return None
+    return _placement_from_json(value, field)
+
+
+def _placement_from_json(value: object, field: str) -> Placement:
     if not isinstance(value, dict):
         raise WebSocketApiError("invalid_request", f"{field} must be an object")
     try:

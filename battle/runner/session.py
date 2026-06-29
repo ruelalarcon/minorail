@@ -181,6 +181,12 @@ class Session:
                     winner = opponent.name
                     break
 
+                advance_started = player.service.begin_advance(
+                    player.suggestion_session_id,
+                    placement=chosen,
+                    rules=self._rules,
+                )
+
                 self._visualizer.animate_suggestion(
                     player.name,
                     self._states(),
@@ -193,6 +199,13 @@ class Session:
 
                 applied = player.game.apply_placement(chosen)
                 if applied is None:
+                    if advance_started:
+                        player.service.finish_advance(
+                            player.suggestion_session_id,
+                            snapshot=player.snapshot(),
+                            rules=self._rules,
+                            new_pieces=[],
+                        )
                     self._visualizer.error(
                         f"{player.name} apply_move rejected: {chosen}"
                     )
@@ -228,7 +241,15 @@ class Session:
                     )
                     self._garbage_queues[player.name] = garbage_applied.queue_after
 
+                queue_len_before_refill = len(player.game.state.queue)
                 player.game.refill_queue(refill_at)
+                if advance_started:
+                    player.service.finish_advance(
+                        player.suggestion_session_id,
+                        snapshot=player.snapshot(),
+                        rules=self._rules,
+                        new_pieces=player.game.state.queue[queue_len_before_refill:],
+                    )
                 self._notify_piece_locked(
                     PieceLockedEvent(
                         session_id=self._session_id,
@@ -285,10 +306,7 @@ class Session:
                     break
 
                 if self._limits.piece_limit is not None:
-                    if (
-                        sum(self._pieces_locked.values())
-                        >= self._limits.piece_limit
-                    ):
+                    if sum(self._pieces_locked.values()) >= self._limits.piece_limit:
                         status = "piece_limit"
                         break
 
@@ -331,9 +349,7 @@ class Session:
 
     def _incoming(self) -> dict[str, int]:
         return {
-            player.name: garbage_rules.queue_total(
-                self._garbage_queues[player.name]
-            )
+            player.name: garbage_rules.queue_total(self._garbage_queues[player.name])
             for player, garbage_rules in zip(self._players, self._garbage)
         }
 

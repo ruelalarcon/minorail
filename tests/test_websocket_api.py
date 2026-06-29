@@ -12,6 +12,8 @@ from tetris.model.spin import Spin
 from tetris.movegen.steps import MoveStep
 from api.websocket import (
     WebSocketApiError,
+    advance_request_from_json,
+    advance_result_to_json,
     request_from_json,
     result_to_json,
 )
@@ -214,6 +216,40 @@ class WebSocketApiTests(unittest.TestCase):
         self.assertEqual(response["placements"], [placement.to_sbp()])
         self.assertEqual(response["path"], ["rot_180", "hard_drop"])
         self.assertIsNone(response["reason"])
+
+    def test_advance_request_accepts_placement_and_session(self) -> None:
+        placement = Placement(PieceLocation(Piece.T, Rotation.South, 4, 1), Spin.full)
+
+        request = advance_request_from_json(
+            {
+                "type": "advance",
+                "seq": 8,
+                "session_id": "game-1",
+                "placement": placement.to_sbp(),
+                "rules": {"spawn_position": {"x": 4, "y": 21}},
+            },
+            base_rules=Rules(),
+        )
+
+        self.assertEqual(request["session_id"], "game-1")
+        self.assertEqual(request["placement"], placement)
+        self.assertEqual(request["rules"].spawn_y, 21)
+
+    def test_advance_request_rejects_missing_placement(self) -> None:
+        with self.assertRaises(WebSocketApiError) as cm:
+            advance_request_from_json(
+                {"type": "advance", "seq": 8},
+                base_rules=Rules(),
+            )
+
+        self.assertEqual(cm.exception.reason, "invalid_request")
+        self.assertEqual(cm.exception.message, "placement must be an object")
+
+    def test_advance_result_json(self) -> None:
+        self.assertEqual(
+            advance_result_to_json(8, True),
+            {"type": "advance", "seq": 8, "accepted": True},
+        )
 
 
 if __name__ == "__main__":

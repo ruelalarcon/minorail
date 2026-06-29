@@ -28,7 +28,7 @@ overrides `api.websocket.host`; `--ws-port` overrides `api.websocket.port`.
 
 ---
 
-## Request Shape
+## Suggest Request Shape
 
 Each request is a JSON text frame.
 
@@ -62,7 +62,7 @@ Optional fields:
 
 | Field | Default | Notes |
 | --- | --- | --- |
-| `type` | `suggest` | Only `suggest` is accepted. |
+| `type` | `suggest` | Suggestion request type. |
 | `hold` | null | Piece string or null. |
 | `can_hold` | true | Whether hold is currently legal. |
 | `last_move` | null | SBP placement or null. |
@@ -73,6 +73,52 @@ Optional fields:
 | `convert_sonic_drops` | server settings | Whether returned paths rewrite intermediate sonic drops. Only matters when pathfinding is enabled. |
 | `session_id` | connection session | Non empty string. |
 | `timeout_ms` | settings value | Positive integer. |
+
+---
+
+## Advance Request Shape
+
+Clients that intend to execute a returned suggestion may send an `advance` message
+as soon as they accept the selected placement:
+
+```json
+{
+  "type": "advance",
+  "seq": 7,
+  "session_id": "game-42",
+  "placement": {
+    "location": {
+      "type": "T",
+      "orientation": "north",
+      "x": 4,
+      "y": 1
+    },
+    "spin": "none"
+  }
+}
+```
+
+Minorail translates this into SBP `advance` for the bot. The next normal
+`suggest` snapshot remains authoritative: Minorail uses it to append newly
+observed queue pieces and reconcile the bot. If the actual post-lock state
+differs only by board cells, Minorail sends a board update to bots that support
+it. If active piece, queue, hold state, or rules differ, Minorail resets the
+bot session from the authoritative snapshot.
+
+Required fields:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `type` | string | Must be `advance`. |
+| `placement` | object | SBP placement selected from a prior suggestion. |
+
+Optional fields:
+
+| Field | Default | Notes |
+| --- | --- | --- |
+| `seq` | null | Echoed in the response when present. |
+| `session_id` | connection session | Must match the session that produced the suggestion. |
+| `rules` | server settings | Partial per request rule override; use the same effective rules as the matching `suggest`. |
 
 ---
 
@@ -268,6 +314,20 @@ earliest-resolving garbage chunk to latest-resolving chunk.
 
 When a placement is selected, it uses SBP placement shape.
 
+`advance` responses use this shape:
+
+```json
+{
+  "type": "advance",
+  "seq": 7,
+  "accepted": true
+}
+```
+
+`accepted` is `false` when Minorail has no matching active suggestion/session
+to begin early advance for that placement. The client can continue normally; the
+next `suggest` snapshot will use the standard reconciliation path.
+
 ---
 
 ## Error Response
@@ -295,10 +355,11 @@ The API rejects:
 
 * non JSON text frames
 * JSON values that are not objects
-* missing or invalid `seq`
+* missing `suggest` sequence numbers or invalid `seq` values
 * unknown request types
 * invalid board shape
 * invalid piece strings
+* invalid advance placements
 * unknown rule fields
 * non object extensions
 * empty session ids

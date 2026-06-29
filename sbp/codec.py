@@ -3,9 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from sbp.messages import (
+    MsgAdvance,
     MsgBoard,
     MsgNewPiece,
-    MsgPlay,
     MsgQuit,
     MsgRules,
     MsgStart,
@@ -19,7 +19,7 @@ OutboundMessage = (
     MsgRules
     | MsgStart
     | MsgBoard
-    | MsgPlay
+    | MsgAdvance
     | MsgNewPiece
     | MsgSuggest
     | MsgStop
@@ -80,8 +80,8 @@ def to_jsonable(message: OutboundMessage) -> dict[str, Any]:
             return obj
         case MsgBoard():
             return {"type": "board", "board": board_to_sbp(message.board)}
-        case MsgPlay():
-            return {"type": "play", "move": message.move.to_sbp()}
+        case MsgAdvance():
+            return {"type": "advance", "move": message.move.to_sbp()}
         case MsgNewPiece():
             return {"type": "new_piece", "piece": message.piece.value}
         case MsgSuggest():

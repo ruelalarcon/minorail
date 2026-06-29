@@ -12,9 +12,9 @@ from tetris.model.rules import Rules
 from tetris.model.board import Board
 from sbp.codec import rules_message, to_jsonable
 from sbp.messages import (
+    MsgAdvance,
     MsgBoard,
     MsgNewPiece,
-    MsgPlay,
     MsgQuit,
     MsgStart,
     MsgStop,
@@ -74,8 +74,8 @@ class BotProcess:
     def send_board(self, board: Board) -> None:
         self._send(to_jsonable(MsgBoard(board)))
 
-    def send_play(self, placement: Placement) -> None:
-        self._send(to_jsonable(MsgPlay(placement)))
+    def send_advance(self, placement: Placement) -> None:
+        self._send(to_jsonable(MsgAdvance(placement)))
 
     def send_new_piece(self, piece: Piece) -> None:
         self._send(to_jsonable(MsgNewPiece(piece)))

@@ -182,7 +182,7 @@ class MsgBoard:
 
 
 @dataclass
-class MsgPlay:
+class MsgAdvance:
     move: Placement
 
 

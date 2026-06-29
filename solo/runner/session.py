@@ -23,6 +23,7 @@ from suggestion.move_selection import moving_piece_for
 from suggestion.service import SuggestionService
 from tetris.attack.registry import AttackCalculator, attack_calculator
 from tetris.game.state import GameState
+from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rules import Rules
 from tetris.randomizer import Randomizer, make_randomizer
@@ -30,6 +31,19 @@ from tetris.randomizer import Randomizer, make_randomizer
 
 class SuggestionServiceLike(Protocol):
     def suggest(self, request: SuggestionRequest) -> SuggestionResult: ...
+
+    def begin_advance(
+        self, session_id: str, *, placement: Placement, rules: Rules
+    ) -> bool: ...
+
+    def finish_advance(
+        self,
+        session_id: str,
+        *,
+        snapshot: ObservedSnapshot,
+        rules: Rules,
+        new_pieces: list[Piece],
+    ) -> None: ...
 
     def stop_game(self, session_id: str) -> None: ...
 
@@ -178,6 +192,12 @@ class LocalGameSession:
                     status = "invalid_move"
                     break
 
+                advance_started = self._service.begin_advance(
+                    self._suggestion_session_id,
+                    placement=chosen,
+                    rules=self._rules,
+                )
+
                 self._visualizer.animate_suggestion(
                     self.state,
                     moving_piece,
@@ -188,13 +208,28 @@ class LocalGameSession:
 
                 applied = self._game.apply_placement(chosen)
                 if applied is None:
+                    if advance_started:
+                        self._service.finish_advance(
+                            self._suggestion_session_id,
+                            snapshot=self.snapshot(),
+                            rules=self._rules,
+                            new_pieces=[],
+                        )
                     self._visualizer.error(f"apply_move rejected: {chosen}")
                     status = "apply_move_rejected"
                     break
 
                 attack = self._attack.calculate(applied)
                 total_attack += attack
+                queue_len_before_refill = len(self.state.queue)
                 self._game.refill_queue(refill_at)
+                if advance_started:
+                    self._service.finish_advance(
+                        self._suggestion_session_id,
+                        snapshot=self.snapshot(),
+                        rules=self._rules,
+                        new_pieces=self.state.queue[queue_len_before_refill:],
+                    )
                 self._notify_piece_locked(
                     PieceLockedEvent(
                         session_id=self._session_id,

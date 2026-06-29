@@ -8,7 +8,7 @@ suggestions. Use separate `session_id` values for independent games.
 This matters because an SBP bot session has internal state. Minorail classifies
 each authoritative snapshot transition, then reconciles the bot session with
 the least disruptive valid SBP operations. If continuity can be preserved, it
-sends operations such as `play`, `new_piece`, or `board`. If continuity cannot
+sends operations such as `advance`, `new_piece`, or `board`. If continuity cannot
 be preserved, it resets the bot from the authoritative snapshot.
 
 ---
@@ -50,8 +50,8 @@ are normal and are handled through reconciliation.
 | Status | Meaning | Bot action |
 | --- | --- | --- |
 | `synced` | First request, or incoming physical state matches the session. | Start or keep. |
-| `advanced` | Incoming state matches the expected result of the previous selected placement. | Send `play` and any `new_piece` messages. |
-| `reconciled` | Incoming state did not exactly match, but Minorail preserved bot session continuity. | Send `board`, or send `play` plus `board`. |
+| `advanced` | Incoming state matches the expected result of the previous selected placement. | Send `advance` and any `new_piece` messages. |
+| `reconciled` | Incoming state did not exactly match, but Minorail preserved bot session continuity. | Send `board`, or send `advance` plus `board`. |
 | `reset` | Incoming state required a bot session restart from the authoritative snapshot. | Send `stop` plus `start`, or restart a closed bot process from snapshot. |
 | `invalid` | Request validation failed. | Do not contact the bot. |
 | `no_suggestion` | Bot returned no usable placement before timeout. | Keep session state, but return no placement. |
@@ -84,7 +84,7 @@ the observed piece chronology.
 Board edits through a visualizer commonly produce board-only reconciliation.
 Battle garbage rise commonly produces
 `board_changed_after_expected_advance`: Minorail first confirms the lock with
-`play` and any `new_piece` messages, then sends `board` for the authoritative
+`advance` and any `new_piece` messages, then sends `board` for the authoritative
 post-garbage physical board when the bot supports it. Bots without `board`
 support still use the reset fallback.
 

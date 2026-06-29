@@ -46,6 +46,8 @@ class BotSessionLike(Protocol):
         self, placement: Placement, new_pieces: list[Piece] | None = None
     ) -> None: ...
 
+    def add_new_pieces(self, pieces: list[Piece]) -> None: ...
+
     def supports_board_update(self) -> bool: ...
 
     def update_board(self, snapshot: BotSnapshot, rules: Rules) -> bool: ...
@@ -79,6 +81,7 @@ class SuggestionContinuity:
         self.derived_state = DerivedState.neutral()
         self.piece_stream = PieceStreamTracker(piece_stream_limit)
         self.previous_suggestion: Optional[Placement] = None
+        self._pending_advance_completion = False
         self.bot_session: BotSessionLike = bot_session_factory()
         self.rules: Optional[Rules] = None
 
@@ -87,6 +90,28 @@ class SuggestionContinuity:
             self._cancel_go_idle()
             try:
                 return self._suggest_locked(request)
+            finally:
+                self._schedule_go_idle()
+
+    def begin_advance(self, placement: Placement, rules: Rules) -> bool:
+        with self._lock:
+            self._cancel_go_idle()
+            try:
+                return self._begin_advance_locked(placement, rules)
+            finally:
+                self._schedule_go_idle()
+
+    def finish_advance(
+        self,
+        *,
+        snapshot: ObservedSnapshot,
+        rules: Rules,
+        new_pieces: list[Piece],
+    ) -> None:
+        with self._lock:
+            self._cancel_go_idle()
+            try:
+                self._finish_advance_locked(snapshot, rules, new_pieces)
             finally:
                 self._schedule_go_idle()
 
@@ -117,6 +142,7 @@ class SuggestionContinuity:
                 reason=validation_error,
             )
 
+        self._finish_pending_advance_from_request(request)
         transition, reconciliation = self._sync_to_request(request)
         self._apply_reconciliation(reconciliation, transition, request)
 
@@ -270,6 +296,99 @@ class SuggestionContinuity:
             self.previous_suggestion, transition.expected.new_pieces
         )
 
+    def _begin_advance_locked(self, placement: Placement, rules: Rules) -> bool:
+        if (
+            not self._bot_game_active
+            or self.shadow_observed is None
+            or self.previous_suggestion != placement
+        ):
+            return False
+
+        state = self.derived_state.to_game_state(self.shadow_observed)
+        if state.apply_move(placement, rules) is None:
+            return False
+
+        self.bot_session.advance_with(placement)
+        self.derived_state.update_from_confirmed(state)
+        self.shadow_observed = ObservedSnapshot(
+            board=state.board.copy(),
+            active=state.active,
+            queue=list(state.queue),
+            hold=state.hold,
+            can_hold=True,
+            seq=self.shadow_observed.seq,
+            last_move=placement,
+        )
+        self.latest_observed = self.shadow_observed.copy()
+        self.previous_suggestion = None
+        self.rules = rules
+        self._pending_advance_completion = True
+        return True
+
+    def _finish_pending_advance_from_request(self, request: SuggestionRequest) -> None:
+        if not self._pending_advance_completion or self.shadow_observed is None:
+            return
+
+        if self.rules is not None and self.rules != request.rules:
+            self.derived_state.reconcile_from(request.snapshot, request.rules)
+            self.bot_session.reset_from(self._to_bot_snapshot(request), request.rules)
+            self._bot_game_active = True
+            self._pending_advance_completion = False
+            self.latest_observed = request.snapshot.copy()
+            self.shadow_observed = request.snapshot.copy()
+            self.previous_suggestion = None
+            self.rules = request.rules
+            return
+
+        new_pieces: list[Piece] = []
+        if self._snapshot_matches_except_queue_and_board(
+            request.snapshot, self.shadow_observed
+        ) and self._is_prefix(self.shadow_observed.queue, request.snapshot.queue):
+            new_pieces = request.snapshot.queue[len(self.shadow_observed.queue) :]
+
+        self._finish_advance_locked(
+            request.snapshot,
+            request.rules,
+            new_pieces,
+        )
+
+    def _finish_advance_locked(
+        self,
+        snapshot: ObservedSnapshot,
+        rules: Rules,
+        new_pieces: list[Piece],
+    ) -> None:
+        if not self._bot_game_active or self.shadow_observed is None:
+            return
+
+        expected = self.derived_state.to_game_state(self.shadow_observed)
+        expected.queue.extend(new_pieces)
+        if new_pieces:
+            self.bot_session.add_new_pieces(new_pieces)
+            self.piece_stream.append(new_pieces)
+
+        if self._state_matches_snapshot(expected, snapshot):
+            pass
+        elif self._state_matches_snapshot_except_board(expected, snapshot):
+            bot_snapshot = self._bot_snapshot_from_observed(snapshot)
+            if self.bot_session.supports_board_update():
+                self.bot_session.update_board(bot_snapshot, rules)
+            else:
+                self.bot_session.reset_from(bot_snapshot, rules)
+                self._bot_game_active = True
+        else:
+            self.derived_state.reconcile_from(snapshot, rules)
+            self.bot_session.reset_from(
+                self._bot_snapshot_from_observed(snapshot), rules
+            )
+            self._bot_game_active = True
+
+        self.latest_observed = snapshot.copy()
+        self.shadow_observed = snapshot.copy()
+        self.previous_suggestion = None
+        self.rules = rules
+        self._pending_advance_completion = False
+
     def _reset_game_continuity(self) -> None:
         self._bot_game_active = False
         self._bot_needs_start = False
@@ -278,10 +397,24 @@ class SuggestionContinuity:
         self.derived_state = DerivedState.neutral()
         self.piece_stream = PieceStreamTracker(self._piece_stream_limit)
         self.previous_suggestion = None
+        self._pending_advance_completion = False
         self.rules = None
 
     def _to_bot_snapshot(self, request: SuggestionRequest) -> BotSnapshot:
         snapshot = request.snapshot
+        return self._bot_snapshot_from_observed(
+            snapshot,
+            incoming_garbage=request.incoming_garbage,
+            extensions=request.extensions,
+        )
+
+    def _bot_snapshot_from_observed(
+        self,
+        snapshot: ObservedSnapshot,
+        *,
+        incoming_garbage: list[int] | None = None,
+        extensions: dict[str, Any] | None = None,
+    ) -> BotSnapshot:
         return BotSnapshot(
             board=snapshot.board.copy(),
             active=snapshot.active.piece,
@@ -291,14 +424,38 @@ class SuggestionContinuity:
             back_to_back=self.derived_state.back_to_back,
             piece_stream=self.piece_stream.snapshot(),
             incoming_garbage=(
-                None
-                if request.incoming_garbage is None
-                else list(request.incoming_garbage)
+                None if incoming_garbage is None else list(incoming_garbage)
             ),
-            extensions=(
-                None if request.extensions is None else dict(request.extensions)
-            ),
+            extensions=(None if extensions is None else dict(extensions)),
         )
+
+    def _state_matches_snapshot(self, state: Any, snapshot: ObservedSnapshot) -> bool:
+        return (
+            state.board.rows == snapshot.board.rows
+            and self._state_matches_snapshot_except_board(state, snapshot)
+        )
+
+    def _state_matches_snapshot_except_board(
+        self, state: Any, snapshot: ObservedSnapshot
+    ) -> bool:
+        return (
+            state.active == snapshot.active
+            and state.queue == snapshot.queue
+            and state.hold == snapshot.hold
+            and (not state.hold_used_this_turn) == snapshot.can_hold
+        )
+
+    def _snapshot_matches_except_queue_and_board(
+        self, incoming: ObservedSnapshot, expected: ObservedSnapshot
+    ) -> bool:
+        return (
+            incoming.active == expected.active
+            and incoming.hold == expected.hold
+            and incoming.can_hold == expected.can_hold
+        )
+
+    def _is_prefix(self, prefix: list[Piece], values: list[Piece]) -> bool:
+        return len(values) >= len(prefix) and values[: len(prefix)] == prefix
 
     def _validate(self, snapshot: ObservedSnapshot, rules: Rules) -> Optional[str]:
         if snapshot.board.width != rules.board_width:

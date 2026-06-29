@@ -89,8 +89,14 @@ class BotSession:
     ) -> None:
         if self._bot is None:
             return
-        self._bot.send_play(placement)
+        self._bot.send_advance(placement)
         for piece in new_pieces or []:
+            self._bot.send_new_piece(piece)
+
+    def add_new_pieces(self, pieces: list[Piece]) -> None:
+        if self._bot is None:
+            return
+        for piece in pieces:
             self._bot.send_new_piece(piece)
 
     def supports_board_update(self) -> bool:

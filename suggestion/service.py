@@ -3,9 +3,13 @@ from __future__ import annotations
 from typing import Callable
 
 from bots.session import BotSession
+from contracts.observed_snapshot import ObservedSnapshot
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
 from suggestion.session.continuity import SuggestionContinuity
+from tetris.model.piece import Piece
+from tetris.model.placement import Placement
+from tetris.model.rules import Rules
 
 
 class SuggestionService:
@@ -38,6 +42,30 @@ class SuggestionService:
             )
             self._sessions[request.session_id] = session
         return session.suggest(request)
+
+    def begin_advance(
+        self, session_id: str, *, placement: Placement, rules: Rules
+    ) -> bool:
+        session = self._sessions.get(session_id)
+        if session is None:
+            return False
+        return session.begin_advance(placement, rules)
+
+    def finish_advance(
+        self,
+        session_id: str,
+        *,
+        snapshot: ObservedSnapshot,
+        rules: Rules,
+        new_pieces: list[Piece],
+    ) -> None:
+        session = self._sessions.get(session_id)
+        if session is not None:
+            session.finish_advance(
+                snapshot=snapshot,
+                rules=rules,
+                new_pieces=new_pieces,
+            )
 
     def close_session(self, session_id: str) -> None:
         session = self._sessions.pop(session_id, None)

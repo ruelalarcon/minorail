@@ -2,6 +2,7 @@ import unittest
 
 from battle.runner.session import Session as BattleSession
 from visualizers.battle.null import NullVisualizer
+from contracts.observed_snapshot import ObservedSnapshot
 from contracts.suggestion_request import SuggestionRequest
 from contracts.suggestion_result import SuggestionResult
 from contracts.suggestion_status import SuggestionStatus
@@ -9,8 +10,10 @@ from settings import RunLimits, Settings
 from tetris.attack.registry import attack_calculator, register_attack_calculator
 from tetris.game.state import AppliedMove
 from tetris.model.location import PieceLocation
+from tetris.model.piece import Piece
 from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
+from tetris.model.rules import Rules
 from tetris.model.spin import Spin
 
 
@@ -22,6 +25,8 @@ class FixedAttackCalculator:
 class FakeSuggestionService:
     def __init__(self) -> None:
         self.requests: list[SuggestionRequest] = []
+        self.begun: list[tuple[str, Placement]] = []
+        self.finished: list[tuple[str, list[Piece]]] = []
         self.stopped_games: list[str] = []
         self.closed = False
 
@@ -36,6 +41,22 @@ class FakeSuggestionService:
             placement=placement,
             path=None,
         )
+
+    def begin_advance(
+        self, session_id: str, *, placement: Placement, rules: Rules
+    ) -> bool:
+        self.begun.append((session_id, placement))
+        return True
+
+    def finish_advance(
+        self,
+        session_id: str,
+        *,
+        snapshot: ObservedSnapshot,
+        rules: Rules,
+        new_pieces: list[Piece],
+    ) -> None:
+        self.finished.append((session_id, list(new_pieces)))
 
     def close(self) -> None:
         self.closed = True
@@ -63,6 +84,10 @@ class BattleSessionTests(unittest.TestCase):
 
         self.assertEqual(stats["status"], "piece_limit")
         self.assertEqual(stats["pieces"], {"A": 1, "B": 1})
+        self.assertEqual([advance[0] for advance in service_a.begun], ["battle:A"])
+        self.assertEqual([advance[0] for advance in service_b.begun], ["battle:B"])
+        self.assertEqual([advance[0] for advance in service_a.finished], ["battle:A"])
+        self.assertEqual([advance[0] for advance in service_b.finished], ["battle:B"])
         self.assertEqual(service_a.stopped_games, ["battle:A"])
         self.assertEqual(service_b.stopped_games, ["battle:B"])
         self.assertFalse(service_a.closed)
