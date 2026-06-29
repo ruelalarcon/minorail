@@ -330,7 +330,14 @@ class SuggestionContinuity:
             return
 
         if self.rules is not None and self.rules != request.rules:
+            self.piece_stream.realign(observed_pieces(request.snapshot))
             self.derived_state.reconcile_from(request.snapshot, request.rules)
+            self._log_reconciliation_event(
+                reason=ReconciliationReason.RulesChanged.value,
+                seq=request.snapshot.seq,
+                action=ReconciliationAction.Reset.value,
+                piece_stream=PieceStreamAction.Realign.value,
+            )
             self.bot_session.reset_from(self._to_bot_snapshot(request), request.rules)
             self._bot_game_active = True
             self._pending_advance_completion = False
@@ -363,6 +370,9 @@ class SuggestionContinuity:
 
         expected = self.derived_state.to_game_state(self.shadow_observed)
         expected.queue.extend(new_pieces)
+        piece_stream_action = (
+            PieceStreamAction.Append if new_pieces else PieceStreamAction.Keep
+        )
         if new_pieces:
             self.bot_session.add_new_pieces(new_pieces)
             self.piece_stream.append(new_pieces)
@@ -372,12 +382,31 @@ class SuggestionContinuity:
         elif self._state_matches_snapshot_except_board(expected, snapshot):
             bot_snapshot = self._bot_snapshot_from_observed(snapshot)
             if self.bot_session.supports_board_update():
+                self._log_reconciliation_event(
+                    reason=ReconciliationReason.BoardChangedAfterExpectedAdvance.value,
+                    seq=snapshot.seq,
+                    action=ReconciliationAction.Board.value,
+                    piece_stream=piece_stream_action.value,
+                )
                 self.bot_session.update_board(bot_snapshot, rules)
             else:
+                self._log_reconciliation_event(
+                    reason=ReconciliationReason.BoardChangedAfterExpectedAdvance.value,
+                    seq=snapshot.seq,
+                    action=ReconciliationAction.Reset.value,
+                    piece_stream=piece_stream_action.value,
+                )
                 self.bot_session.reset_from(bot_snapshot, rules)
                 self._bot_game_active = True
         else:
+            self.piece_stream.realign(observed_pieces(snapshot))
             self.derived_state.reconcile_from(snapshot, rules)
+            self._log_reconciliation_event(
+                reason=ReconciliationReason.BoardChangedAfterExpectedAdvance.value,
+                seq=snapshot.seq,
+                action=ReconciliationAction.Reset.value,
+                piece_stream=PieceStreamAction.Realign.value,
+            )
             self.bot_session.reset_from(
                 self._bot_snapshot_from_observed(snapshot), rules
             )
@@ -475,12 +504,27 @@ class SuggestionContinuity:
             if transition.reconciliation_reason
             else "unknown"
         )
+        self._log_reconciliation_event(
+            reason=reason,
+            seq=incoming.seq,
+            action=reconciliation.action.value,
+            piece_stream=transition.piece_stream_action.value,
+        )
+
+    def _log_reconciliation_event(
+        self,
+        *,
+        reason: str,
+        seq: int,
+        action: str,
+        piece_stream: str,
+    ) -> None:
         print(
             "[info] reconciliation: "
             f"reason={reason} "
-            f"seq={incoming.seq} "
-            f"action={reconciliation.action.value} "
-            f"piece_stream={transition.piece_stream_action.value}",
+            f"seq={seq} "
+            f"action={action} "
+            f"piece_stream={piece_stream}",
             file=sys.stderr,
         )
 

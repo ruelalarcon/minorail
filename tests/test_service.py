@@ -333,6 +333,53 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(result.status, SuggestionStatus.Synced)
         self.assertEqual(result.placement, second)
 
+    def test_pending_begin_advance_logs_board_correction_from_next_suggest(
+        self,
+    ) -> None:
+        first = placement(Piece.O, 4, 0)
+        fake = FakeBotSession([[first], []], supports_board=True)
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules()
+
+        session.suggest(SuggestionRequest(snapshot=snapshot(), rules=rules))
+        self.assertTrue(session.begin_advance(first, rules))
+
+        state = GameState(
+            Board(),
+            spawn_location(Piece.O),
+            [Piece.I, Piece.T, Piece.L, Piece.J],
+            None,
+            0,
+            0,
+        )
+        self.assertTrue(state.apply_move(first, rules))
+        state.queue.append(Piece.S)
+        changed_board = state.board.copy()
+        changed_board.set_cell(0, 0, 1)
+        advanced = snapshot(
+            changed_board,
+            active=state.active.piece,
+            queue=state.queue,
+            seq=1,
+            last_move=first,
+        )
+
+        stderr = io.StringIO()
+        with redirect_stderr(stderr):
+            session.suggest(SuggestionRequest(snapshot=advanced, rules=rules))
+
+        self.assertIn(
+            "[info] reconciliation: "
+            "reason=board_changed_after_expected_advance seq=1 "
+            "action=board piece_stream=append",
+            stderr.getvalue(),
+        )
+        self.assertEqual(
+            [board.cols for board in fake.board_updates],
+            [[1, 0, 0, 0, 3, 3, 0, 0, 0, 0]],
+        )
+        self.assertEqual(fake.resets, [])
+
     def test_finish_advance_sends_board_update_after_early_mismatch(self) -> None:
         first = placement(Piece.O, 4, 0)
         fake = FakeBotSession(
