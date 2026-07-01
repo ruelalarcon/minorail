@@ -22,7 +22,8 @@ be preserved, it resets the bot from the authoritative snapshot.
 | Websocket request with `session_id` | Uses the named session, allowing one connection to drive multiple games. |
 
 When a websocket connection closes, Minorail closes the sessions used by that
-connection.
+connection. Websocket clients can also send `close_session` to explicitly close
+a session while keeping the connection open.
 
 ---
 

@@ -67,10 +67,12 @@ class SuggestionService:
                 new_pieces=new_pieces,
             )
 
-    def close_session(self, session_id: str) -> None:
+    def close_session(self, session_id: str) -> bool:
         session = self._sessions.pop(session_id, None)
         if session is not None:
             session.close()
+            return True
+        return False
 
     def stop_game(self, session_id: str) -> None:
         session = self._sessions.get(session_id)

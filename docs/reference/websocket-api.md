@@ -122,6 +122,37 @@ Optional fields:
 
 ---
 
+## Close Session Request Shape
+
+Clients can explicitly close a Minorail session without closing the websocket:
+
+```json
+{
+  "type": "close_session",
+  "seq": 13,
+  "session_id": "game-42"
+}
+```
+
+Minorail closes the session state and any live SBP bot process for that
+`session_id`. A later `suggest` with the same `session_id` starts a fresh
+session from that request's snapshot.
+
+Required fields:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `type` | string | Must be `close_session`. |
+
+Optional fields:
+
+| Field | Default | Notes |
+| --- | --- | --- |
+| `seq` | null | Echoed in the response when present. |
+| `session_id` | connection session | Non empty string. |
+
+---
+
 ## Board Formats
 
 The preferred Minorail board format is an SBP-style row matrix:
@@ -251,7 +282,8 @@ games:
 ```
 
 When the websocket connection closes, Minorail closes every session used by
-that connection.
+that connection. To retire a session while keeping the websocket open, send
+`close_session`.
 
 ---
 
@@ -328,6 +360,19 @@ When a placement is selected, it uses SBP placement shape.
 to begin early advance for that placement. The client can continue normally; the
 next `suggest` snapshot will use the standard reconciliation path.
 
+`close_session` responses use this shape:
+
+```json
+{
+  "type": "close_session",
+  "seq": 13,
+  "closed": true
+}
+```
+
+`closed` is `false` when no live session existed for that id. Closing an
+already-closed session is not an error.
+
 ---
 
 ## Error Response
@@ -360,6 +405,7 @@ The API rejects:
 * invalid board shape
 * invalid piece strings
 * invalid advance placements
+* invalid close session ids
 * unknown rule fields
 * non object extensions
 * empty session ids

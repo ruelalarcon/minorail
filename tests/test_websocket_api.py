@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import unittest
 
 from tetris.model.board import GARBAGE_CELL, PIECE_TO_CELL, Board
@@ -11,9 +12,12 @@ from tetris.model.rules import Rules
 from tetris.model.spin import Spin
 from tetris.movegen.steps import MoveStep
 from api.websocket import (
+    SuggestionWebSocketServer,
     WebSocketApiError,
     advance_request_from_json,
     advance_result_to_json,
+    close_session_request_from_json,
+    close_session_result_to_json,
     request_from_json,
     result_to_json,
 )
@@ -25,7 +29,7 @@ def _empty_board(width: int = 10, height: int = 40) -> list[list[None]]:
     return [[None] * width for _ in range(height)]
 
 
-class WebSocketApiTests(unittest.TestCase):
+class WebSocketApiTests(unittest.IsolatedAsyncioTestCase):
     def test_request_active_is_piece_string(self) -> None:
         request = request_from_json(
             {
@@ -250,6 +254,61 @@ class WebSocketApiTests(unittest.TestCase):
             advance_result_to_json(8, True),
             {"type": "advance", "seq": 8, "accepted": True},
         )
+
+    def test_close_session_request_accepts_session(self) -> None:
+        request = close_session_request_from_json(
+            {
+                "type": "close_session",
+                "seq": 9,
+                "session_id": "game-1",
+            },
+        )
+
+        self.assertEqual(request["session_id"], "game-1")
+
+    def test_close_session_request_uses_default_session(self) -> None:
+        request = close_session_request_from_json(
+            {
+                "type": "close_session",
+                "seq": 9,
+            },
+            default_session_id="connection-1",
+        )
+
+        self.assertEqual(request["session_id"], "connection-1")
+
+    def test_close_session_result_json(self) -> None:
+        self.assertEqual(
+            close_session_result_to_json(9, True),
+            {"type": "close_session", "seq": 9, "closed": True},
+        )
+
+    async def test_close_session_message_closes_service_session(self) -> None:
+        class FakeService:
+            def __init__(self) -> None:
+                self.closed_session_ids: list[str] = []
+
+            def close_session(self, session_id: str) -> bool:
+                self.closed_session_ids.append(session_id)
+                return True
+
+        server = SuggestionWebSocketServer.__new__(SuggestionWebSocketServer)
+        server._service = FakeService()
+        server._lock = asyncio.Lock()
+        session_ids = {"connection-1", "game-1"}
+
+        response = await server._handle_message(
+            '{"type":"close_session","seq":9,"session_id":"game-1"}',
+            "connection-1",
+            session_ids,
+        )
+
+        self.assertEqual(
+            response,
+            {"type": "close_session", "seq": 9, "closed": True},
+        )
+        self.assertEqual(server._service.closed_session_ids, ["game-1"])
+        self.assertEqual(session_ids, {"connection-1"})
 
 
 if __name__ == "__main__":

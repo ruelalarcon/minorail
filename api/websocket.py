@@ -135,9 +135,21 @@ class SuggestionWebSocketServer:
                         rules=advance["rules"],
                     )
                 return advance_result_to_json(seq, accepted)
+            if message_type == "close_session":
+                close = close_session_request_from_json(
+                    obj,
+                    default_session_id=connection_session_id,
+                )
+                async with self._lock:
+                    closed = await asyncio.to_thread(
+                        self._service.close_session,
+                        close["session_id"],
+                    )
+                session_ids.discard(close["session_id"])
+                return close_session_result_to_json(seq, closed)
             raise WebSocketApiError(
                 "invalid_request",
-                "type must be 'suggest' or 'advance'",
+                "type must be 'suggest', 'advance', or 'close_session'",
                 seq=seq,
             )
         except WebSocketApiError as e:
@@ -219,6 +231,23 @@ def advance_request_from_json(
     }
 
 
+def close_session_request_from_json(
+    obj: dict[str, Any],
+    *,
+    default_session_id: str = "default",
+) -> dict[str, Any]:
+    if obj.get("type") != "close_session":
+        raise WebSocketApiError(
+            "invalid_request",
+            "type must be 'close_session'",
+            seq=_optional_seq(obj.get("seq")),
+        )
+
+    return {
+        "session_id": _session_id(obj.get("session_id"), default_session_id),
+    }
+
+
 def result_to_json(result: SuggestionResult) -> dict[str, Any]:
     return {
         "type": "suggestion",
@@ -236,6 +265,14 @@ def advance_result_to_json(seq: int | None, accepted: bool) -> dict[str, Any]:
         "type": "advance",
         "seq": seq,
         "accepted": accepted,
+    }
+
+
+def close_session_result_to_json(seq: int | None, closed: bool) -> dict[str, Any]:
+    return {
+        "type": "close_session",
+        "seq": seq,
+        "closed": closed,
     }
 
 
