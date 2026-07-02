@@ -41,6 +41,19 @@ class PathfinderTests(unittest.TestCase):
 
         self.assertEqual(path, [MoveStep.Left, MoveStep.HardDrop])
 
+    def test_find_path_prefers_horizontal_steps_before_rotations(self) -> None:
+        path = find_path(
+            Board(),
+            Piece.T,
+            PieceLocation(Piece.T, Rotation.East, 5, 1),
+            Rules(),
+        )
+
+        self.assertEqual(
+            path,
+            [MoveStep.Right, MoveStep.RotCW, MoveStep.HardDrop],
+        )
+
     def test_o_rotation_is_controlled_by_kick_table(self) -> None:
         board = Board()
 

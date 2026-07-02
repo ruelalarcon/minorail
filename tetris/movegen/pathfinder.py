@@ -81,15 +81,6 @@ def find_path(
         if das_x != cx:
             enqueue((das_x, cy, crot), state, MoveStep.DasRight)
 
-        if rules.sonic_drop != "only" and not obstructed(
-            board, piece, crot, cx, cy - 1
-        ):
-            enqueue((cx, cy - 1, crot), state, MoveStep.SoftDrop)
-
-        sonic_y = cy - board.drop_distance(piece, crot, cx, cy)
-        if sonic_y != cy:
-            enqueue((cx, sonic_y, crot), state, MoveStep.SonicDrop)
-
         r = try_rotate(board, piece, crot, rot_cw(crot), cx, cy, rules.kickset)
         if r is not None:
             enqueue(r, state, MoveStep.RotCW)
@@ -100,6 +91,15 @@ def find_path(
             r = try_rotate_180(board, piece, crot, cx, cy, rules.kickset)
             if r is not None:
                 enqueue(r, state, MoveStep.Rot180)
+
+        if rules.sonic_drop != "only" and not obstructed(
+            board, piece, crot, cx, cy - 1
+        ):
+            enqueue((cx, cy - 1, crot), state, MoveStep.SoftDrop)
+
+        sonic_y = cy - board.drop_distance(piece, crot, cx, cy)
+        if sonic_y != cy:
+            enqueue((cx, sonic_y, crot), state, MoveStep.SonicDrop)
 
     if best is None:
         return None
