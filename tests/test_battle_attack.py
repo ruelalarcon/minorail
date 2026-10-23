@@ -87,7 +87,7 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
 
         self.assertEqual(attack, 23)
 
-    def test_perfect_clear_tetris_uses_s2_special_bonus(self) -> None:
+    def test_perfect_clear_without_garbage_has_no_special_bonus(self) -> None:
         attack = TetrioS2AttackCalculator().calculate(
             _applied(
                 Piece.I,
@@ -98,7 +98,7 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(attack, 11)
+        self.assertEqual(attack, 10)
 
     def test_perfect_clear_t_spin_mini_does_not_use_s2_special_bonus(self) -> None:
         attack = TetrioS2AttackCalculator().calculate(
@@ -107,7 +107,7 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
 
         self.assertEqual(attack, 5)
 
-    def test_back_to_back_surge_uses_normalized_back_to_back_before_counter(
+    def test_back_to_back_surge_uses_raw_back_to_back_before_counter(
         self,
     ) -> None:
         attack = TetrioS2AttackCalculator().calculate(
@@ -119,14 +119,52 @@ class TetrioS2AttackCalculatorTests(unittest.TestCase):
             )
         )
 
-        self.assertEqual(attack, 7)
+        self.assertEqual(attack, 8)
 
-    def test_non_t_spin_double_is_not_treated_as_full_t_spin_attack(self) -> None:
+    def test_surge_boundary_matches_raw_client_stats_btb(self) -> None:
+        for before, expected in [(3, 0), (4, 0), (5, 4), (6, 5), (9, 8)]:
+            with self.subTest(before=before):
+                attack = TetrioS2AttackCalculator().calculate(
+                    _applied(Piece.I, lines=1, back_to_back_before=before)
+                )
+                self.assertEqual(attack, expected)
+
+    def test_garbage_bonus_is_fixed_after_combo_rounding_and_applies_to_minis(
+        self,
+    ) -> None:
+        for piece, spin, lines, expected in [
+            (Piece.I, Spin.none, 4, 7),
+            (Piece.T, Spin.full, 2, 7),
+            (Piece.J, Spin.mini, 1, 2),
+            (Piece.T, Spin.mini, 1, 2),
+            (Piece.O, Spin.none, 2, 1),
+        ]:
+            with self.subTest(piece=piece, spin=spin):
+                attack = TetrioS2AttackCalculator().calculate(
+                    _applied(
+                        piece,
+                        lines=lines,
+                        spin=spin,
+                        combo_after=3,
+                        garbage_lines_cleared=lines,
+                    )
+                )
+                self.assertEqual(attack, expected)
+
+    def test_non_t_mini_double_uses_mini_attack(self) -> None:
         attack = TetrioS2AttackCalculator().calculate(
-            _applied(Piece.L, lines=2, spin=Spin.full)
+            _applied(Piece.L, lines=2, spin=Spin.mini)
         )
 
         self.assertEqual(attack, 1)
+
+    def test_full_non_t_spin_uses_full_spin_damage_under_custom_allspin_rules(
+        self,
+    ) -> None:
+        attack = TetrioS2AttackCalculator().calculate(
+            _applied(Piece.L, lines=2, spin=Spin.full)
+        )
+        self.assertEqual(attack, 4)
 
     def test_t_spin_double_still_uses_t_spin_attack(self) -> None:
         attack = TetrioS2AttackCalculator().calculate(
@@ -244,6 +282,7 @@ def _applied(
     combo_after: int = 1,
     back_to_back_before: int = 0,
     back_to_back_after: int = 0,
+    garbage_lines_cleared: int = 0,
 ) -> AppliedMove:
     return AppliedMove(
         placement=Placement(PieceLocation(piece, Rotation.North, 4, 0), spin),
@@ -253,6 +292,7 @@ def _applied(
         combo_after=combo_after,
         back_to_back_before=back_to_back_before,
         back_to_back_after=back_to_back_after,
+        garbage_lines_cleared=garbage_lines_cleared,
     )
 
 

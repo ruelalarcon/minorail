@@ -97,6 +97,7 @@ class EvaluationCollector:
                 "hold_used": event.hold_used,
                 "lines_cleared": applied.lines_cleared,
                 "perfect_clear": applied.perfect_clear,
+                "garbage_lines_cleared": applied.garbage_lines_cleared,
                 "combo_before": applied.combo_before,
                 "combo_after": applied.combo_after,
                 "back_to_back_before": applied.back_to_back_before,

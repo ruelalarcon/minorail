@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from tetris.model.board import Board
+from tetris.model.board import Board, GARBAGE_CELL
 from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 from tetris.model.spin import Spin
@@ -15,6 +15,7 @@ class LineClearResult:
     perfect_clear: bool
     combo: int
     back_to_back: int
+    garbage_lines_cleared: int = 0
 
 
 class LineClear:
@@ -37,6 +38,10 @@ class LineClear:
                 back_to_back=back_to_back,
             )
 
+        garbage_lines_cleared = sum(
+            bool(cleared & (1 << y)) and GARBAGE_CELL in row
+            for y, row in enumerate(board.rows)
+        )
         board.remove_lines(cleared)
         perfect_clear = board.is_empty()
         lines_cleared = cleared.bit_count()
@@ -52,4 +57,5 @@ class LineClear:
             perfect_clear=perfect_clear,
             combo=combo + 1,
             back_to_back=back_to_back + 1 if hard else 0,
+            garbage_lines_cleared=garbage_lines_cleared,
         )

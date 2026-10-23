@@ -27,6 +27,7 @@ class AppliedMove:
     combo_after: int
     back_to_back_before: int
     back_to_back_after: int
+    garbage_lines_cleared: int = 0
 
 
 @dataclass
@@ -102,4 +103,5 @@ class GameState:
             combo_after=self.combo,
             back_to_back_before=back_to_back_before,
             back_to_back_after=self.back_to_back,
+            garbage_lines_cleared=clear_result.garbage_lines_cleared,
         )
