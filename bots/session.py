@@ -70,18 +70,18 @@ class BotSession:
     ) -> list[Placement]:
         if self._bot is None:
             raise RuntimeError("bot session has not been started")
-        deadline = time.time() + timeout_ms / 1000
-        while time.time() < deadline:
+        deadline = time.monotonic() + timeout_ms / 1000
+        while time.monotonic() < deadline:
             self._suggestion_event.clear()
             self._suggestion = None
             self._bot.send_suggest(incoming_garbage, extensions)
-            wait_time = min(5.0, max(0.0, deadline - time.time()))
+            wait_time = max(0.0, deadline - time.monotonic())
             if not self._suggestion_event.wait(timeout=wait_time):
                 return []
             moves = self._suggestion or []
             if moves:
                 return moves
-            time.sleep(0.05)
+            time.sleep(min(0.05, max(0.0, deadline - time.monotonic())))
         return []
 
     def advance_with(
