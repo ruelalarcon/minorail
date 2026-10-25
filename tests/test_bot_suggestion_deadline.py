@@ -42,10 +42,11 @@ def session_with_replies(monkeypatch, replies):
     monkeypatch.setattr("bots.session.time.monotonic", clock.monotonic)
     monkeypatch.setattr("bots.session.time.sleep", clock.sleep)
     session = BotSession("unused")
-    session._bot = Mock()
+    process = Mock()
+    monkeypatch.setattr(session, "_bot", process)
     event = Replies(session, clock, replies)
-    session._suggestion_event = event
-    return session, clock, event
+    monkeypatch.setattr(session, "_suggestion_event", event)
+    return session, clock, event, process
 
 
 def move():
@@ -56,16 +57,18 @@ def move():
 
 def test_accepts_reply_after_five_seconds_within_configured_deadline(monkeypatch):
     placement = move()
-    session, clock, event = session_with_replies(monkeypatch, [(6, [placement])])
+    session, clock, event, process = session_with_replies(
+        monkeypatch, [(6, [placement])]
+    )
     assert session.suggest(12000, [3]) == [placement]
     assert clock.now == 6
     assert event.waits == [12]
-    session._bot.send_suggest.assert_called_once_with([3], None)
+    process.send_suggest.assert_called_once_with([3], None)
 
 
 def test_empty_reply_retries_share_one_deadline(monkeypatch):
     placement = move()
-    session, clock, event = session_with_replies(
+    session, clock, event, _ = session_with_replies(
         monkeypatch, [(6, []), (7, [placement])]
     )
     assert session.suggest(12000) == []
@@ -74,14 +77,14 @@ def test_empty_reply_retries_share_one_deadline(monkeypatch):
 
 
 def test_no_reply_uses_full_requested_timeout(monkeypatch):
-    session, clock, event = session_with_replies(monkeypatch, [(math.inf, [])])
+    session, clock, event, _ = session_with_replies(monkeypatch, [(math.inf, [])])
     assert session.suggest(12000) == []
     assert clock.now == 12
     assert event.waits == [12]
 
 
 def test_retry_backoff_does_not_exceed_short_deadline(monkeypatch):
-    session, clock, event = session_with_replies(monkeypatch, [(0, [])])
+    session, clock, event, _ = session_with_replies(monkeypatch, [(0, [])])
     assert session.suggest(20) == []
     assert clock.now == pytest.approx(0.02)
     assert len(event.waits) == 1
