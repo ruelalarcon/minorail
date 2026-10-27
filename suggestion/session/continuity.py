@@ -171,7 +171,11 @@ class SuggestionContinuity:
             moving_piece = moving_piece_for(request.snapshot, chosen)
             if moving_piece is not None:
                 path = find_path(
-                    request.snapshot.board, moving_piece, chosen.location, request.rules
+                    request.snapshot.board,
+                    moving_piece,
+                    chosen.location,
+                    request.rules,
+                    required_spin=chosen.spin,
                 )
                 if path is not None and request.convert_sonic_drops:
                     path = convert_sonic_drops(

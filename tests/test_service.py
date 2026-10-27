@@ -649,6 +649,28 @@ class ServiceTests(unittest.TestCase):
 
         self.assertIsNone(fake.started[0].piece_stream)
 
+    def test_suggestion_path_earns_the_selected_mini_spin(self) -> None:
+        chosen = Placement(PieceLocation(Piece.T, Rotation.East, 0, 1), Spin.mini)
+        fake = FakeBotSession([[chosen]])
+        session = SuggestionContinuity(lambda: fake)
+        rules = Rules(
+            kickset="srs_plus",
+            spawn_y=21,
+            spin_detection=SpinDetection.all_mini_plus,
+        )
+        snap = snapshot(
+            board=Board(cols=[0, 1, 1, 1, 1, 3, 1, 1, 1, 1]), active=Piece.T
+        )
+        snap.active = spawn_location(Piece.T, y=21)
+
+        result = session.suggest(SuggestionRequest(snapshot=snap, rules=rules))
+
+        self.assertEqual(result.placement, chosen)
+        self.assertEqual(
+            result.path,
+            [MoveStep.DasLeft, MoveStep.SonicDrop, MoveStep.RotCW, MoveStep.HardDrop],
+        )
+
     def test_convert_sonic_drops_request_option_rewrites_path(self) -> None:
         fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
         session = SuggestionContinuity(lambda: fake)

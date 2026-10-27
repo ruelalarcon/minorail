@@ -7,6 +7,8 @@ from tetris.model.location import PieceLocation
 from tetris.model.piece import Piece
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
+from tetris.model.spin import Spin
+from tetris.model.spin_detection import SpinDetection
 from tetris.kicks.registry import register_kick_table
 from tetris.kicks.table import KickTable
 from tetris.movegen.pathfinder import MoveStep, convert_sonic_drops, find_path
@@ -14,6 +16,31 @@ from tetris.movegen.rotation import try_rotate, try_rotate_180
 
 
 class PathfinderTests(unittest.TestCase):
+    def test_mini_path_earns_spin_instead_of_only_reaching_its_cells(self) -> None:
+        board = Board(cols=[0, 1, 1, 1, 1, 3, 1, 1, 1, 1])
+        rules = Rules(
+            kickset="srs_plus", spawn_y=21, spin_detection=SpinDetection.all_mini_plus
+        )
+        target = PieceLocation(Piece.T, Rotation.East, 0, 1)
+        geometry = find_path(board, Piece.T, target, rules)
+        self.assertEqual(
+            geometry, [MoveStep.RotCW, MoveStep.DasLeft, MoveStep.HardDrop]
+        )
+        spin = find_path(board, Piece.T, target, rules, required_spin=Spin.mini)
+        self.assertEqual(
+            spin,
+            [MoveStep.DasLeft, MoveStep.SonicDrop, MoveStep.RotCW, MoveStep.HardDrop],
+        )
+        ordinary = find_path(board, Piece.T, target, rules, required_spin=Spin.none)
+        self.assertEqual(ordinary, geometry)
+
+    def test_spin_constraint_rejects_a_geometrically_reachable_nonspin(self) -> None:
+        target = PieceLocation(Piece.T, Rotation.North, 4, 0)
+        self.assertIsNotNone(find_path(Board(), Piece.T, target, Rules()))
+        self.assertIsNone(
+            find_path(Board(), Piece.T, target, Rules(), required_spin=Spin.full)
+        )
+
     def test_convert_sonic_drop_to_exact_soft_drop_count(self) -> None:
         path = [MoveStep.Right, MoveStep.SonicDrop, MoveStep.HardDrop]
 
