@@ -34,6 +34,29 @@ class PathfinderTests(unittest.TestCase):
         ordinary = find_path(board, Piece.T, target, rules, required_spin=Spin.none)
         self.assertEqual(ordinary, geometry)
 
+    def test_hard_drop_carries_airborne_spin_but_sonic_drop_clears_it(self) -> None:
+        board = Board(cols=[511, 511, 511, 255, 255, 384, 319, 63, 63, 127])
+        rules = Rules(
+            kickset="srs_plus", spawn_y=21, spin_detection=SpinDetection.all_mini_plus
+        )
+        target = PieceLocation(Piece.I, Rotation.East, 5, 2)
+        mini = [
+            MoveStep.DasRight,
+            MoveStep.RotCW,
+            MoveStep.SonicDrop,
+            MoveStep.RotCCW,
+            MoveStep.RotCW,
+            MoveStep.HardDrop,
+        ]
+        self.assertEqual(find_path(board, Piece.I, target, rules), mini)
+        self.assertEqual(
+            find_path(board, Piece.I, target, rules, required_spin=Spin.mini), mini
+        )
+        self.assertEqual(
+            find_path(board, Piece.I, target, rules, required_spin=Spin.none),
+            mini[:-1] + [MoveStep.SonicDrop, MoveStep.HardDrop],
+        )
+
     def test_spin_constraint_rejects_a_geometrically_reachable_nonspin(self) -> None:
         target = PieceLocation(Piece.T, Rotation.North, 4, 0)
         self.assertIsNotNone(find_path(Board(), Piece.T, target, Rules()))
