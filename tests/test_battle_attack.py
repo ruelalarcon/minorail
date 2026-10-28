@@ -39,6 +39,33 @@ class BattleAttackRegistryTests(unittest.TestCase):
 
 
 class TetrioS2AttackCalculatorTests(unittest.TestCase):
+    def test_surge_rounding_and_packet_order_match_client(self) -> None:
+        calc = TetrioS2AttackCalculator()
+        for raw, expected in [
+            (5, (1, 1, 2)),
+            (6, (2, 2, 1)),
+            (8, (2, 2, 3)),
+            (9, (3, 3, 2)),
+        ]:
+            with self.subTest(raw=raw):
+                applied = _applied(Piece.O, lines=1, back_to_back_before=raw)
+                self.assertEqual(calc.packets(applied), expected)
+                self.assertEqual(calc.calculate(applied), sum(expected))
+        applied = _applied(Piece.O, lines=2, back_to_back_before=9, perfect_clear=True)
+        self.assertEqual(calc.packets(applied), (3, 3, 2, 1, 5))
+
+    def test_perfect_clear_packet_is_separate_from_ordinary_attack(self) -> None:
+        calc = TetrioS2AttackCalculator()
+        applied = _applied(
+            Piece.I,
+            lines=4,
+            back_to_back_before=1,
+            back_to_back_after=2,
+            perfect_clear=True,
+        )
+        self.assertEqual(calc.packets(applied), (5, 5))
+        self.assertEqual(calc.calculate(applied), 10)
+
     def test_no_clear_sends_no_attack_even_with_combo_and_back_to_back(self) -> None:
         attack = TetrioS2AttackCalculator().calculate(
             _applied(

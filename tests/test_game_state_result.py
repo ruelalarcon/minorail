@@ -8,9 +8,24 @@ from tetris.model.placement import Placement
 from tetris.model.rotation import Rotation
 from tetris.model.rules import Rules
 from tetris.model.spin import Spin
+from tetris.model.back_to_back_source import BackToBackSource
 
 
 class GameStateResultTests(unittest.TestCase):
+    def test_quad_perfect_clear_awards_two_enabled_b2b_credits(self) -> None:
+        cols = [15] * 10
+        cols[4] = 0
+        state = GameState(
+            Board(cols=cols), spawn_location(Piece.I), [Piece.O], None, 0, 0
+        )
+        applied = state.apply_move(
+            Placement(PieceLocation(Piece.I, Rotation.East, 4, 2), Spin.none),
+            Rules(back_to_back_sources=frozenset(BackToBackSource)),
+        )
+        assert applied is not None
+        self.assertTrue(applied.perfect_clear)
+        self.assertEqual(applied.back_to_back_after, 2)
+
     def test_apply_move_returns_line_clear_facts(self) -> None:
         board = Board(cols=[1] * 8 + [0] * 2)
         state = GameState(

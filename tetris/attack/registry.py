@@ -12,6 +12,7 @@ from tetris.game.state import AppliedMove
 
 class AttackCalculator(Protocol):
     def calculate(self, applied: AppliedMove) -> int: ...
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]: ...
 
 
 _ATTACK_CALCULATORS: dict[str, type[AttackCalculator]] = {

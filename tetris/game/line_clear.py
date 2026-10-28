@@ -6,7 +6,7 @@ from tetris.model.board import Board, GARBAGE_CELL
 from tetris.model.piece import Piece
 from tetris.model.rules import Rules
 from tetris.model.spin import Spin
-from tetris.game.back_to_back import is_back_to_back_clear
+from tetris.game.back_to_back import back_to_back_increment
 
 
 @dataclass(frozen=True)
@@ -45,7 +45,7 @@ class LineClear:
         board.remove_lines(cleared)
         perfect_clear = board.is_empty()
         lines_cleared = cleared.bit_count()
-        hard = is_back_to_back_clear(
+        credit = back_to_back_increment(
             piece,
             spin,
             lines_cleared,
@@ -56,6 +56,6 @@ class LineClear:
             lines_cleared=lines_cleared,
             perfect_clear=perfect_clear,
             combo=combo + 1,
-            back_to_back=back_to_back + 1 if hard else 0,
+            back_to_back=back_to_back + credit if credit else 0,
             garbage_lines_cleared=garbage_lines_cleared,
         )

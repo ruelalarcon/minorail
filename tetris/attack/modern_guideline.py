@@ -14,6 +14,10 @@ class ModernGuidelineAttackCalculator:
     PERFECT_CLEAR_BONUS = 10
     BACK_TO_BACK_BONUS = 1
 
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
+        attack = self.calculate(applied)
+        return (attack,) if attack > 0 else ()
+
     def calculate(self, applied: AppliedMove) -> int:
         if applied.lines_cleared <= 0:
             return 0

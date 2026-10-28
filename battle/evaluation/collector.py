@@ -108,6 +108,8 @@ class EvaluationCollector:
                 "incoming_garbage_before": event.incoming_garbage_before,
                 "garbage_cancelled": event.garbage_cancelled,
                 "garbage_sent": event.garbage_sent,
+                "attack_packets": list(event.attack_packets),
+                "garbage_sent_packets": list(event.garbage_sent_packets),
                 "incoming_garbage_after": event.incoming_garbage_after,
             }
         )
@@ -130,7 +132,6 @@ class EvaluationCollector:
         )
 
     def on_game_ended(self, event: GameEndedEvent) -> None:
-        total = sum(event.pieces.values())
         self._summary["status"] = event.status
         self._summary["winner"] = event.winner
         self._summary["loser"] = event.loser

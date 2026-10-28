@@ -23,6 +23,11 @@ class PptAttackCalculator:
     COMBO_TABLE = [0, 0, 1, 1, 1, 1, 1, 2]
     PERFECT_CLEAR_BONUS = 6
     BACK_TO_BACK_BONUS = 1
+
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
+        attack = self.calculate(applied)
+        return (attack,) if attack > 0 else ()
+
     T_SPIN_ATTACK = {
         1: 2,
         2: 3,

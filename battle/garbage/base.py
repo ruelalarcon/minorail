@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Protocol
+from collections.abc import Sequence
 
 from tetris.game.state import GameState
 
@@ -14,8 +15,27 @@ GarbageQueue = Any
 @dataclass(frozen=True)
 class GarbageExchange:
     cancelled: int
-    sent: int
+    sent_packets: tuple[int, ...]
     queue_after: GarbageQueue
+
+    @property
+    def sent(self) -> int:
+        return sum(self.sent_packets)
+
+
+def cancel_packets(
+    attacks: Sequence[int], available: int
+) -> tuple[int, tuple[int, ...]]:
+    """Offset oldest pending rows while retaining outgoing packet boundaries."""
+    cancelled = 0
+    sent = []
+    for attack in attacks:
+        count = min(attack, available)
+        cancelled += count
+        available -= count
+        if attack > count:
+            sent.append(attack - count)
+    return cancelled, tuple(sent)
 
 
 @dataclass(frozen=True)
@@ -32,7 +52,14 @@ class GarbageRules(Protocol):
 
     def queue_chunks(self, queue: GarbageQueue) -> list[int]: ...
 
-    def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange: ...
+    def exchange(
+        self,
+        *,
+        attacks: Sequence[int],
+        queue: GarbageQueue,
+        pieces_placed: int,
+        sent_before: int,
+    ) -> GarbageExchange: ...
 
     def enqueue_attack(self, queue: GarbageQueue, *, attack: int) -> GarbageQueue: ...
 

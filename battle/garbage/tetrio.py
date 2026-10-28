@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from battle.garbage.base import (
@@ -29,6 +30,7 @@ class _GarbageQueue:
 
 class TetrioGarbageRules:
     MAX_RISE_PER_LOCK = 8
+    OPENER_PHASE = 14
     DEFAULT_WIDTH = 10
 
     def __init__(self, *, seed: int | None) -> None:
@@ -43,16 +45,38 @@ class TetrioGarbageRules:
     def queue_chunks(self, queue: GarbageQueue) -> list[int]:
         return [chunk.lines for chunk in _queue(queue).chunks]
 
-    def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange:
+    def exchange(
+        self,
+        *,
+        attacks: Sequence[int],
+        queue: GarbageQueue,
+        pieces_placed: int,
+        sent_before: int,
+    ) -> GarbageExchange:
         current = _queue(queue)
-        cancelled = min(max(0, attack), current.total)
-        sent = max(0, attack - cancelled)
+        remaining = current.total
+        cancelled = 0
+        sent = []
+        for attack in attacks:
+            bonus = (
+                attack
+                if pieces_placed <= self.OPENER_PHASE and remaining >= sent_before
+                else 0
+            )
+            ordinary = min(attack, remaining)
+            extra = min(bonus, remaining - ordinary)
+            cancelled += ordinary + extra
+            remaining -= ordinary + extra
+            outgoing = attack - ordinary
+            if outgoing:
+                sent.append(outgoing)
+                sent_before += outgoing
         queue_after = _consume_queue(
             current, cancelled, reroll_finished_chunks=True, rng=self._rng
         )
         return GarbageExchange(
             cancelled=cancelled,
-            sent=sent,
+            sent_packets=tuple(sent),
             queue_after=queue_after,
         )
 

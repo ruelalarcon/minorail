@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import random
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from battle.garbage.base import (
     GarbageApplication,
     GarbageExchange,
     GarbageQueue,
+    cancel_packets,
 )
 from tetris.game.state import GameState
 from tetris.model.board import EMPTY_CELL, GARBAGE_CELL
@@ -74,14 +76,20 @@ class ModernGarbageRules:
     def queue_chunks(self, queue: GarbageQueue) -> list[int]:
         return [chunk.lines for chunk in _queue(queue).chunks]
 
-    def exchange(self, *, attack: int, queue: GarbageQueue) -> GarbageExchange:
+    def exchange(
+        self,
+        *,
+        attacks: Sequence[int],
+        queue: GarbageQueue,
+        pieces_placed: int,
+        sent_before: int,
+    ) -> GarbageExchange:
         current = _queue(queue)
-        cancelled = min(max(0, attack), current.total)
-        sent = max(0, attack - cancelled)
+        cancelled, sent = cancel_packets(attacks, current.total)
         queue_after = _consume_queue(current, cancelled)
         return GarbageExchange(
             cancelled=cancelled,
-            sent=sent,
+            sent_packets=sent,
             queue_after=_increment_locks(queue_after),
         )
 

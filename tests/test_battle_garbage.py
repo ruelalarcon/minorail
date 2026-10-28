@@ -16,6 +16,39 @@ def _hole_at_row(state: GameState, y: int) -> int:
 
 
 class TetrioGarbageRulesTests(unittest.TestCase):
+    def test_opening_bonus_boundary_and_sent_condition(self) -> None:
+        for piece, sent, expected in [(14, 0, 4), (15, 0, 2), (14, 6, 4), (14, 7, 2)]:
+            with self.subTest(piece=piece, sent=sent):
+                rules = TetrioGarbageRules(seed=123)
+                queue = rules.enqueue_attack(rules.empty_queue(), attack=6)
+                exchange = rules.exchange(
+                    attacks=(2,), queue=queue, pieces_placed=piece, sent_before=sent
+                )
+                self.assertEqual(exchange.cancelled, expected)
+                self.assertEqual(exchange.sent_packets, ())
+                self.assertEqual(rules.queue_total(exchange.queue_after), 6 - expected)
+
+    def test_opening_condition_is_rechecked_between_packets(self) -> None:
+        rules = TetrioGarbageRules(seed=123)
+        queue = rules.enqueue_attack(rules.empty_queue(), attack=8)
+        exchange = rules.exchange(
+            attacks=(2, 2), queue=queue, pieces_placed=14, sent_before=6
+        )
+        self.assertEqual(exchange.cancelled, 6)
+        self.assertEqual(rules.queue_total(exchange.queue_after), 2)
+
+    def test_packet_boundaries_survive_partial_cancellation(self) -> None:
+        for piece, expected in [(15, (1, 2)), (14, (3, 2))]:
+            with self.subTest(piece=piece):
+                rules = TetrioGarbageRules(seed=123)
+                queue = rules.enqueue_attack(rules.empty_queue(), attack=5)
+                exchange = rules.exchange(
+                    attacks=(3, 3, 2), queue=queue, pieces_placed=piece, sent_before=0
+                )
+                self.assertEqual(exchange.cancelled, 5)
+                self.assertEqual(exchange.sent_packets, expected)
+                self.assertEqual(exchange.sent, sum(expected))
+
     def test_registry_resolves_built_in_garbage_rules(self) -> None:
         self.assertIs(garbage_rules("tetrio"), TetrioGarbageRules)
         self.assertIs(garbage_rules("ppt"), PptGarbageRules)
@@ -25,7 +58,9 @@ class TetrioGarbageRulesTests(unittest.TestCase):
         rules = TetrioGarbageRules(seed=123)
         queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
 
-        exchange = rules.exchange(attack=6, queue=queue)
+        exchange = rules.exchange(
+            attacks=(6,), queue=queue, pieces_placed=20, sent_before=0
+        )
 
         self.assertEqual(exchange.cancelled, 4)
         self.assertEqual(exchange.sent, 2)
@@ -63,13 +98,17 @@ class TetrioGarbageRulesTests(unittest.TestCase):
         queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
         queue = rules.enqueue_attack(queue, attack=2)
         self.assertEqual(rules.queue_chunks(queue), [4, 2])
+        rules.apply_queue(state, queue)
+        self.assertEqual([_hole_at_row(state, y) for y in range(6)], [0, 0, 0, 0, 4, 4])
 
     def test_tetrio_cancels_from_oldest_garbage_chunk(self) -> None:
         rules = TetrioGarbageRules(seed=123)
         queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
         queue = rules.enqueue_attack(queue, attack=2)
 
-        exchange = rules.exchange(attack=5, queue=queue)
+        exchange = rules.exchange(
+            attacks=(5,), queue=queue, pieces_placed=20, sent_before=0
+        )
 
         self.assertEqual(rules.queue_chunks(exchange.queue_after), [1])
 
@@ -133,7 +172,9 @@ class PptGarbageRulesTests(unittest.TestCase):
         rules = PptGarbageRules(seed=123)
         queue = rules.enqueue_attack(rules.empty_queue(), attack=4)
 
-        exchange = rules.exchange(attack=6, queue=queue)
+        exchange = rules.exchange(
+            attacks=(6,), queue=queue, pieces_placed=20, sent_before=0
+        )
 
         self.assertEqual(exchange.cancelled, 4)
         self.assertEqual(exchange.sent, 2)
@@ -141,6 +182,15 @@ class PptGarbageRulesTests(unittest.TestCase):
 
 
 class ModernGarbageRulesTests(unittest.TestCase):
+    def test_multiple_attack_packets_count_as_one_lock(self) -> None:
+        rules = ModernGarbageRules(seed=123)
+        queue = rules.enqueue_attack(rules.empty_queue(), attack=1)
+        exchange = rules.exchange(
+            attacks=(1, 2, 3), queue=queue, pieces_placed=1, sent_before=0
+        )
+        self.assertEqual(exchange.sent_packets, (2, 3))
+        self.assertEqual(exchange.queue_after.locks, 1)
+
     def test_early_phase_uses_clean_columns_per_chunk(self) -> None:
         rules = ModernGarbageRules(seed=123)
         state = GameState(
@@ -173,7 +223,9 @@ class ModernGarbageRulesTests(unittest.TestCase):
         )
         queue = rules.empty_queue()
         for _ in range(150):
-            queue = rules.exchange(attack=0, queue=queue).queue_after
+            queue = rules.exchange(
+                attacks=(), queue=queue, pieces_placed=20, sent_before=0
+            ).queue_after
         queue = rules.enqueue_attack(queue, attack=8)
 
         applied = rules.apply_queue(state, queue)
@@ -186,7 +238,9 @@ class ModernGarbageRulesTests(unittest.TestCase):
         rules = ModernGarbageRules(seed=0)
         queue = rules.empty_queue()
         for _ in range(150):
-            queue = rules.exchange(attack=0, queue=queue).queue_after
+            queue = rules.exchange(
+                attacks=(), queue=queue, pieces_placed=20, sent_before=0
+            ).queue_after
 
         reset = rules.empty_queue()
 

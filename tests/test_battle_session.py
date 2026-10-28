@@ -18,8 +18,16 @@ from tetris.model.spin import Spin
 
 
 class FixedAttackCalculator:
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
+        return (2,)
+
     def calculate(self, applied: AppliedMove) -> int:
         return 2
+
+
+class PacketAttackCalculator(FixedAttackCalculator):
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
+        return (1, 1)
 
 
 class FakeSuggestionService:
@@ -112,6 +120,24 @@ class BattleSessionTests(unittest.TestCase):
 
         self.assertEqual(service_a.requests[0].incoming_garbage, [])
         self.assertEqual(service_b.requests[0].incoming_garbage, [2])
+
+    def test_separate_outgoing_packets_reach_the_opponent_as_separate_chunks(
+        self,
+    ) -> None:
+        register_attack_calculator("test_packet_attack", PacketAttackCalculator)
+        service_a, service_b = FakeSuggestionService(), FakeSuggestionService()
+        session = BattleSession(
+            "fake-a",
+            "fake-b",
+            settings=_settings(attack_calculator="test_packet_attack"),
+            visualizer=NullVisualizer(),
+            service_a=service_a,
+            service_b=service_b,
+            limits=RunLimits(piece_limit=2),
+            random_seed=0,
+        )
+        session.play_game()
+        self.assertEqual(service_b.requests[0].incoming_garbage, [1, 1])
 
 
 def _settings(*, attack_calculator: str = "tetrio_s2") -> Settings:

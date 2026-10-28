@@ -112,6 +112,7 @@ class Session:
         self._attack_total: dict[str, int] = {
             player.name: 0 for player in self._players
         }
+        self._sent_total: dict[str, int] = {player.name: 0 for player in self._players}
 
     def play_game(self) -> dict[str, Any]:
         bot_cfg = self._settings.bot()
@@ -217,19 +218,24 @@ class Session:
                 incoming_before = garbage_rules.queue_total(
                     self._garbage_queues[player.name]
                 )
-                attack = self._attack.calculate(applied)
+                attack_packets = self._attack.packets(applied)
+                attack = sum(attack_packets)
                 exchange = garbage_rules.exchange(
-                    attack=attack,
+                    attacks=attack_packets,
                     queue=self._garbage_queues[player.name],
+                    pieces_placed=self._pieces_locked[player.name] + 1,
+                    sent_before=self._sent_total[player.name],
                 )
                 self._garbage_queues[player.name] = exchange.queue_after
+                self._sent_total[player.name] += exchange.sent
                 opponent_garbage_rules = self._garbage[1 - player_index]
-                self._garbage_queues[opponent.name] = (
-                    opponent_garbage_rules.enqueue_attack(
-                        self._garbage_queues[opponent.name],
-                        attack=exchange.sent,
+                for packet in exchange.sent_packets:
+                    self._garbage_queues[opponent.name] = (
+                        opponent_garbage_rules.enqueue_attack(
+                            self._garbage_queues[opponent.name],
+                            attack=packet,
+                        )
                     )
-                )
 
                 garbage_applied = None
                 if garbage_rules.should_apply_on_lock(
@@ -261,9 +267,11 @@ class Session:
                         stack_height=stack_height(player.game.state),
                         occupied_cells=occupied_cells(player.game.state),
                         attack=attack,
+                        attack_packets=attack_packets,
                         incoming_garbage_before=incoming_before,
                         garbage_cancelled=exchange.cancelled,
                         garbage_sent=exchange.sent,
+                        garbage_sent_packets=exchange.sent_packets,
                         incoming_garbage_after=garbage_rules.queue_total(
                             self._garbage_queues[player.name]
                         ),

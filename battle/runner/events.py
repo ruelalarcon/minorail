@@ -25,9 +25,11 @@ class PieceLockedEvent:
     stack_height: int
     occupied_cells: int
     attack: int
+    attack_packets: tuple[int, ...]
     incoming_garbage_before: int
     garbage_cancelled: int
     garbage_sent: int
+    garbage_sent_packets: tuple[int, ...]
     incoming_garbage_after: int
 
 

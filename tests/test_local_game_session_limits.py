@@ -20,6 +20,9 @@ from visualizers.solo.null import NullVisualizer
 
 
 class FixedAttackCalculator:
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
+        return (2,)
+
     def calculate(self, applied: AppliedMove) -> int:
         return 2
 

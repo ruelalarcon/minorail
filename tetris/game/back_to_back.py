@@ -37,5 +37,22 @@ def is_back_to_back_clear(
     perfect_clear: bool,
     rules: Rules,
 ) -> bool:
+    return back_to_back_increment(piece, spin, lines_cleared, perfect_clear, rules) > 0
+
+
+def back_to_back_increment(
+    piece: Piece,
+    spin: Spin,
+    lines_cleared: int,
+    perfect_clear: bool,
+    rules: Rules,
+) -> int:
+    if lines_cleared <= 0:
+        return 0
     sources = clear_sources(piece, spin, lines_cleared, perfect_clear)
-    return bool(sources & rules.back_to_back_sources)
+    enabled = sources & rules.back_to_back_sources
+    # A perfect clear contributes independently. Quad/spin overlap remains
+    # one ordinary hard-clear credit, matching the client's exclusive branch.
+    perfect = BackToBackSource.perfect_clear in enabled
+    ordinary = bool(enabled - {BackToBackSource.perfect_clear})
+    return int(ordinary) + int(perfect)

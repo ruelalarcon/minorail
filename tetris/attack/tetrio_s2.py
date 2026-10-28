@@ -14,15 +14,18 @@ from tetris.model.spin import Spin
 
 
 class TetrioS2AttackCalculator:
-    MODEL_VERSION = "tetrio-s2-raw-b2b-garbage-bonus-v2"
+    MODEL_VERSION = "tetrio-s2-packets-v3"
     PERFECT_CLEAR_BONUS = 5
     BACK_TO_BACK_BONUS = 1
     BACK_TO_BACK_SURGE_AT = 4
     BACK_TO_BACK_SURGE_BASE = 3
 
     def calculate(self, applied: AppliedMove) -> int:
+        return sum(self.packets(applied))
+
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
         if applied.lines_cleared <= 0:
-            return 0
+            return ()
 
         # Combo multiplication and the repeated-B2B bonus use displayed counts.
         combo = normalized_combo(applied)
@@ -53,7 +56,20 @@ class TetrioS2AttackCalculator:
         subtotal = line_clear + back_to_back
         line_attack = _attack_round(_multiplier_combo_attack(subtotal, combo))
         perfect_clear = self.PERFECT_CLEAR_BONUS if applied.perfect_clear else 0
-        return line_attack + special_bonus + perfect_clear + surge
+        # The client offsets/emits surge segments before the ordinary clear,
+        # and sends the perfect-clear bonus in a separate final call.
+        third = (surge + 1) // 3  # Math.round(integer_surge / 3)
+        return tuple(
+            packet
+            for packet in (
+                third,
+                third,
+                surge - 2 * third,
+                line_attack + special_bonus,
+                perfect_clear,
+            )
+            if packet > 0
+        )
 
     def _back_to_back_surge(
         self, applied: AppliedMove, back_to_back_before: int
