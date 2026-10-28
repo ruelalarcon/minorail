@@ -68,10 +68,18 @@ battle.runner.session.Session
   -> battle.runner.player.Player
   -> solo.runner.local_game.LocalGame
   -> suggestion.service.SuggestionService
-  -> tetris.attack.AttackCalculator
-  -> battle.garbage.GarbageRules
+  -> tetris.attack.base.AttackCalculator
+  -> battle.garbage.base.GarbageRules
   -> battle visualizer/evaluation observer
 ```
+
+Attack calculators implement only `packets(applied)`, returning an ordered tuple
+of positive attack chunks (or an empty tuple). Callers sum the packets when they
+need a total. `tetris/attack/base.py` owns this interface; `registry.py` owns named
+calculator lookup. Attack generation stays in `tetris/attack/`, while cancellation,
+opening defence, and pending garbage stay in `battle/garbage/`. The battle runner
+connects those responsibilities. Battle events derive attack totals from their
+packet tuples so the two representations cannot disagree.
 
 Battle composes two solo local boards. It does not make visualizers responsible
 for attack, garbage, or gameplay mutation.

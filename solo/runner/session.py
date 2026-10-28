@@ -21,7 +21,8 @@ from solo.runner.metrics import occupied_cells, stack_height
 from solo.runner.visualizer import SoloVisualizer
 from suggestion.move_selection import moving_piece_for
 from suggestion.service import SuggestionService
-from tetris.attack.registry import AttackCalculator, attack_calculator
+from tetris.attack.base import AttackCalculator
+from tetris.attack.registry import attack_calculator
 from tetris.game.state import GameState
 from tetris.model.piece import Piece
 from tetris.model.placement import Placement
@@ -219,7 +220,7 @@ class LocalGameSession:
                     status = "apply_move_rejected"
                     break
 
-                attack = self._attack.calculate(applied)
+                attack = sum(self._attack.packets(applied))
                 total_attack += attack
                 queue_len_before_refill = len(self.state.queue)
                 self._game.refill_queue(refill_at)

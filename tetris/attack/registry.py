@@ -1,18 +1,11 @@
 from __future__ import annotations
 
-from typing import Protocol
-
+from tetris.attack.base import AttackCalculator
 from tetris.attack.classic_guideline import ClassicGuidelineAttackCalculator
 from tetris.attack.modern_guideline import ModernGuidelineAttackCalculator
 from tetris.attack.ppt import PptAttackCalculator
 from tetris.attack.tetrio_s1 import TetrioS1AttackCalculator
 from tetris.attack.tetrio_s2 import TetrioS2AttackCalculator
-from tetris.game.state import AppliedMove
-
-
-class AttackCalculator(Protocol):
-    def calculate(self, applied: AppliedMove) -> int: ...
-    def packets(self, applied: AppliedMove) -> tuple[int, ...]: ...
 
 
 _ATTACK_CALCULATORS: dict[str, type[AttackCalculator]] = {

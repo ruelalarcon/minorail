@@ -14,12 +14,8 @@ class TetrioS1AttackCalculator:
     PERFECT_CLEAR_BONUS = 10
 
     def packets(self, applied: AppliedMove) -> tuple[int, ...]:
-        attack = self.calculate(applied)
-        return (attack,) if attack > 0 else ()
-
-    def calculate(self, applied: AppliedMove) -> int:
         if applied.lines_cleared <= 0:
-            return 0
+            return ()
 
         # Minorail counters are one-based from the first clear. TETR.IO combo
         # and back-to-back attack formulas use displayed/derived counts, so subtract one.
@@ -32,7 +28,8 @@ class TetrioS1AttackCalculator:
         multiplied = _multiplier_combo_attack(subtotal, combo)
         line_attack = _attack_round(multiplied)
         perfect_clear = self.PERFECT_CLEAR_BONUS if applied.perfect_clear else 0
-        return line_attack + perfect_clear
+        attack = line_attack + perfect_clear
+        return (attack,) if attack > 0 else ()
 
 
 def _attack_round(attack: float) -> int:

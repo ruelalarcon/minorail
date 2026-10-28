@@ -21,11 +21,8 @@ class FixedAttackCalculator:
     def packets(self, applied: AppliedMove) -> tuple[int, ...]:
         return (2,)
 
-    def calculate(self, applied: AppliedMove) -> int:
-        return 2
 
-
-class PacketAttackCalculator(FixedAttackCalculator):
+class PacketAttackCalculator:
     def packets(self, applied: AppliedMove) -> tuple[int, ...]:
         return (1, 1)
 

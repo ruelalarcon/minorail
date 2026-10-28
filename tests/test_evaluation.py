@@ -143,11 +143,9 @@ class EvaluationCollectorTests(unittest.TestCase):
                 ),
                 stack_height=17,
                 occupied_cells=86,
-                attack=3,
                 incoming_garbage_before=4,
                 attack_packets=(3,),
                 garbage_cancelled=1,
-                garbage_sent=2,
                 garbage_sent_packets=(2,),
                 incoming_garbage_after=3,
             )

@@ -21,7 +21,8 @@ from solo.runner.metrics import occupied_cells, stack_height
 from solo.runner.session import SuggestionServiceLike
 from suggestion.move_selection import moving_piece_for
 from suggestion.service import SuggestionService
-from tetris.attack.registry import AttackCalculator, attack_calculator
+from tetris.attack.base import AttackCalculator
+from tetris.attack.registry import attack_calculator
 from tetris.model.rules import Rules
 
 
@@ -266,11 +267,9 @@ class Session:
                         applied=applied,
                         stack_height=stack_height(player.game.state),
                         occupied_cells=occupied_cells(player.game.state),
-                        attack=attack,
                         attack_packets=attack_packets,
                         incoming_garbage_before=incoming_before,
                         garbage_cancelled=exchange.cancelled,
-                        garbage_sent=exchange.sent,
                         garbage_sent_packets=exchange.sent_packets,
                         incoming_garbage_after=garbage_rules.queue_total(
                             self._garbage_queues[player.name]

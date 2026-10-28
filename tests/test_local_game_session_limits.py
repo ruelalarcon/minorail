@@ -23,9 +23,6 @@ class FixedAttackCalculator:
     def packets(self, applied: AppliedMove) -> tuple[int, ...]:
         return (2,)
 
-    def calculate(self, applied: AppliedMove) -> int:
-        return 2
-
 
 class CaptureTotalAttackVisualizer(NullVisualizer):
     def __init__(self) -> None:

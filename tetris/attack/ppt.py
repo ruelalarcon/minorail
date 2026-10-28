@@ -24,17 +24,13 @@ class PptAttackCalculator:
     PERFECT_CLEAR_BONUS = 6
     BACK_TO_BACK_BONUS = 1
 
-    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
-        attack = self.calculate(applied)
-        return (attack,) if attack > 0 else ()
-
     T_SPIN_ATTACK = {
         1: 2,
         2: 3,
         3: 4,
     }
 
-    def calculate(self, applied: AppliedMove) -> int:
+    def packets(self, applied: AppliedMove) -> tuple[int, ...]:
         combo = normalized_combo(applied)
         back_to_back = normalized_back_to_back(applied)
 
@@ -46,7 +42,8 @@ class PptAttackCalculator:
         )
         combo_bonus = fixed_combo_bonus(self.COMBO_TABLE, combo)
         perfect_clear = self.PERFECT_CLEAR_BONUS if applied.perfect_clear else 0
-        return line_clear + back_to_back + combo_bonus + perfect_clear
+        attack = line_clear + back_to_back + combo_bonus + perfect_clear
+        return (attack,) if attack > 0 else ()
 
     def _line_clear_attack(self, applied: AppliedMove) -> int:
         lines = applied.lines_cleared

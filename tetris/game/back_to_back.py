@@ -30,16 +30,6 @@ def clear_sources(
     return frozenset(sources)
 
 
-def is_back_to_back_clear(
-    piece: Piece,
-    spin: Spin,
-    lines_cleared: int,
-    perfect_clear: bool,
-    rules: Rules,
-) -> bool:
-    return back_to_back_increment(piece, spin, lines_cleared, perfect_clear, rules) > 0
-
-
 def back_to_back_increment(
     piece: Piece,
     spin: Spin,

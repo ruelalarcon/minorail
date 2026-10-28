@@ -20,9 +20,6 @@ class TetrioS2AttackCalculator:
     BACK_TO_BACK_SURGE_AT = 4
     BACK_TO_BACK_SURGE_BASE = 3
 
-    def calculate(self, applied: AppliedMove) -> int:
-        return sum(self.packets(applied))
-
     def packets(self, applied: AppliedMove) -> tuple[int, ...]:
         if applied.lines_cleared <= 0:
             return ()
