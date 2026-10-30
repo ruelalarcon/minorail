@@ -10,7 +10,9 @@ class PieceStreamTracker:
         self._stream: PieceStreamSnapshot | None = None
 
     def initialize(self, queue: list[Piece]) -> None:
-        self._stream = PieceStreamSnapshot(offset=0, pieces=list(queue))
+        # A snapshot establishes visible order, not an absolute generated-piece
+        # index. Sessions may begin mid-bag, even with seq=0 and an empty board.
+        self._stream = PieceStreamSnapshot(offset=None, pieces=list(queue))
         self._trim_to_limit()
 
     def append(self, pieces: list[Piece]) -> None:
@@ -20,8 +22,7 @@ class PieceStreamTracker:
         self._trim_to_limit()
 
     def realign(self, queue: list[Piece]) -> None:
-        self._stream = PieceStreamSnapshot(offset=None, pieces=list(queue))
-        self._trim_to_limit()
+        self.initialize(queue)
 
     def snapshot(self) -> PieceStreamSnapshot | None:
         if self._limit == 0 or self._stream is None:

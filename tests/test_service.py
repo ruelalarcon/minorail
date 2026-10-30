@@ -117,6 +117,29 @@ class FakeBotSession:
 
 
 class ServiceTests(unittest.TestCase):
+    def test_joining_existing_game_does_not_claim_a_generated_bag_boundary(
+        self,
+    ) -> None:
+        for seq, hold, board in [
+            (0, None, Board()),
+            (7, None, Board()),
+            (0, Piece.T, Board()),
+            (0, None, Board(cols=[1] + [0] * 9)),
+        ]:
+            with self.subTest(seq=seq, hold=hold):
+                fake = FakeBotSession([[placement(Piece.O, 4, 0)]])
+                session = SuggestionContinuity(lambda: fake, idle_ms=0)
+                snap = snapshot(board=board, seq=seq)
+                snap.hold = hold
+                try:
+                    session.suggest(SuggestionRequest(snapshot=snap, rules=Rules()))
+                    stream = fake.started[0].piece_stream
+                    assert stream is not None
+                    self.assertIsNone(stream.offset)
+                    self.assertEqual(stream.pieces, [snap.active.piece, *snap.queue])
+                finally:
+                    session.close()
+
     def test_pick_move_accepts_5_piece_hold_candidate(self) -> None:
         snap = snapshot(active=Piece.O, queue=[Piece.I, Piece.T, Piece.L, Piece.J])
         self.assertEqual(
@@ -178,7 +201,7 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(fake.started[0].queue, [Piece.I, Piece.T, Piece.L, Piece.J])
         self.assertIsNotNone(fake.started[0].piece_stream)
         assert fake.started[0].piece_stream is not None
-        self.assertEqual(fake.started[0].piece_stream.offset, 0)
+        self.assertIsNone(fake.started[0].piece_stream.offset)
         self.assertEqual(
             fake.started[0].piece_stream.pieces,
             [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J],
@@ -257,7 +280,7 @@ class ServiceTests(unittest.TestCase):
         stream = session.piece_stream.snapshot()
         self.assertIsNotNone(stream)
         assert stream is not None
-        self.assertEqual(stream.offset, 0)
+        self.assertIsNone(stream.offset)
         self.assertEqual(
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )
@@ -518,7 +541,7 @@ class ServiceTests(unittest.TestCase):
         stream = session.piece_stream.snapshot()
         self.assertIsNotNone(stream)
         assert stream is not None
-        self.assertEqual(stream.offset, 0)
+        self.assertIsNone(stream.offset)
         self.assertEqual(stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J])
 
     def test_board_only_desync_falls_back_to_reset_without_capability(self) -> None:
@@ -545,7 +568,7 @@ class ServiceTests(unittest.TestCase):
         stream = fake.resets[0].piece_stream
         self.assertIsNotNone(stream)
         assert stream is not None
-        self.assertEqual(stream.offset, 0)
+        self.assertIsNone(stream.offset)
         self.assertEqual(stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J])
 
     def test_expected_advance_with_board_correction_advances_and_updates_supported_bot(
@@ -579,7 +602,7 @@ class ServiceTests(unittest.TestCase):
         stream = session.piece_stream.snapshot()
         self.assertIsNotNone(stream)
         assert stream is not None
-        self.assertEqual(stream.offset, 0)
+        self.assertIsNone(stream.offset)
         self.assertEqual(
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )
@@ -630,7 +653,7 @@ class ServiceTests(unittest.TestCase):
         self.assertIsNone(stream.offset)
         self.assertEqual(stream.pieces, [Piece.T, Piece.L, Piece.J, Piece.S, Piece.Z])
 
-    def test_piece_stream_trimming_adjusts_offset(self) -> None:
+    def test_piece_stream_trimming_preserves_unknown_offset(self) -> None:
         tracker = PieceStreamTracker(limit=5)
         tracker.initialize([Piece.O, Piece.I, Piece.T, Piece.L, Piece.J])
         tracker.append([Piece.S, Piece.Z])
@@ -638,7 +661,7 @@ class ServiceTests(unittest.TestCase):
         stream = tracker.snapshot()
         self.assertIsNotNone(stream)
         assert stream is not None
-        self.assertEqual(stream.offset, 2)
+        self.assertIsNone(stream.offset)
         self.assertEqual(stream.pieces, [Piece.T, Piece.L, Piece.J, Piece.S, Piece.Z])
 
     def test_piece_stream_limit_zero_omits_stream(self) -> None:
@@ -749,7 +772,7 @@ class ServiceTests(unittest.TestCase):
         stream = fake.started[1].piece_stream
         self.assertIsNotNone(stream)
         assert stream is not None
-        self.assertEqual(stream.offset, 0)
+        self.assertIsNone(stream.offset)
         self.assertEqual(
             stream.pieces, [Piece.O, Piece.I, Piece.T, Piece.L, Piece.J, Piece.S]
         )

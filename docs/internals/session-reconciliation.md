@@ -102,6 +102,11 @@ Minorail tracks generated pieces as:
 When the retained stream exceeds `protocol.start.piece_stream_limit`, Minorail
 trims older pieces and adjusts the offset when it can.
 
+Initial snapshots preserve the observed stream with an unknown offset. A session
+may begin mid-bag; neither sequence zero nor an empty board proves an absolute
+generated-piece index. Bots can infer bag phase from the observed pieces instead
+of assuming the snapshot starts a fresh seven-bag.
+
 Set `piece_stream_limit = 0` to omit piece stream data entirely.
 
 Piece stream realignment means Minorail preserves the current observed
