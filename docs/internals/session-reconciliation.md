@@ -89,6 +89,19 @@ Battle garbage rise commonly produces
 post-garbage physical board when the bot supports it. Bots without `board`
 support still use the reset fallback.
 
+Pending garbage is not a physical board change. Under the
+[SBP/1 contract](https://github.com/ruelalarcon/stacker_bot_protocol/blob/master/spec/sbp-1.md#95-advance),
+`advance` applies the accepted placement and line clears, without assuming that
+pending garbage has arrived. If the next snapshot matches that result, Minorail
+does not send an extra `board` message merely because `incoming_garbage` is
+non-empty. Bots may simulate garbage in future search states, but must keep
+their current board and suggestion root aligned with this physical state.
+
+For example, five pending rows can remain pending across a non-clearing lock.
+Minorail sends the accepted placement, then requests another suggestion against
+the board without those rows. When the rows actually rise, the authoritative
+snapshot triggers the board-update or restart path described above.
+
 ---
 
 ## Piece Stream Tracking

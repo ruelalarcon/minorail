@@ -117,6 +117,62 @@ class FakeBotSession:
 
 
 class ServiceTests(unittest.TestCase):
+    def test_pending_garbage_requires_board_update_only_after_observed_rise(
+        self,
+    ) -> None:
+        for rise in (False, True):
+            for early_advance in (False, True):
+                with self.subTest(rise=rise, early_advance=early_advance):
+                    first = placement(Piece.O, 4, 0)
+                    fake = FakeBotSession([[first], []], supports_board=True)
+                    session = SuggestionContinuity(lambda: fake, idle_ms=0)
+                    rules = Rules()
+                    session.suggest(
+                        SuggestionRequest(
+                            snapshot=snapshot(),
+                            rules=rules,
+                            incoming_garbage=[5],
+                        )
+                    )
+                    state = GameState(
+                        Board(),
+                        spawn_location(Piece.O),
+                        [Piece.I, Piece.T, Piece.L, Piece.J],
+                        None,
+                        0,
+                        0,
+                    )
+                    self.assertTrue(state.apply_move(first, rules))
+                    if early_advance:
+                        self.assertTrue(session.begin_advance(first, rules))
+                    if rise:
+                        garbage = [bytearray([8] * 7 + [0] + [8] * 2) for _ in range(5)]
+                        state.board = Board(rows=garbage + state.board.rows[:-5])
+                    advanced = snapshot(
+                        state.board,
+                        active=state.active.piece,
+                        queue=state.queue,
+                        seq=1,
+                        last_move=first,
+                    )
+
+                    def suggest_after_sync(*args: Any) -> list[Placement]:
+                        self.assertEqual(len(fake.advanced), 1)
+                        self.assertEqual(fake.resets, [])
+                        expected = [advanced.board.rows] if rise else []
+                        self.assertEqual([b.rows for b in fake.board_updates], expected)
+                        return []
+
+                    with patch.object(fake, "suggest", side_effect=suggest_after_sync):
+                        session.suggest(
+                            SuggestionRequest(
+                                snapshot=advanced,
+                                rules=rules,
+                                incoming_garbage=[] if rise else [5],
+                            )
+                        )
+                    session.close()
+
     def test_joining_existing_game_does_not_claim_a_generated_bag_boundary(
         self,
     ) -> None:
